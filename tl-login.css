@@ -1,0 +1,36 @@
+:root {
+    --coffee-dark: #2C1E16; 
+    --coffee-medium: #8B5E34;
+    --cream-bg: #FDFBF7; 
+    --text-main: #333333;
+    --input-border: #E0DCD3; 
+    --error-red: #D9534F;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+body { background-color: var(--cream-bg); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+
+.login-container { width: 100%; max-width: 400px; background: #ffffff; padding: 40px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(44, 30, 22, 0.08); }
+
+.header-section { text-align: center; margin-bottom: 30px; }
+.logo-small { width: 90px; height: auto; margin-bottom: 12px; }
+.header-section h2 { color: var(--coffee-dark); font-size: 24px; font-weight: 600; }
+.header-section p { font-size: 14px; color: #777; }
+.login-form { display: flex; flex-direction: column; gap: 20px; }
+
+.input-group { display: flex; flex-direction: column; text-align: left; }
+.input-group label { font-size: 13px; font-weight: 500; color: var(--coffee-dark); margin-bottom: 8px; }
+.input-group input { padding: 14px; border: 1px solid var(--input-border); border-radius: 8px; font-size: 14px; color: var(--text-main); transition: border-color 0.2s ease; }
+.input-group input:focus { outline: none; border-color: var(--coffee-medium); box-shadow: 0 0 0 3px rgba(139, 94, 52, 0.1); }
+
+.btn { width: 100%; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; margin-top: 10px; -webkit-tap-highlight-color: transparent; }
+
+/* Using the secondary color for Team Leaders */
+.secondary-btn { background-color: var(--coffee-medium); color: #ffffff; }
+.secondary-btn:active { background-color: #6b4726; transform: scale(0.98); }
+.secondary-btn:disabled { background-color: #c4a991; cursor: not-allowed; }
+
+.back-link { text-align: center; margin-top: 15px; }
+.back-link a { color: var(--coffee-medium); font-size: 14px; text-decoration: none; font-weight: 500; }
+.back-link a:hover { text-decoration: underline; }
+.error-msg { color: var(--error-red); font-size: 13px; text-align: center; min-height: 18px; }

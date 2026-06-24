@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Adrianos System</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="admin-dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-brand">
+            <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
+            <h2>Owner Portal</h2>
+        </div>
+        <button id="logoutBtn" class="btn outline-btn small-btn">Logout</button>
+    </nav>
+
+    <div class="dashboard-container">
+        
+        <!-- User Management -->
+        <section class="dashboard-card">
+            <div class="card-header">
+                <h3>Staff Management</h3>
+                <p>Assign branches and update employee roles.</p>
+            </div>
+            
+            <div class="table-responsive">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Contact</th>
+                            <th>Role</th>
+                            <th>Branch Assignment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="5" class="loading-text">Loading staff data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Static Repetitive Schedule Maker -->
+        <section class="dashboard-card">
+            <div class="card-header flex-header">
+                <div class="header-text">
+                    <h3>Weekly Schedule Maker</h3>
+                    <p>Assign standard schedules (Repeats weekly).</p>
+                </div>
+                <div class="export-actions">
+                    <button id="exportPdfBtn" class="btn secondary-btn small-btn">Export PDF</button>
+                    <button id="exportPngBtn" class="btn secondary-btn small-btn">Export PNG</button>
+                </div>
+            </div>
+
+            <div class="schedule-controls">
+                <div class="input-group">
+                    <label for="scheduleBranchSelect">Select Branch</label>
+                    <select id="scheduleBranchSelect">
+                        <option value="">Choose a branch to view schedule...</option>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive" id="scheduleExportArea">
+                <div class="export-header" style="display: none;">
+                    <img src="logo.png" alt="Adrianos" width="60">
+                    <h3 id="exportBranchName">Branch Name</h3>
+                    <p>Standard Weekly Schedule</p>
+                </div>
+                <table id="scheduleTable">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Mon</th>
+                            <th>Tue</th>
+                            <th>Wed</th>
+                            <th>Thu</th>
+                            <th>Fri</th>
+                            <th>Sat</th>
+                            <th>Sun</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleTableBody">
+                        <tr>
+                            <td colspan="8" class="loading-text">Select a branch to view schedules.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <script type="module" src="admin-dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Login - Adrianos System</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="employee-login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <div class="header-section">
+            <img src="logo.png" alt="Adrianos Logo" class="logo-small">
+            <h2>Employee Portal</h2>
+            <p>Sign in to view your schedule</p>
+        </div>
+
+        <form id="loginForm" class="login-form">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required placeholder="Enter your username">
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="Enter your password">
+            </div>
+
+            <div id="errorMessage" class="error-msg"></div>
+
+            <button type="submit" id="loginBtn" class="btn primary-btn">Login</button>
+            
+            <div class="back-link">
+                <a href="index.html">← Back to Main Menu</a>
+            </div>
+        </form>
+    </div>
+
+    <script type="module" src="employee-login.js"></script>
+</body>
+</html>
