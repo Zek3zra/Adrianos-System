@@ -2,11 +2,11 @@
     --coffee-dark: #2C1E16;
     --coffee-medium: #8B5E34;
     --cream-bg: #FDFBF7;
+    --card-bg: #ffffff;
     --text-main: #333333;
     --text-muted: #777777;
     --input-border: #E0DCD3;
     --error-red: #D9534F;
-    --white: #ffffff;
 }
 
 * {
@@ -16,93 +16,96 @@
     font-family: 'Poppins', sans-serif;
 }
 
-html {
+html,
+body {
     width: 100%;
     min-height: 100%;
     overflow-x: hidden;
 }
 
 body {
-    width: 100%;
-    min-height: 100vh;
-    background-color: var(--cream-bg);
+    background: var(--cream-bg);
     color: var(--text-main);
-    overflow-x: hidden;
 }
 
 .register-page {
     width: 100%;
-    min-height: 100vh;
+    min-height: 100svh;
+    padding: 14px 12px 26px;
     display: flex;
+    align-items: flex-start;
     justify-content: center;
-    align-items: center;
-    padding: 24px 16px;
 }
 
 .register-container {
     width: 100%;
     max-width: 520px;
-    background: var(--white);
-    padding: 30px 24px;
-    border-radius: 16px;
+    background: var(--card-bg);
     border: 1px solid var(--input-border);
+    border-radius: 14px;
+    padding: 22px 16px;
 }
 
 .header-section {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .logo-small {
-    width: 80px;
+    width: 68px;
     height: auto;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .header-section h2 {
     color: var(--coffee-dark);
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1.2;
     font-weight: 600;
 }
 
 .header-section p {
     margin-top: 4px;
-    font-size: 14px;
     color: var(--text-muted);
+    font-size: 13px;
 }
 
 .register-form {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
 }
 
 .input-group {
+    width: 100%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     text-align: left;
-    min-width: 0;
 }
 
 .input-group label {
-    font-size: 13px;
-    font-weight: 500;
     color: var(--coffee-dark);
-    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.25;
+    font-weight: 600;
+    margin-bottom: 7px;
+    white-space: normal;
 }
 
 .input-group input {
     width: 100%;
-    min-height: 46px;
-    padding: 12px 14px;
+    min-width: 0;
+    min-height: 48px;
     border: 1px solid var(--input-border);
     border-radius: 10px;
-    font-size: 16px;
+    padding: 12px 14px;
+    background: #ffffff;
     color: var(--text-main);
-    background-color: var(--white);
+    font-size: 16px;
+    line-height: 1.3;
     outline: none;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
     -webkit-appearance: none;
     appearance: none;
 }
@@ -113,132 +116,133 @@ body {
 
 .input-group input:focus {
     border-color: var(--coffee-medium);
-    background-color: #fffdf9;
+    background: #fffdf9;
+}
+
+input[type="date"] {
+    color: var(--text-main);
+    min-height: 48px;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
 }
 
 .form-row {
+    width: 100%;
+    min-width: 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: 1fr;
+    gap: 14px;
 }
 
 .half-width {
     width: 100%;
+    min-width: 0;
+}
+
+.error-msg {
+    min-height: 18px;
+    color: var(--error-red);
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: center;
 }
 
 .btn {
     width: 100%;
-    min-height: 48px;
-    padding: 14px;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
+    min-height: 50px;
     border: none;
-    transition: background-color 0.2s ease, transform 0.15s ease;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
     margin-top: 4px;
     -webkit-tap-highlight-color: transparent;
 }
 
 .primary-btn {
-    background-color: var(--coffee-dark);
-    color: var(--white);
+    background: var(--coffee-dark);
+    color: #ffffff;
 }
 
 .primary-btn:active {
-    background-color: #1a110d;
+    background: #1a110d;
     transform: scale(0.99);
 }
 
 .primary-btn:disabled {
-    background-color: #a89f9a;
+    background: #a89f9a;
     cursor: not-allowed;
 }
 
 .back-link {
     text-align: center;
     margin-top: 10px;
-    padding-bottom: 2px;
+    padding-bottom: 4px;
 }
 
 .back-link a {
     color: var(--coffee-medium);
     font-size: 14px;
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .back-link a:hover {
     text-decoration: underline;
 }
 
-.error-msg {
-    color: var(--error-red);
-    font-size: 13px;
-    line-height: 1.4;
-    text-align: center;
-    min-height: 18px;
-}
-
-@media (max-width: 640px) {
+@media (min-width: 720px) {
     .register-page {
-        align-items: flex-start;
-        padding: 14px 12px 22px;
+        align-items: center;
+        padding: 24px 16px;
     }
 
     .register-container {
-        max-width: 100%;
-        padding: 22px 16px;
-        border-radius: 14px;
-    }
-
-    .header-section {
-        margin-bottom: 20px;
+        padding: 30px 24px;
+        border-radius: 16px;
     }
 
     .logo-small {
-        width: 68px;
-        margin-bottom: 8px;
+        width: 80px;
     }
 
     .header-section h2 {
-        font-size: 20px;
+        font-size: 22px;
     }
 
     .header-section p {
-        font-size: 13px;
-    }
-
-    .register-form {
-        gap: 14px;
+        font-size: 14px;
     }
 
     .form-row {
-        grid-template-columns: 1fr;
-        gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+}
+
+@media (max-width: 380px) {
+    .register-page {
+        padding: 10px 8px 20px;
+    }
+
+    .register-container {
+        padding: 18px 12px;
+        border-radius: 12px;
+    }
+
+    .register-form {
+        gap: 13px;
     }
 
     .input-group label {
         font-size: 12px;
     }
 
-    .btn {
-        margin-top: 2px;
-    }
-}
-
-@media (max-width: 380px) {
-    .register-page {
-        padding: 10px 8px 18px;
-    }
-
-    .register-container {
-        padding: 20px 12px;
-        border-radius: 12px;
-    }
-
     .input-group input {
-        min-height: 45px;
+        min-height: 46px;
         padding: 11px 12px;
     }
 }
