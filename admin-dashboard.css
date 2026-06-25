@@ -37,9 +37,7 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 14px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    position: static;
 }
 
 .nav-brand {
