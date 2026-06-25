@@ -3,7 +3,7 @@
     --coffee-medium: #8B5E34;
     --cream-bg: #FDFBF7;
     --card-bg: #ffffff;
-    --soft-bg: #FAF8F4;
+    --soft-bg: #faf9f6;
     --text-main: #333333;
     --text-muted: #777777;
     --input-border: #E0DCD3;
@@ -35,40 +35,36 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 14px;
-    position: relative !important;
-    top: auto !important;
-    bottom: auto !important;
-    z-index: auto;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .nav-brand {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-width: 0;
 }
 
 .nav-logo {
     width: 38px;
     height: auto;
-    flex: 0 0 auto;
 }
 
 .nav-brand h2 {
     color: var(--coffee-dark);
     font-size: 18px;
-    line-height: 1.15;
+    line-height: 1.2;
 }
 
 .nav-brand p {
     color: var(--coffee-medium);
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
-.nav-actions,
-.hero-buttons {
+.nav-actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -78,11 +74,11 @@ body {
 
 .report-container {
     max-width: 1240px;
-    margin: 18px auto 34px;
+    margin: 18px auto 30px;
     padding: 0 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
 }
 
 .report-hero-card,
@@ -102,32 +98,27 @@ body {
     gap: 18px;
 }
 
-.eyebrow,
-.section-kicker {
-    display: inline-block;
+.eyebrow {
     color: var(--coffee-medium);
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 12px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.7px;
-    margin-bottom: 6px;
+    letter-spacing: 0.6px;
 }
 
 .report-hero-card h1 {
     color: var(--coffee-dark);
-    font-size: 30px;
-    line-height: 1.12;
-    margin-bottom: 7px;
+    font-size: 28px;
+    line-height: 1.15;
+    margin: 5px 0 6px;
 }
 
 .report-hero-card p,
 .section-header p,
 .range-note,
-.panel-title-row span,
-.mobile-hint {
+.panel-title-row span {
     color: var(--text-muted);
     font-size: 13px;
-    line-height: 1.55;
 }
 
 .report-card {
@@ -144,14 +135,9 @@ body {
     border-bottom: 1px solid var(--input-border);
 }
 
-.compact-header {
-    margin-bottom: 12px;
-}
-
 .section-header h3 {
     color: var(--coffee-dark);
-    font-size: 20px;
-    line-height: 1.2;
+    font-size: 18px;
 }
 
 .orders-controls {
@@ -169,18 +155,15 @@ body {
 .input-group label {
     color: var(--coffee-dark);
     font-size: 12px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+    font-weight: 700;
 }
 
 .input-group input,
 .input-group select {
     width: 100%;
-    min-height: 44px;
     border: 1px solid var(--input-border);
     border-radius: 9px;
-    padding: 10px 12px;
+    padding: 11px 12px;
     background: #ffffff;
     color: var(--text-main);
     font-size: 14px;
@@ -192,18 +175,12 @@ body {
     border-color: var(--coffee-medium);
 }
 
-.range-note,
-.mobile-hint {
+.range-note {
     margin-top: 12px;
     background: var(--soft-bg);
     border: 1px solid var(--input-border);
     border-radius: 10px;
     padding: 11px 12px;
-}
-
-.mobile-hint {
-    display: none;
-    margin: 0 0 12px;
 }
 
 .summary-grid {
@@ -230,19 +207,9 @@ body {
 
 .summary-card strong {
     color: var(--coffee-dark);
-    font-size: 23px;
-    line-height: 1.12;
+    font-size: 24px;
+    line-height: 1.1;
     word-break: break-word;
-}
-
-.summary-card.primary-summary {
-    background: var(--coffee-dark);
-    border-color: var(--coffee-dark);
-}
-
-.summary-card.primary-summary span,
-.summary-card.primary-summary strong {
-    color: #ffffff;
 }
 
 .summary-card.wide-summary {
@@ -261,7 +228,7 @@ body {
 
 .report-panel {
     padding: 18px;
-    min-height: 260px;
+    min-height: 280px;
 }
 
 .panel-title-row {
@@ -318,7 +285,6 @@ body {
 .rank-count {
     min-width: 42px;
     height: 34px;
-    padding: 0 10px;
     border-radius: 999px;
     background: var(--coffee-dark);
     color: #ffffff;
@@ -327,7 +293,6 @@ body {
     justify-content: center;
     font-weight: 800;
     font-size: 14px;
-    flex: 0 0 auto;
 }
 
 .empty-state,
@@ -344,7 +309,7 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
-.responsive-orders-table {
+table {
     width: 100%;
     min-width: 980px;
     border-collapse: collapse;
@@ -378,7 +343,6 @@ tbody tr:nth-child(even) {
 
 .value-cell {
     font-weight: 700;
-    color: var(--coffee-medium);
 }
 
 .btn {
@@ -388,7 +352,7 @@ tbody tr:nth-child(even) {
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    transition: 0.16s ease;
+    transition: 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -402,7 +366,7 @@ tbody tr:nth-child(even) {
 }
 
 .small-btn {
-    padding: 9px 13px;
+    padding: 8px 13px;
     font-size: 13px;
 }
 
@@ -478,7 +442,7 @@ tbody tr:nth-child(even) {
     background: var(--success-green);
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1050px) {
     .summary-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -488,7 +452,7 @@ tbody tr:nth-child(even) {
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 768px) {
     .report-nav,
     .report-hero-card,
     .section-header {
@@ -496,34 +460,21 @@ tbody tr:nth-child(even) {
         flex-direction: column;
     }
 
-    .report-nav {
-        padding: 12px;
-    }
-
-    .nav-brand h2 {
-        font-size: 16px;
-    }
-
-    .nav-brand p {
-        font-size: 11px;
-    }
-
-    .nav-actions,
-    .hero-buttons {
+    .nav-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
         width: 100%;
     }
 
     .nav-actions .btn,
-    .hero-buttons .btn {
+    .report-hero-card .btn,
+    .section-header .btn {
         width: 100%;
     }
 
     .report-container {
-        margin: 14px auto 26px;
+        margin: 14px auto 24px;
         padding: 0 12px;
-        gap: 14px;
     }
 
     .report-hero-card,
@@ -549,13 +500,8 @@ tbody tr:nth-child(even) {
         grid-column: 1 / -1;
     }
 
-    .summary-card {
-        min-height: 88px;
-        padding: 13px;
-    }
-
     .summary-card strong {
-        font-size: 20px;
+        font-size: 21px;
     }
 
     .panel-title-row {
@@ -565,106 +511,255 @@ tbody tr:nth-child(even) {
     .panel-title-row span {
         text-align: left;
     }
+}
 
-    .mobile-hint {
-        display: block;
+@media (max-width: 430px) {
+    .summary-grid,
+    .nav-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================================
+   Final admin product report mobile update
+   Header scrolls away and detailed table becomes cards.
+========================================================= */
+.report-nav {
+    position: static !important;
+    top: auto !important;
+}
+
+@media (min-width: 769px) {
+    .report-card .table-responsive {
+        border: 1px solid var(--input-border);
+        border-radius: 12px;
+        overflow: auto;
+    }
+}
+
+@media (max-width: 760px) {
+    body {
+        overflow-x: hidden;
     }
 
-    .table-responsive {
-        overflow: visible;
+    .report-nav {
+        padding: 14px 12px;
     }
 
-    .responsive-orders-table {
+    .nav-brand {
         min-width: 0;
-        border-collapse: separate;
-        border-spacing: 0 12px;
-        font-size: 13px;
     }
 
-    .responsive-orders-table thead {
-        display: none;
+    .nav-logo {
+        width: 34px;
     }
 
-    .responsive-orders-table,
-    .responsive-orders-table tbody,
-    .responsive-orders-table tr,
-    .responsive-orders-table td {
-        display: block;
+    .nav-brand h2 {
+        font-size: 16px;
+    }
+
+    .nav-brand p {
+        font-size: 11px;
+    }
+
+    .nav-actions {
+        display: grid;
+        grid-template-columns: 1fr;
         width: 100%;
     }
 
-    .responsive-orders-table tr {
-        background: #ffffff !important;
-        border: 1px solid var(--input-border);
-        border-radius: 12px;
-        padding: 10px;
+    .report-container {
+        width: 100%;
+        margin: 12px auto 24px;
+        padding: 0 10px;
+        gap: 14px;
     }
 
-    .responsive-orders-table td {
-        white-space: normal;
-        border-bottom: 1px solid var(--input-border);
-        padding: 10px 2px;
-        display: grid;
-        grid-template-columns: 120px 1fr;
+    .report-hero-card,
+    .report-card,
+    .report-panel,
+    .summary-card {
+        box-shadow: none !important;
+    }
+
+    .report-hero-card h1 {
+        font-size: 22px;
+    }
+
+    .report-hero-card p,
+    .section-header p,
+    .range-note,
+    .panel-title-row span {
+        font-size: 12px;
+    }
+
+    .orders-controls {
         gap: 10px;
-        align-items: center;
     }
 
-    .responsive-orders-table td:last-child {
-        border-bottom: 0;
+    .input-group input,
+    .input-group select {
+        min-height: 46px;
+        font-size: 15px;
     }
 
-    .responsive-orders-table td::before {
-        content: attr(data-label);
-        color: var(--coffee-medium);
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
+    .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
     }
 
-    .responsive-orders-table td[colspan] {
+    .summary-card {
+        min-height: 86px;
+        padding: 13px;
+    }
+
+    .summary-card span {
+        font-size: 10px;
+    }
+
+    .summary-card strong {
+        font-size: 20px;
+    }
+
+    .summary-card.wide-summary {
+        grid-column: 1 / -1;
+    }
+
+    .report-panels {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .rank-list {
+        max-height: none;
+        overflow-y: visible;
+        padding-right: 0;
+    }
+
+    .rank-item {
+        align-items: flex-start;
+    }
+
+    .rank-count {
+        flex: 0 0 auto;
+    }
+
+    .table-responsive {
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        padding: 0;
+    }
+
+    #ordersTable {
         display: block;
-        text-align: center;
+        width: 100% !important;
+        min-width: 0 !important;
+        border-collapse: separate;
     }
 
-    .responsive-orders-table td[colspan]::before {
+    #ordersTable thead {
         display: none;
     }
 
-    .qty-cell {
+    #ordersTable tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    #ordersTable tr {
+        display: block;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid var(--input-border);
+        border-radius: 14px;
+        padding: 12px;
+    }
+
+    #ordersTable tbody tr:nth-child(even) {
+        background: #ffffff;
+    }
+
+    #ordersTable td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        padding: 9px 0;
+        border-bottom: 1px solid #eee8dc;
+        white-space: normal;
+        text-align: right;
+    }
+
+    #ordersTable td:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    #ordersTable td::before {
+        color: var(--coffee-medium);
+        flex: 0 0 118px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .3px;
         text-align: left;
+        text-transform: uppercase;
+    }
+
+    #ordersTable td:nth-child(1)::before { content: 'Date'; }
+    #ordersTable td:nth-child(2)::before { content: 'Product'; }
+    #ordersTable td:nth-child(3)::before { content: 'Variant'; }
+    #ordersTable td:nth-child(4)::before { content: 'Category'; }
+    #ordersTable td:nth-child(5)::before { content: 'Branch'; }
+    #ordersTable td:nth-child(6)::before { content: 'Qty'; }
+    #ordersTable td:nth-child(7)::before { content: 'Price'; }
+    #ordersTable td:nth-child(8)::before { content: 'Total'; }
+    #ordersTable td:nth-child(9)::before { content: 'Logged By'; }
+    #ordersTable td:nth-child(10)::before { content: 'Updated'; }
+
+    #ordersTable td:nth-child(2) {
+        display: block;
+        text-align: left;
+        background: #faf9f6;
+        margin: -12px -12px 8px;
+        padding: 13px 12px;
+        border-radius: 14px 14px 0 0;
+        border-bottom: 1px solid var(--input-border);
+    }
+
+    #ordersTable td:nth-child(2)::before {
+        content: none;
+    }
+
+    .qty-cell {
+        text-align: right;
     }
 
     .toast {
-        left: 12px;
-        right: 12px;
+        left: 10px;
+        right: 10px;
+        bottom: 14px;
         transform: none;
         border-radius: 12px;
         text-align: center;
     }
 }
 
-@media (max-width: 430px) {
-    .summary-grid,
-    .nav-actions,
-    .hero-buttons {
+@media (max-width: 390px) {
+    .summary-grid {
         grid-template-columns: 1fr;
     }
 
-    .responsive-orders-table td {
-        grid-template-columns: 1fr;
+    #ordersTable td {
+        align-items: stretch;
+        flex-direction: column;
         gap: 5px;
+        text-align: left;
     }
-}
 
-
-/* Header scroll behavior fix: header is only visible at the top of the page. */
-.report-nav {
-    position: relative !important;
-    top: auto !important;
-    bottom: auto !important;
-    left: auto !important;
-    right: auto !important;
-    z-index: auto !important;
+    #ordersTable td::before {
+        flex: 0 0 auto;
+    }
 }

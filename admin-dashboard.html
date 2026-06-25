@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin Dashboard - Adrianos System</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-dashboard.css?v=header-normal-20260626">
+    <link rel="stylesheet" href="admin-dashboard.css?v=mobile-card-assign-20260626">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
@@ -62,9 +62,41 @@
                 </div>
             </div>
 
-            <div class="mobile-hint">Swipe the table sideways or use the card layout below on small screens.</div>
+            <div class="assignment-toolbar staff-toolbar">
+                <div class="toolbar-title-row">
+                    <div>
+                        <strong>Find staff faster</strong>
+                        <span>Use search and filters before assigning roles or branches.</span>
+                    </div>
+                    <small id="staffCountText">Loading staff...</small>
+                </div>
 
-            <div class="table-responsive staff-table-wrap">
+                <div class="toolbar-grid">
+                    <div class="input-group">
+                        <label for="staffSearchInput">Search staff</label>
+                        <input type="search" id="staffSearchInput" placeholder="Type employee name or username..." autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label for="staffRoleFilterSelect">Role</label>
+                        <select id="staffRoleFilterSelect">
+                            <option value="all">All Roles</option>
+                            <option value="team_leader">Team Leaders</option>
+                            <option value="employee">Employees</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="staffBranchFilterSelect">Branch</label>
+                        <select id="staffBranchFilterSelect">
+                            <option value="all">All Branches</option>
+                            <option value="unassigned">Unassigned</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mobile-hint">On phones, staff records become cards, so you do not need to scroll sideways.</div>
+
+            <div class="table-responsive staff-table-wrap mobile-scroll-box">
                 <table id="usersTable" class="responsive-table staff-table">
                     <thead>
                         <tr>
@@ -96,16 +128,32 @@
                 </div>
             </div>
 
-            <div class="schedule-controls control-card">
-                <div class="input-group">
-                    <label for="scheduleBranchSelect">Branch to manage</label>
-                    <select id="scheduleBranchSelect">
-                        <option value="">Choose a branch to view schedule...</option>
-                    </select>
+            <div class="schedule-controls control-card assignment-toolbar">
+                <div class="toolbar-title-row">
+                    <div>
+                        <strong>Schedule controls</strong>
+                        <span>Select a branch, then search a name if the branch has many employees.</span>
+                    </div>
+                    <small id="scheduleCountText">Select a branch</small>
+                </div>
+
+                <div class="toolbar-grid schedule-toolbar-grid">
+                    <div class="input-group">
+                        <label for="scheduleBranchSelect">Branch to manage</label>
+                        <select id="scheduleBranchSelect">
+                            <option value="">Choose a branch to view schedule...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="scheduleEmployeeSearchInput">Search employee</label>
+                        <input type="search" id="scheduleEmployeeSearchInput" placeholder="Type employee name..." autocomplete="off">
+                    </div>
                 </div>
             </div>
 
-            <div class="table-responsive schedule-table-wrap">
+            <div class="mobile-hint">On phones, schedule rows become simple cards. Search first to assign faster.</div>
+
+            <div class="table-responsive schedule-table-wrap mobile-scroll-box">
                 <table id="scheduleTable" class="responsive-table schedule-table">
                     <thead>
                         <tr>
@@ -156,6 +204,6 @@
         </div>
     </div>
 
-    <script type="module" src="admin-dashboard.js"></script>
+    <script type="module" src="admin-dashboard.js?v=mobile-card-assign-20260626"></script>
 </body>
 </html>

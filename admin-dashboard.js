@@ -1,6 +1,8 @@
 import { supabase } from './supabaseClient.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const ORDERS_TABLE_NAME = 'daily_product_orders';
+    const PH_TIMEZONE = 'Asia/Manila';
     // ADMIN PAGE PROTECTION
     const ADMIN_SESSION_MAX_AGE = 8 * 60 * 60 * 1000; // 8 hours
     const isAdminLoggedIn = sessionStorage.getItem('adrianosAdminAuth') === 'true';
@@ -28,8 +30,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const pdfLoadingTitle = document.getElementById('pdfLoadingTitle');
     const pdfLoadingMessage = document.getElementById('pdfLoadingMessage');
 
+    const staffSearchInput = document.getElementById('staffSearchInput');
+    const staffRoleFilterSelect = document.getElementById('staffRoleFilterSelect');
+    const staffBranchFilterSelect = document.getElementById('staffBranchFilterSelect');
+    const staffCountText = document.getElementById('staffCountText');
+    const scheduleEmployeeSearchInput = document.getElementById('scheduleEmployeeSearchInput');
+    const scheduleCountText = document.getElementById('scheduleCountText');
+
     let branchesList = [];
     let usersList = [];
+    let currentScheduleEmployees = [];
+    let currentScheduleRows = [];
+    let currentScheduleBranchId = '';
     const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     const coffeeDark = [44, 30, 22];
@@ -41,7 +53,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function initDashboard() {
         await fetchBranches();
         await fetchUsers();
+
         scheduleBranchSelect.addEventListener('change', reloadSchedule);
+
+        [staffSearchInput, staffRoleFilterSelect, staffBranchFilterSelect].forEach(element => {
+            if (!element) return;
+            element.addEventListener('input', renderUsersTable);
+            element.addEventListener('change', renderUsersTable);
+        });
+
+        if (scheduleEmployeeSearchInput) {
+            scheduleEmployeeSearchInput.addEventListener('input', () => {
+                renderScheduleTable(currentScheduleEmployees, currentScheduleRows, currentScheduleBranchId);
+            });
+        }
     }
 
     function escapeHTML(value) {
@@ -105,12 +130,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         pdfLoadingOverlay.style.display = 'flex';
         exportPdfBtn.disabled = true;
         exportStaffBtn.disabled = true;
+
     }
 
     function hidePdfLoading() {
         pdfLoadingOverlay.style.display = 'none';
         exportPdfBtn.disabled = false;
         exportStaffBtn.disabled = false;
+
     }
 
     async function fetchBranches() {
@@ -124,12 +151,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             branchesList = data || [];
             scheduleBranchSelect.innerHTML = '<option value="">Choose a branch to view schedule...</option>';
+            if (staffBranchFilterSelect) {
+                staffBranchFilterSelect.innerHTML = '<option value="all">All Branches</option><option value="unassigned">Unassigned</option>';
+            }
 
             branchesList.forEach(branch => {
                 const option = document.createElement('option');
                 option.value = branch.id;
                 option.textContent = branch.name;
                 scheduleBranchSelect.appendChild(option);
+
+                if (staffBranchFilterSelect) {
+                    const staffOption = document.createElement('option');
+                    staffOption.value = branch.id;
+                    staffOption.textContent = branch.name;
+                    staffBranchFilterSelect.appendChild(staffOption);
+                }
             });
         } catch (error) {
             console.error('Error loading branches:', JSON.stringify(error, null, 2));
@@ -155,11 +192,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderUsersTable() {
-        const staffUsers = sortEmployees(usersList.filter(user => user.role !== 'admin'));
+        const staffUsers = getFilteredStaffUsers();
         usersTableBody.innerHTML = '';
 
+        if (staffCountText) {
+            const totalStaff = usersList.filter(user => user.role !== 'admin').length;
+            staffCountText.textContent = `${staffUsers.length} of ${totalStaff} shown`;
+        }
+
         if (staffUsers.length === 0) {
-            usersTableBody.innerHTML = '<tr><td colspan="5" class="loading-text">No registered staff found.</td></tr>';
+            usersTableBody.innerHTML = '<tr><td colspan="5" class="loading-text">No staff found for the selected search or filter.</td></tr>';
             return;
         }
 
@@ -178,17 +220,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
 
             tr.innerHTML = `
-                <td data-label="Name"><strong>${escapeHTML(user.full_name)}</strong></td>
-                <td data-label="Profile"><button class="btn outline-btn small-btn view-profile-btn" data-id="${escapeHTML(user.id)}">View Profile</button></td>
-                <td data-label="Role"><select class="table-select role-select" data-user-id="${escapeHTML(user.id)}">${roleOptionsHTML}</select></td>
-                <td data-label="Branch"><select class="table-select branch-select" data-user-id="${escapeHTML(user.id)}">${branchOptionsHTML}</select></td>
-                <td data-label="Actions"><button class="btn danger-btn small-btn delete-user-btn" data-id="${escapeHTML(user.id)}">Delete</button></td>
+                <td><strong>${escapeHTML(user.full_name)}</strong><span class="mobile-subtext">${escapeHTML(getRoleLabel(user.role))} • ${escapeHTML(getBranchName(user.branch_id))}</span></td>
+                <td><button class="btn outline-btn small-btn view-profile-btn" data-id="${escapeHTML(user.id)}">View Profile</button></td>
+                <td><select class="table-select role-select" data-user-id="${escapeHTML(user.id)}">${roleOptionsHTML}</select></td>
+                <td><select class="table-select branch-select" data-user-id="${escapeHTML(user.id)}">${branchOptionsHTML}</select></td>
+                <td><button class="btn danger-btn small-btn delete-user-btn" data-id="${escapeHTML(user.id)}">Delete</button></td>
             `;
 
             usersTableBody.appendChild(tr);
         });
 
         attachTableEventListeners();
+    }
+
+    function getFilteredStaffUsers() {
+        const searchValue = plainText(staffSearchInput?.value, '').toLowerCase();
+        const roleValue = staffRoleFilterSelect?.value || 'all';
+        const branchValue = staffBranchFilterSelect?.value || 'all';
+
+        return sortEmployees(usersList.filter(user => {
+            if (user.role === 'admin') return false;
+
+            const searchText = `${user.full_name || ''} ${user.username || ''} ${user.email || ''} ${user.phone_number || ''}`.toLowerCase();
+            const matchesSearch = !searchValue || searchText.includes(searchValue);
+            const matchesRole = roleValue === 'all' || user.role === roleValue;
+            const matchesBranch = branchValue === 'all' ||
+                (branchValue === 'unassigned' ? !user.branch_id : user.branch_id === branchValue);
+
+            return matchesSearch && matchesRole && matchesBranch;
+        }));
     }
 
     function attachTableEventListeners() {
@@ -207,6 +267,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     const targetUser = usersList.find(user => user.id === userId);
                     if (targetUser) targetUser.role = newRole;
+                    renderUsersTable();
 
                     if (scheduleBranchSelect.value) await reloadSchedule();
                 } catch (error) {
@@ -232,6 +293,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     const targetUser = usersList.find(user => user.id === userId);
                     if (targetUser) targetUser.branch_id = newBranchId;
+                    renderUsersTable();
 
                     if (scheduleBranchSelect.value) await reloadSchedule();
                 } catch (error) {
@@ -319,6 +381,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const branchId = scheduleBranchSelect.value;
 
         if (!branchId) {
+            currentScheduleEmployees = [];
+            currentScheduleRows = [];
+            currentScheduleBranchId = '';
+            if (scheduleCountText) scheduleCountText.textContent = 'Select a branch';
             scheduleTableBody.innerHTML = '<tr><td colspan="8" class="loading-text">Select a branch to view schedules.</td></tr>';
             return;
         }
@@ -336,6 +402,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (empError) throw empError;
 
             if (!employees || employees.length === 0) {
+                currentScheduleEmployees = [];
+                currentScheduleRows = [];
+                currentScheduleBranchId = branchId;
+                if (scheduleCountText) scheduleCountText.textContent = '0 employees';
                 scheduleTableBody.innerHTML = '<tr><td colspan="8" class="loading-text">No employees assigned to this branch yet.</td></tr>';
                 return;
             }
@@ -347,7 +417,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (schedError) throw schedError;
 
-            renderScheduleTable(sortEmployees(employees), existingSchedules || [], branchId);
+            currentScheduleEmployees = sortEmployees(employees);
+            currentScheduleRows = existingSchedules || [];
+            currentScheduleBranchId = branchId;
+            renderScheduleTable(currentScheduleEmployees, currentScheduleRows, currentScheduleBranchId);
         } catch (error) {
             console.error('Schedule loading failed:', JSON.stringify(error, null, 2));
             scheduleTableBody.innerHTML = '<tr><td colspan="8" class="loading-text error-text">Error loading schedule matrix.</td></tr>';
@@ -357,9 +430,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderScheduleTable(employees, existingSchedules, branchId) {
         scheduleTableBody.innerHTML = '';
 
-        employees.forEach(employee => {
+        const searchValue = plainText(scheduleEmployeeSearchInput?.value, '').toLowerCase();
+        const visibleEmployees = employees.filter(employee => {
+            const text = `${employee.full_name || ''} ${employee.username || ''}`.toLowerCase();
+            return !searchValue || text.includes(searchValue);
+        });
+
+        if (scheduleCountText) {
+            scheduleCountText.textContent = branchId
+                ? `${visibleEmployees.length} of ${employees.length} shown`
+                : 'Select a branch';
+        }
+
+        if (!visibleEmployees.length) {
+            scheduleTableBody.innerHTML = '<tr><td colspan="8" class="loading-text">No employee found for this schedule search.</td></tr>';
+            return;
+        }
+
+        visibleEmployees.forEach(employee => {
             const tr = document.createElement('tr');
-            let rowHTML = `<td data-label="Employee"><strong>${escapeHTML(employee.full_name)}</strong></td>`;
+            let rowHTML = `<td><strong>${escapeHTML(employee.full_name)}</strong><span class="mobile-subtext">${escapeHTML(getRoleLabel(employee.role))}</span></td>`;
 
             daysOfWeek.forEach(day => {
                 const existingShift = existingSchedules.find(schedule => {
@@ -369,7 +459,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const shiftValue = existingShift ? existingShift.shift_type : '';
 
                 rowHTML += `
-                    <td data-label="${escapeHTML(day)}">
+                    <td>
                         <select class="table-select shift-select" data-emp-id="${escapeHTML(employee.id)}" data-day="${escapeHTML(day)}">
                             <option value="" ${shiftValue === '' ? 'selected' : ''}>-</option>
                             <option value="opening" ${shiftValue === 'opening' ? 'selected' : ''}>Opening</option>
@@ -591,6 +681,476 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         return shiftLabel(row?.shift_type);
+    }
+
+    function initProductOrdersReport() {
+        orderDateInput.value = getPHDateKey();
+    }
+
+    async function loadProductOrdersReport() {
+        const selectedDate = orderDateInput.value || getPHDateKey();
+        orderDateInput.value = selectedDate;
+
+        ordersTableBody.innerHTML = '<tr><td colspan="9" class="loading-text">Loading product orders...</td></tr>';
+        refreshOrdersBtn.disabled = true;
+        refreshOrdersBtn.textContent = 'Loading...';
+
+        try {
+            let query = supabase
+                .from(ORDERS_TABLE_NAME)
+                .select('*')
+                .eq('report_date', selectedDate)
+                .order('quantity', { ascending: false })
+                .order('product_name', { ascending: true });
+
+            if (orderBranchSelect.value && orderBranchSelect.value !== 'all') {
+                query = query.eq('branch_key', orderBranchSelect.value);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            dailyProductOrders = data || [];
+            renderProductOrdersReport();
+        } catch (error) {
+            console.error('Product orders load failed:', JSON.stringify(error, null, 2));
+            dailyProductOrders = [];
+            renderEmptyProductOrders('Failed to load product orders. Please check the daily_product_orders table.');
+        } finally {
+            refreshOrdersBtn.disabled = false;
+            refreshOrdersBtn.textContent = 'Refresh Orders';
+        }
+    }
+
+    function renderProductOrdersReport() {
+        const rows = dailyProductOrders.filter(row => Number(row.quantity) > 0);
+        const totalQty = rows.reduce((sum, row) => sum + getOrderQuantity(row), 0);
+        const topProducts = getTopProducts(rows);
+        const branchBreakdown = getBranchBreakdown(rows);
+
+        ordersTotalQty.textContent = String(totalQty);
+        ordersActiveProducts.textContent = String(new Set(rows.map(row => row.product_key)).size);
+        ordersBranchCount.textContent = String(branchBreakdown.length);
+        ordersTopProduct.textContent = topProducts.length ? `${topProducts[0].productName} (${topProducts[0].quantity})` : 'No orders yet';
+
+        renderTopProducts(topProducts);
+        renderBranchBreakdown(branchBreakdown);
+        renderProductOrdersTable(rows);
+    }
+
+    function renderEmptyProductOrders(message) {
+        ordersTotalQty.textContent = '0';
+        ordersActiveProducts.textContent = '0';
+        ordersBranchCount.textContent = '0';
+        ordersTopProduct.textContent = 'No orders yet';
+        topProductsList.innerHTML = `<div class="empty-state">${escapeHTML(message)}</div>`;
+        branchOrdersList.innerHTML = `<div class="empty-state">${escapeHTML(message)}</div>`;
+        ordersTableBody.innerHTML = `<tr><td colspan="9" class="loading-text">${escapeHTML(message)}</td></tr>`;
+    }
+
+    function renderTopProducts(topProducts) {
+        if (!topProducts.length) {
+            topProductsList.innerHTML = '<div class="empty-state">No product orders found for this date.</div>';
+            return;
+        }
+
+        topProductsList.innerHTML = topProducts.slice(0, 10).map(item => {
+            const meta = [item.category, item.variant || 'Regular'].filter(Boolean).join(' • ');
+
+            return `
+                <div class="rank-item">
+                    <div>
+                        <strong>${escapeHTML(item.productName)}</strong>
+                        <span>${escapeHTML(meta)}</span>
+                    </div>
+                    <div class="rank-count">${item.quantity}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderBranchBreakdown(branchBreakdown) {
+        if (!branchBreakdown.length) {
+            branchOrdersList.innerHTML = '<div class="empty-state">No branch orders found for this date.</div>';
+            return;
+        }
+
+        branchOrdersList.innerHTML = branchBreakdown.map(item => {
+            return `
+                <div class="rank-item">
+                    <div>
+                        <strong>${escapeHTML(item.branchName)}</strong>
+                        <span>${item.activeProducts} active product${item.activeProducts === 1 ? '' : 's'} • ${formatPeso(item.estimatedTotal)}</span>
+                    </div>
+                    <div class="rank-count">${item.quantity}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderProductOrdersTable(rows) {
+        if (!rows.length) {
+            ordersTableBody.innerHTML = '<tr><td colspan="9" class="loading-text">No product orders logged for this date.</td></tr>';
+            return;
+        }
+
+        const sortedRows = [...rows].sort((a, b) => {
+            const qtyCompare = getOrderQuantity(b) - getOrderQuantity(a);
+            if (qtyCompare !== 0) return qtyCompare;
+            return plainText(a.product_name, '').localeCompare(plainText(b.product_name, ''));
+        });
+
+        ordersTableBody.innerHTML = sortedRows.map(row => {
+            const qty = getOrderQuantity(row);
+            const price = getOrderPrice(row);
+            const estimatedTotal = qty * price;
+
+            return `
+                <tr>
+                    <td><strong>${escapeHTML(row.product_name)}</strong></td>
+                    <td>${escapeHTML(row.product_variant || 'Regular')}</td>
+                    <td>${escapeHTML(row.category)}</td>
+                    <td>${escapeHTML(row.branch_name || 'Unassigned Branch')}</td>
+                    <td><span class="qty-badge">${qty}</span></td>
+                    <td>${formatPeso(price)}</td>
+                    <td class="money-text">${formatPeso(estimatedTotal)}</td>
+                    <td>${escapeHTML(row.team_leader_name || 'Team Leader')}</td>
+                    <td class="muted-cell">${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function getTopProducts(rows) {
+        const map = new Map();
+
+        rows.forEach(row => {
+            const key = row.product_key || `${row.product_name}-${row.product_variant}`;
+            const qty = getOrderQuantity(row);
+            const price = getOrderPrice(row);
+
+            if (!map.has(key)) {
+                map.set(key, {
+                    productKey: key,
+                    productName: plainText(row.product_name, 'Unnamed Product'),
+                    variant: row.product_variant || '',
+                    category: row.category || 'Uncategorized',
+                    quantity: 0,
+                    estimatedTotal: 0
+                });
+            }
+
+            const item = map.get(key);
+            item.quantity += qty;
+            item.estimatedTotal += qty * price;
+        });
+
+        return [...map.values()].sort((a, b) => {
+            if (b.quantity !== a.quantity) return b.quantity - a.quantity;
+            return a.productName.localeCompare(b.productName);
+        });
+    }
+
+    function getBranchBreakdown(rows) {
+        const map = new Map();
+
+        rows.forEach(row => {
+            const key = row.branch_key || row.branch_name || 'unassigned';
+            const qty = getOrderQuantity(row);
+            const price = getOrderPrice(row);
+
+            if (!map.has(key)) {
+                map.set(key, {
+                    branchKey: key,
+                    branchName: row.branch_name || getBranchName(row.branch_id) || 'Unassigned Branch',
+                    quantity: 0,
+                    estimatedTotal: 0,
+                    products: new Set()
+                });
+            }
+
+            const item = map.get(key);
+            item.quantity += qty;
+            item.estimatedTotal += qty * price;
+            if (row.product_key) item.products.add(row.product_key);
+        });
+
+        return [...map.values()]
+            .map(item => ({
+                branchKey: item.branchKey,
+                branchName: item.branchName,
+                quantity: item.quantity,
+                estimatedTotal: item.estimatedTotal,
+                activeProducts: item.products.size
+            }))
+            .sort((a, b) => b.quantity - a.quantity || a.branchName.localeCompare(b.branchName));
+    }
+
+    function getOrderQuantity(row) {
+        return Math.max(0, Number(row.quantity) || 0);
+    }
+
+    function getOrderPrice(row) {
+        return Math.max(0, Number(row.price) || 0);
+    }
+
+    function formatPeso(amount) {
+        const value = Number(amount) || 0;
+
+        return value.toLocaleString('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
+            minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function getPHDateKey() {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: PH_TIMEZONE,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(new Date());
+
+        const year = parts.find(part => part.type === 'year').value;
+        const month = parts.find(part => part.type === 'month').value;
+        const day = parts.find(part => part.type === 'day').value;
+
+        return `${year}-${month}-${day}`;
+    }
+
+    function formatOrderDateLong(dateKey) {
+        if (!dateKey) return 'N/A';
+
+        try {
+            const date = new Date(`${dateKey}T00:00:00+08:00`);
+            return new Intl.DateTimeFormat('en-PH', {
+                timeZone: PH_TIMEZONE,
+                year: 'numeric',
+                month: 'long',
+                day: '2-digit'
+            }).format(date);
+        } catch {
+            return dateKey;
+        }
+    }
+
+    function formatPHDateTime(value) {
+        if (!value) return 'N/A';
+
+        try {
+            return new Intl.DateTimeFormat('en-PH', {
+                timeZone: PH_TIMEZONE,
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }).format(new Date(value));
+        } catch {
+            return value;
+        }
+    }
+
+    function getSelectedOrderBranchLabel() {
+        if (!orderBranchSelect.value || orderBranchSelect.value === 'all') {
+            return 'All Branches';
+        }
+
+        return orderBranchSelect.options[orderBranchSelect.selectedIndex]?.textContent || 'Selected Branch';
+    }
+
+    async function exportProductOrdersPdf() {
+        if (!ensurePdfLibraryReady()) return;
+
+        if (!dailyProductOrders.length) {
+            await loadProductOrdersReport();
+        }
+
+        const rows = dailyProductOrders.filter(row => Number(row.quantity) > 0);
+
+        if (!rows.length) {
+            alert('No product orders available to export for the selected date.');
+            return;
+        }
+
+        showPdfLoading('Generating Orders PDF...', 'Compiling daily product demand report.');
+
+        try {
+            const selectedDate = orderDateInput.value || getPHDateKey();
+            const topProducts = getTopProducts(rows);
+            const branchBreakdown = getBranchBreakdown(rows);
+            const totalQty = rows.reduce((sum, row) => sum + getOrderQuantity(row), 0);
+            const estimatedTotal = rows.reduce((sum, row) => sum + (getOrderQuantity(row) * getOrderPrice(row)), 0);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+            doc.autoTable({
+                body: [
+                    ['Report Date', formatOrderDateLong(selectedDate)],
+                    ['Branch Filter', getSelectedOrderBranchLabel()],
+                    ['Total Orders', String(totalQty)],
+                    ['Active Products', String(new Set(rows.map(row => row.product_key)).size)],
+                    ['Branches Logged', String(branchBreakdown.length)],
+                    ['Estimated Total Value', formatPeso(estimatedTotal)]
+                ],
+                startY: 34,
+                margin: { left: 12, right: 12 },
+                theme: 'grid',
+                styles: {
+                    font: 'helvetica',
+                    fontSize: 8,
+                    cellPadding: 2.5,
+                    lineColor: border,
+                    lineWidth: 0.15,
+                    textColor: textGray
+                },
+                columnStyles: {
+                    0: { cellWidth: 45, fontStyle: 'bold', fillColor: [250, 249, 246], textColor: coffeeDark },
+                    1: { cellWidth: 92 }
+                },
+                didDrawPage() {
+                    drawPdfHeader(doc, 'DAILY PRODUCT ORDERS REPORT', 'Adrianos Coffee & Food Portal - Team Leader Logged Orders');
+                }
+            });
+
+            doc.autoTable({
+                head: [['Rank', 'Product', 'Variant', 'Category', 'Total Qty', 'Estimated Value']],
+                body: topProducts.slice(0, 15).map((item, index) => [
+                    String(index + 1),
+                    item.productName,
+                    item.variant || 'Regular',
+                    item.category,
+                    String(item.quantity),
+                    formatPeso(item.estimatedTotal)
+                ]),
+                startY: doc.lastAutoTable.finalY + 7,
+                margin: { left: 12, right: 12 },
+                theme: 'grid',
+                styles: {
+                    font: 'helvetica',
+                    fontSize: 8,
+                    cellPadding: 2.3,
+                    lineColor: border,
+                    lineWidth: 0.15,
+                    textColor: textGray
+                },
+                headStyles: {
+                    fillColor: coffeeDark,
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                columnStyles: {
+                    0: { cellWidth: 14, halign: 'center' },
+                    4: { cellWidth: 24, halign: 'center', fontStyle: 'bold' },
+                    5: { cellWidth: 30, halign: 'right' }
+                }
+            });
+
+            doc.autoTable({
+                head: [['Branch', 'Active Products', 'Total Qty', 'Estimated Value']],
+                body: branchBreakdown.map(item => [
+                    item.branchName,
+                    String(item.activeProducts),
+                    String(item.quantity),
+                    formatPeso(item.estimatedTotal)
+                ]),
+                startY: doc.lastAutoTable.finalY + 7,
+                margin: { left: 12, right: 12 },
+                theme: 'grid',
+                styles: {
+                    font: 'helvetica',
+                    fontSize: 8,
+                    cellPadding: 2.3,
+                    lineColor: border,
+                    lineWidth: 0.15,
+                    textColor: textGray
+                },
+                headStyles: {
+                    fillColor: coffeeMedium,
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                columnStyles: {
+                    1: { cellWidth: 34, halign: 'center' },
+                    2: { cellWidth: 28, halign: 'center', fontStyle: 'bold' },
+                    3: { cellWidth: 34, halign: 'right' }
+                }
+            });
+
+            const detailRows = [...rows]
+                .sort((a, b) => getOrderQuantity(b) - getOrderQuantity(a))
+                .map(row => {
+                    const qty = getOrderQuantity(row);
+                    const price = getOrderPrice(row);
+
+                    return [
+                        row.product_name || 'Unnamed Product',
+                        row.product_variant || 'Regular',
+                        row.category || 'Uncategorized',
+                        row.branch_name || 'Unassigned Branch',
+                        String(qty),
+                        formatPeso(price),
+                        formatPeso(qty * price),
+                        row.team_leader_name || 'Team Leader',
+                        formatPHDateTime(row.updated_at || row.created_at)
+                    ];
+                });
+
+            doc.autoTable({
+                head: [['Product', 'Variant', 'Category', 'Branch', 'Qty', 'Price', 'Total', 'Logged By', 'Updated']],
+                body: detailRows,
+                startY: doc.lastAutoTable.finalY + 7,
+                margin: { top: 34, right: 12, bottom: 16, left: 12 },
+                theme: 'grid',
+                rowPageBreak: 'avoid',
+                pageBreak: 'auto',
+                styles: {
+                    font: 'helvetica',
+                    fontSize: 7.2,
+                    cellPadding: 2,
+                    overflow: 'linebreak',
+                    valign: 'middle',
+                    lineColor: border,
+                    lineWidth: 0.15,
+                    textColor: textGray
+                },
+                headStyles: {
+                    fillColor: coffeeDark,
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                columnStyles: {
+                    0: { cellWidth: 38, fontStyle: 'bold' },
+                    1: { cellWidth: 24 },
+                    2: { cellWidth: 35 },
+                    3: { cellWidth: 32 },
+                    4: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+                    5: { cellWidth: 20, halign: 'right' },
+                    6: { cellWidth: 24, halign: 'right', fontStyle: 'bold' },
+                    7: { cellWidth: 32 },
+                    8: { cellWidth: 36 }
+                },
+                alternateRowStyles: {
+                    fillColor: [250, 249, 246]
+                },
+                didDrawPage() {
+                    drawPdfHeader(doc, 'DAILY PRODUCT ORDERS REPORT', 'Adrianos Coffee & Food Portal - Team Leader Logged Orders');
+                }
+            });
+
+            addPdfPageNumbers(doc);
+            doc.save(`Adrianos_Product_Orders_${selectedDate}.pdf`);
+        } catch (error) {
+            console.error('Product orders PDF export failed:', JSON.stringify(error, null, 2));
+            alert('Error compiling product orders PDF. Please check the console for details.');
+        } finally {
+            hidePdfLoading();
+        }
     }
 
     async function exportMasterSchedulePdf() {
