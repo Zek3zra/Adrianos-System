@@ -2,40 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Team Leader Login - Adrianos</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="tl-login.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="login-container tl-theme">
-        <div class="header-section">
-            <img src="logo.png" alt="Adrianos Logo" class="logo-small">
-            <h2>Management Portal</h2>
-            <p>Team Leader & Admin Access</p>
-        </div>
-
-        <form id="loginForm" class="login-form">
-            <div class="input-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" required placeholder="Enter management ID">
+    <main class="login-page">
+        <section class="login-container">
+            <div class="header-section">
+                <img src="logo.png" alt="Adrianos Logo" class="logo-small">
+                <h1>Team Leader Portal</h1>
+                <p>Login to record today's product orders.</p>
             </div>
 
-            <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" required placeholder="Enter password">
-            </div>
+            <form id="loginForm" class="login-form" autocomplete="off">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required placeholder="Enter username" autocomplete="username">
+                </div>
 
-            <div id="errorMessage" class="error-msg"></div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Enter password" autocomplete="current-password">
+                </div>
 
-            <button type="submit" id="loginBtn" class="btn secondary-btn">Login to Dashboard</button>
-            
-            <div class="back-link">
-                <a href="index.html">← Back to Main Menu</a>
-            </div>
-        </form>
-    </div>
+                <div id="errorMessage" class="error-msg" aria-live="polite"></div>
+
+                <button type="submit" id="loginBtn" class="btn primary-btn">Login</button>
+
+                <div class="back-link">
+                    <a href="index.html">Back to Main Menu</a>
+                </div>
+            </form>
+        </section>
+    </main>
 
     <script type="module" src="tl-login.js"></script>
 </body>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Team Leader Dashboard - Adrianos</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="tl-dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-card">
+            <h2>Loading Inventory...</h2>
+            <p>Please wait while we prepare today's order tracker.</p>
+        </div>
+    </div>
+
+    <nav class="tl-nav">
+        <div class="nav-brand">
+            <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
+            <div>
+                <h1>Team Leader</h1>
+                <p id="navBranchText">Inventory Dashboard</p>
+            </div>
+        </div>
+        <button id="logoutBtn" class="btn outline-btn small-btn">Logout</button>
+    </nav>
+
+    <main class="dashboard-container">
+        <section class="summary-card">
+            <div class="summary-main">
+                <span class="role-badge">Daily Product Orders</span>
+                <h2 id="todayText">Today</h2>
+                <p id="leaderText">Team Leader: Loading...</p>
+                <p id="branchText">Branch: Loading...</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <label>Total Orders</label>
+                    <strong id="totalOrdersText">0</strong>
+                </div>
+                <div class="stat-item">
+                    <label>Active Items</label>
+                    <strong id="activeItemsText">0</strong>
+                </div>
+                <div class="stat-item">
+                    <label>PH Time</label>
+                    <strong id="phTimeText">--:--</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-card controls-card">
+            <div class="card-header">
+                <div>
+                    <h3>Inventory Order Counter</h3>
+                    <p>Tap plus or minus every time a product is ordered today.</p>
+                </div>
+            </div>
+
+            <div class="controls-grid">
+                <div class="input-group">
+                    <label for="searchInput">Search Product</label>
+                    <input type="search" id="searchInput" placeholder="Search coffee, rice, burger...">
+                </div>
+
+                <div class="input-group">
+                    <label for="categorySelect">Category</label>
+                    <select id="categorySelect">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="categoryChips" class="category-chips"></div>
+        </section>
+
+        <section class="dashboard-card">
+            <div class="card-header flex-header">
+                <div>
+                    <h3>Product List</h3>
+                    <p id="saveStatusText">Changes save automatically.</p>
+                </div>
+                <button id="refreshBtn" class="btn outline-btn small-btn">Refresh</button>
+            </div>
+
+            <div id="productGrid" class="product-grid">
+                <div class="loading-text">Loading products...</div>
+            </div>
+        </section>
+
+        <section class="dashboard-card">
+            <div class="card-header flex-header">
+                <div>
+                    <h3>Today's Top Items</h3>
+                    <p>Quick view of products with the highest count today.</p>
+                </div>
+                <button id="clearDayBtn" class="btn danger-outline-btn small-btn">Clear Today</button>
+            </div>
+
+            <div id="topItemsList" class="top-items-list">
+                <div class="empty-state">No orders recorded yet.</div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script type="module" src="tl-dashboard.js"></script>
+</body>
+</html>

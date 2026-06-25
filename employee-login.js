@@ -1,50 +1,153 @@
 import { supabase } from './supabaseClient.js';
 
-document.addEventListener("DOMContentLoaded", () => {
+const EMPLOYEE_DASHBOARD_PAGE = 'employee-dashboard.html';
+const MAIN_MENU_PAGE = 'index.html';
+
+const ALLOWED_EMPLOYEE_PORTAL_ROLES = ['employee', 'team_leader'];
+
+const SESSION_KEYS = [
+    'adrianosLoggedAuth',
+    'adrianosLoggedUserId',
+    'adrianosLoggedUsername',
+    'adrianosLoggedRole',
+    'adrianosLoggedFullName',
+    'adrianosEmployeeAuth',
+    'adrianosEmployeeUserId',
+    'adrianosEmployeeUsername',
+    'adrianosEmployeeRole',
+    'adrianosEmployeeFullName',
+    'adrianosTlAuth',
+    'adrianosTlUserId',
+    'adrianosTlUsername',
+    'adrianosTlRole',
+    'adrianosAuthUser'
+];
+
+document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
     const errorMessage = document.getElementById('errorMessage');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
 
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    clearOldLoginSession();
 
-        errorMessage.textContent = '';
-        loginBtn.textContent = 'Authenticating...';
-        loginBtn.disabled = true;
+    loginForm.addEventListener('submit', async event => {
+        event.preventDefault();
 
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        setError('');
+
+        if (!username || !password) {
+            setError('Please enter your username and password.');
+            return;
+        }
+
+        setLoading(true);
 
         try {
-            // BYPASS: Just search the profiles table for a matching username and password
-            const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('username', username)
-                .eq('password', password)
-                .single(); // .single() ensures we only get one result back
-
-            // If no match is found, Supabase throws an error (PGRST116)
-            if (profileError) {
-                throw new Error("Invalid username or password.");
-            }
-
-            // Optional: Role check logic
-            if (profileData.role === 'admin') {
-                console.log("Admin logged in via Employee portal.");
-            } else if (profileData.role === 'team_leader') {
-                console.log("Team Leader logged in via Employee portal.");
-            }
-
-            // Success! Redirect to the dashboard
-            window.location.href = 'employee-dashboard.html';
-
+            const profile = await loginEmployeeOrTeamLeader(username, password);
+            saveEmployeeSession(profile);
+            window.location.replace(EMPLOYEE_DASHBOARD_PAGE);
         } catch (error) {
-            console.error('Login Error:', error);
-            errorMessage.textContent = 'Invalid username or password. Please try again.';
+            console.error('Employee login failed:', error);
+            setError(error.message || 'Invalid username or password. Please try again.');
         } finally {
-            loginBtn.textContent = 'Login';
-            loginBtn.disabled = false;
+            setLoading(false);
         }
     });
+
+    togglePasswordBtn.addEventListener('click', () => {
+        const isHidden = passwordInput.type === 'password';
+        passwordInput.type = isHidden ? 'text' : 'password';
+        togglePasswordBtn.textContent = isHidden ? 'Hide' : 'Show';
+        togglePasswordBtn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    });
+
+    function setLoading(isLoading) {
+        loginBtn.disabled = isLoading;
+        loginBtn.textContent = isLoading ? 'Logging in...' : 'Login';
+        usernameInput.disabled = isLoading;
+        passwordInput.disabled = isLoading;
+        togglePasswordBtn.disabled = isLoading;
+    }
+
+    function setError(message) {
+        errorMessage.textContent = message;
+    }
 });
+
+async function loginEmployeeOrTeamLeader(username, password) {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password)
+        .maybeSingle();
+
+    if (error) {
+        throw new Error('Could not connect to the account database.');
+    }
+
+    if (!data) {
+        throw new Error('Invalid username or password. Please try again.');
+    }
+
+    const role = normalizeRole(data.role);
+
+    if (!ALLOWED_EMPLOYEE_PORTAL_ROLES.includes(role)) {
+        throw new Error('This login page is only for employee and team leader accounts.');
+    }
+
+    return {
+        ...data,
+        role
+    };
+}
+
+function saveEmployeeSession(profile) {
+    clearOldLoginSession();
+
+    const sessionUser = {
+        id: profile.id,
+        username: profile.username || '',
+        role: normalizeRole(profile.role),
+        full_name: profile.full_name || '',
+        login_portal: 'employee',
+        logged_in_at: new Date().toISOString()
+    };
+
+    sessionStorage.setItem('adrianosLoggedAuth', 'true');
+    sessionStorage.setItem('adrianosLoggedUserId', String(sessionUser.id));
+    sessionStorage.setItem('adrianosLoggedUsername', sessionUser.username);
+    sessionStorage.setItem('adrianosLoggedRole', sessionUser.role);
+    sessionStorage.setItem('adrianosLoggedFullName', sessionUser.full_name);
+
+    sessionStorage.setItem('adrianosEmployeeAuth', 'true');
+    sessionStorage.setItem('adrianosEmployeeUserId', String(sessionUser.id));
+    sessionStorage.setItem('adrianosEmployeeUsername', sessionUser.username);
+    sessionStorage.setItem('adrianosEmployeeRole', sessionUser.role);
+    sessionStorage.setItem('adrianosEmployeeFullName', sessionUser.full_name);
+
+    sessionStorage.setItem('adrianosAuthUser', JSON.stringify(sessionUser));
+}
+
+function clearOldLoginSession() {
+    SESSION_KEYS.forEach(key => sessionStorage.removeItem(key));
+}
+
+function normalizeRole(role) {
+    const cleanRole = String(role || 'employee')
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, '_');
+
+    if (cleanRole === 'teamleader' || cleanRole === 'team_lead' || cleanRole === 'tl') {
+        return 'team_leader';
+    }
+
+    return cleanRole;
+}

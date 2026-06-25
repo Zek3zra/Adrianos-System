@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Employee Dashboard - Adrianos</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="employee-dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-card">
+            <div class="loader-spinner"></div>
+            <h2>Loading Dashboard</h2>
+            <p>Please wait while we prepare your account.</p>
+        </div>
+    </div>
+
+    <nav class="employee-nav">
+        <div class="nav-brand">
+            <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
+            <div>
+                <h2>Employee Portal</h2>
+                <p id="navSubtitle">Adrianos Coffee & Food</p>
+            </div>
+        </div>
+
+        <button id="logoutBtn" class="btn outline-btn small-btn">Logout</button>
+    </nav>
+
+    <main class="dashboard-container">
+        <section class="hero-card">
+            <div class="profile-photo-area">
+                <div class="avatar-wrapper">
+                    <img id="profilePhoto" src="" alt="Profile Photo" class="profile-photo hidden">
+                    <div id="profileInitials" class="profile-initials">--</div>
+                </div>
+
+                <input type="file" id="photoInput" accept="image/png,image/jpeg,image/jpg,image/webp" hidden>
+
+                <div class="photo-actions">
+                    <button id="uploadPhotoBtn" class="btn secondary-btn small-btn" type="button">Change Photo</button>
+                    <button id="removePhotoBtn" class="btn danger-btn small-btn" type="button">Remove</button>
+                </div>
+
+                <p class="photo-note">JPG, PNG, or WEBP only. Maximum 5MB.</p>
+            </div>
+
+            <div class="profile-summary">
+                <span id="roleBadge" class="role-badge">Employee</span>
+                <h1 id="profileName">Employee Name</h1>
+                <p id="profileUsername">Username: --</p>
+
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <label>Branch</label>
+                        <span id="profileBranch">Unassigned</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Date Started</label>
+                        <span id="profileStarted">N/A</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Phone</label>
+                        <span id="profilePhone">N/A</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Email</label>
+                        <span id="profileEmail">N/A</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-card schedule-card">
+            <div class="card-header flex-header">
+                <div>
+                    <span class="section-kicker">Schedule</span>
+                    <h3>My Weekly Schedule</h3>
+                    <p>Your assigned weekly schedule from management.</p>
+                </div>
+
+                <button id="refreshScheduleBtn" class="btn outline-btn small-btn" type="button">Refresh</button>
+            </div>
+
+
+            <div id="scheduleGrid" class="schedule-grid">
+                <div class="loading-text">Loading your schedule...</div>
+            </div>
+        </section>
+
+        <section class="dashboard-card">
+            <div class="card-header flex-header">
+                <div>
+                    <span class="section-kicker">Profile</span>
+                    <h3>My Profile Information</h3>
+                    <p>View and update your personal account details.</p>
+                </div>
+
+                <button id="editProfileBtn" class="btn secondary-btn small-btn" type="button">Edit Profile</button>
+            </div>
+
+            <div id="profileView" class="profile-info-grid"></div>
+
+            <form id="profileForm" class="profile-form hidden">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="fullNameInput">Full Name</label>
+                        <input type="text" id="fullNameInput" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="phoneInput">Phone Number</label>
+                        <input type="text" id="phoneInput" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="emailInput">Email Address</label>
+                        <input type="email" id="emailInput" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="birthdayInput">Birthday</label>
+                        <input type="date" id="birthdayInput" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="dateStartedInput">Date Started</label>
+                        <input type="date" id="dateStartedInput" required>
+                    </div>
+
+                    <div class="input-group full-width">
+                        <label for="addressInput">Complete Address</label>
+                        <textarea id="addressInput" rows="3" required></textarea>
+                    </div>
+
+                    <div class="input-group full-width">
+                        <label for="emergencyInput">Emergency Contact</label>
+                        <input type="text" id="emergencyInput" required>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancelEditBtn" class="btn outline-btn">Cancel</button>
+                    <button type="submit" id="saveProfileBtn" class="btn secondary-btn">Save Changes</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script type="module" src="employee-dashboard.js"></script>
+</body>
+</html>
