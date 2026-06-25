@@ -1,5 +1,4 @@
-// supabaseClient.js
-// Update this first line to use the CDN:
+
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const supabaseUrl = 'https://jhvglscasrufvfgenoej.supabase.co';
