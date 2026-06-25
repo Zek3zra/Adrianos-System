@@ -18,10 +18,26 @@
             <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
             <h2>Owner Portal</h2>
         </div>
-        <button id="logoutBtn" class="btn outline-btn small-btn">Logout</button>
+
+        <div class="nav-actions">
+            <a href="admin-product-report.html" class="btn secondary-btn small-btn nav-link-btn">Product Reports</a>
+            <button id="logoutBtn" class="btn outline-btn small-btn">Logout</button>
+        </div>
     </nav>
 
     <main class="dashboard-container">
+        <section class="dashboard-card quick-report-card">
+            <div class="card-header flex-header no-border-header">
+                <div class="header-text">
+                    <h3>Admin Dashboard</h3>
+                    <p>Manage staff records and weekly schedules. Product order reports are now on a separate page for better readability.</p>
+                </div>
+                <div class="export-actions">
+                    <a href="admin-product-report.html" class="btn secondary-btn small-btn nav-link-btn">Open Product Summary Report</a>
+                </div>
+            </div>
+        </section>
+
         <section class="dashboard-card">
             <div class="card-header flex-header">
                 <div class="header-text">
