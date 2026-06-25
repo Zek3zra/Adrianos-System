@@ -33,6 +33,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         topProductsList: document.getElementById('topProductsList'),
         dailyOrdersList: document.getElementById('dailyOrdersList'),
         branchOrdersList: document.getElementById('branchOrdersList'),
+        ordersSearchInput: document.getElementById('ordersSearchInput'),
+        ordersCategorySelect: document.getElementById('ordersCategorySelect'),
+        ordersPageSizeSelect: document.getElementById('ordersPageSizeSelect'),
+        recordsShowingText: document.getElementById('recordsShowingText'),
+        ordersPagination: document.getElementById('ordersPagination'),
+        prevOrdersPageBtn: document.getElementById('prevOrdersPageBtn'),
+        nextOrdersPageBtn: document.getElementById('nextOrdersPageBtn'),
+        ordersPageInfo: document.getElementById('ordersPageInfo'),
         ordersTableBody: document.getElementById('ordersTableBody'),
         pdfLoadingOverlay: document.getElementById('pdfLoadingOverlay'),
         pdfLoadingTitle: document.getElementById('pdfLoadingTitle'),
@@ -42,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let branchesList = [];
     let productOrders = [];
+    let currentRecordsPage = 1;
 
     const coffeeDark = [44, 30, 22];
     const coffeeMedium = [139, 94, 52];
@@ -65,6 +74,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         elements.orderBranchSelect.addEventListener('change', loadProductOrdersReport);
         elements.refreshOrdersBtn.addEventListener('click', loadProductOrdersReport);
         elements.exportOrdersPdfBtn.addEventListener('click', exportProductOrdersPdf);
+
+        elements.ordersSearchInput?.addEventListener('input', () => {
+            currentRecordsPage = 1;
+            renderProductOrdersTable(getPositiveOrderRows());
+        });
+
+        elements.ordersCategorySelect?.addEventListener('change', () => {
+            currentRecordsPage = 1;
+            renderProductOrdersTable(getPositiveOrderRows());
+        });
+
+        elements.ordersPageSizeSelect?.addEventListener('change', () => {
+            currentRecordsPage = 1;
+            renderProductOrdersTable(getPositiveOrderRows());
+        });
+
+        elements.prevOrdersPageBtn?.addEventListener('click', () => {
+            if (currentRecordsPage > 1) {
+                currentRecordsPage -= 1;
+                renderProductOrdersTable(getPositiveOrderRows());
+            }
+        });
+
+        elements.nextOrdersPageBtn?.addEventListener('click', () => {
+            currentRecordsPage += 1;
+            renderProductOrdersTable(getPositiveOrderRows());
+        });
     }
 
     function initDateRange() {
@@ -190,6 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (error) throw error;
 
             productOrders = data || [];
+            currentRecordsPage = 1;
             renderProductOrdersReport();
         } catch (error) {
             console.error('Product orders load failed:', JSON.stringify(error, null, 2));
@@ -226,6 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderTopProducts(stats.topProducts);
         renderDailyBreakdown(stats.dailyBreakdown);
         renderBranchBreakdown(stats.branchBreakdown);
+        populateCategoryFilter(rows);
         renderProductOrdersTable(rows);
     }
 
@@ -239,6 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         elements.topProductsList.innerHTML = `<div class="empty-state">${escapeHTML(message)}</div>`;
         elements.dailyOrdersList.innerHTML = `<div class="empty-state">${escapeHTML(message)}</div>`;
         elements.branchOrdersList.innerHTML = `<div class="empty-state">${escapeHTML(message)}</div>`;
+        resetRecordsControls(message);
         elements.ordersTableBody.innerHTML = `<tr><td colspan="10" class="loading-text">${escapeHTML(message)}</td></tr>`;
     }
 
@@ -302,14 +341,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderProductOrdersTable(rows) {
+        const filteredRows = getFilteredDetailRows(rows);
+        const sortedRows = getSortedOrderRows(filteredRows);
+        const totalRows = sortedRows.length;
+        const pageSize = getRecordsPageSize();
+        const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+
+        if (currentRecordsPage > totalPages) currentRecordsPage = totalPages;
+        if (currentRecordsPage < 1) currentRecordsPage = 1;
+
+        updateRecordsPagination(totalRows, totalPages, pageSize);
+
         if (!rows.length) {
             elements.ordersTableBody.innerHTML = '<tr><td colspan="10" class="loading-text">No product orders logged for the selected range.</td></tr>';
             return;
         }
 
-        const sortedRows = getSortedOrderRows(rows);
+        if (!totalRows) {
+            elements.ordersTableBody.innerHTML = '<tr><td colspan="10" class="loading-text">No records match your search or category filter.</td></tr>';
+            return;
+        }
 
-        elements.ordersTableBody.innerHTML = sortedRows.map(row => {
+        const startIndex = (currentRecordsPage - 1) * pageSize;
+        const pageRows = sortedRows.slice(startIndex, startIndex + pageSize);
+
+        elements.ordersTableBody.innerHTML = pageRows.map(row => {
             const qty = getOrderQuantity(row);
             const price = getOrderPrice(row);
             const estimatedTotal = qty * price;
@@ -329,6 +385,88 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </tr>
             `;
         }).join('');
+    }
+
+    function getFilteredDetailRows(rows) {
+        const searchTerm = plainText(elements.ordersSearchInput?.value, '').toLowerCase();
+        const selectedCategory = elements.ordersCategorySelect?.value || 'all';
+
+        return rows.filter(row => {
+            const category = plainText(row.category, 'Uncategorized');
+            const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
+
+            if (!matchesCategory) return false;
+            if (!searchTerm) return true;
+
+            const searchableText = [
+                row.report_date,
+                row.product_name,
+                row.product_variant || 'Regular',
+                row.category || 'Uncategorized',
+                row.branch_name || 'Unassigned Branch',
+                row.team_leader_name || 'Team Leader',
+                formatPeso(getOrderPrice(row)),
+                String(getOrderQuantity(row))
+            ].join(' ').toLowerCase();
+
+            return searchableText.includes(searchTerm);
+        });
+    }
+
+    function populateCategoryFilter(rows) {
+        if (!elements.ordersCategorySelect) return;
+
+        const currentValue = elements.ordersCategorySelect.value || 'all';
+        const categories = [...new Set(rows.map(row => plainText(row.category, 'Uncategorized')))]
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b));
+
+        elements.ordersCategorySelect.innerHTML = '<option value="all">All Categories</option>' +
+            categories.map(category => `<option value="${escapeHTML(category)}">${escapeHTML(category)}</option>`).join('');
+
+        const hasCurrentValue = currentValue === 'all' || categories.includes(currentValue);
+        elements.ordersCategorySelect.value = hasCurrentValue ? currentValue : 'all';
+    }
+
+    function getRecordsPageSize() {
+        const selectedSize = Number(elements.ordersPageSizeSelect?.value || 25);
+        return Number.isFinite(selectedSize) && selectedSize > 0 ? selectedSize : 25;
+    }
+
+    function updateRecordsPagination(totalRows, totalPages, pageSize) {
+        const startRecord = totalRows === 0 ? 0 : (currentRecordsPage - 1) * pageSize + 1;
+        const endRecord = totalRows === 0 ? 0 : Math.min(totalRows, currentRecordsPage * pageSize);
+
+        if (elements.recordsShowingText) {
+            elements.recordsShowingText.textContent = totalRows
+                ? `Showing ${startRecord}-${endRecord} of ${totalRows} records`
+                : 'Showing 0 records';
+        }
+
+        if (elements.ordersPageInfo) {
+            elements.ordersPageInfo.textContent = `Page ${currentRecordsPage} of ${totalPages}`;
+        }
+
+        if (elements.prevOrdersPageBtn) {
+            elements.prevOrdersPageBtn.disabled = currentRecordsPage <= 1 || totalRows === 0;
+        }
+
+        if (elements.nextOrdersPageBtn) {
+            elements.nextOrdersPageBtn.disabled = currentRecordsPage >= totalPages || totalRows === 0;
+        }
+    }
+
+    function resetRecordsControls(message = 'No records') {
+        currentRecordsPage = 1;
+        if (elements.ordersCategorySelect) {
+            elements.ordersCategorySelect.innerHTML = '<option value="all">All Categories</option>';
+            elements.ordersCategorySelect.value = 'all';
+        }
+        if (elements.ordersSearchInput) elements.ordersSearchInput.value = '';
+        if (elements.recordsShowingText) elements.recordsShowingText.textContent = message;
+        if (elements.ordersPageInfo) elements.ordersPageInfo.textContent = 'Page 1 of 1';
+        if (elements.prevOrdersPageBtn) elements.prevOrdersPageBtn.disabled = true;
+        if (elements.nextOrdersPageBtn) elements.nextOrdersPageBtn.disabled = true;
     }
 
     function buildReportStats(rows) {

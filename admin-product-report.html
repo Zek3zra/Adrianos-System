@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Product Orders Report - Adrianos System</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-product-report.css?v=admin-mobile-report-20260626">
+    <link rel="stylesheet" href="admin-product-report.css?v=records-pagination-20260626">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
@@ -148,7 +148,40 @@
                 </div>
             </div>
 
-            <div class="mobile-hint">On mobile, each row becomes a readable card.</div>
+            <div class="records-toolbar">
+                <div class="input-group records-search-group">
+                    <label for="ordersSearchInput">Search records</label>
+                    <input type="search" id="ordersSearchInput" placeholder="Search product, category, branch, or team leader">
+                </div>
+
+                <div class="input-group">
+                    <label for="ordersCategorySelect">Category</label>
+                    <select id="ordersCategorySelect">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="ordersPageSizeSelect">Rows per page</label>
+                    <select id="ordersPageSizeSelect">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="records-status-row">
+                <p id="recordsShowingText">Showing 0 records</p>
+                <div id="ordersPagination" class="pagination-controls">
+                    <button id="prevOrdersPageBtn" type="button" class="btn outline-btn small-btn">Previous</button>
+                    <span id="ordersPageInfo">Page 1 of 1</span>
+                    <button id="nextOrdersPageBtn" type="button" class="btn outline-btn small-btn">Next</button>
+                </div>
+            </div>
+
+            <div class="mobile-hint">On mobile, swipe the table left or right to see all columns. Use search and pagination to avoid endless scrolling.</div>
 
             <div class="table-responsive">
                 <table id="ordersTable" class="responsive-orders-table">
@@ -185,6 +218,6 @@
 
     <div id="toast" class="toast hidden"></div>
 
-    <script type="module" src="admin-product-report.js?v=admin-mobile-report-20260626"></script>
+    <script type="module" src="admin-product-report.js?v=records-pagination-20260626"></script>
 </body>
 </html>

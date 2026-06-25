@@ -1136,3 +1136,213 @@ select.table-select {
         min-height: auto;
     }
 }
+
+/* =========================================================
+   FINAL OVERRIDE: Mobile horizontal assignment tables
+   Keep staff and schedule as tables on phones with side scroll.
+========================================================= */
+@media (max-width: 760px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .mobile-hint {
+        display: block !important;
+        background: #faf9f6;
+        border: 1px solid var(--input-border);
+        border-radius: 10px;
+        color: #6f6259;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 0 0 10px;
+        padding: 10px 12px;
+    }
+
+    .mobile-scroll-box,
+    .table-responsive {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--input-border);
+        border-radius: 12px;
+        background: #ffffff;
+        padding-bottom: 8px;
+    }
+
+    .mobile-scroll-box::-webkit-scrollbar,
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .mobile-scroll-box::-webkit-scrollbar-track,
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1ece5;
+        border-radius: 999px;
+    }
+
+    .mobile-scroll-box::-webkit-scrollbar-thumb,
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: var(--coffee-medium);
+        border-radius: 999px;
+    }
+
+    .responsive-table,
+    .staff-table,
+    .schedule-table,
+    table {
+        display: table !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        font-size: 13.5px;
+    }
+
+    .staff-table {
+        min-width: 760px !important;
+    }
+
+    .schedule-table {
+        min-width: 980px !important;
+    }
+
+    .responsive-table thead,
+    .staff-table thead,
+    .schedule-table thead {
+        display: table-header-group !important;
+    }
+
+    .responsive-table tbody,
+    .staff-table tbody,
+    .schedule-table tbody {
+        display: table-row-group !important;
+        width: auto !important;
+    }
+
+    .responsive-table tr,
+    .staff-table tr,
+    .schedule-table tr {
+        display: table-row !important;
+        width: auto !important;
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+    }
+
+    .responsive-table th,
+    .responsive-table td,
+    .staff-table th,
+    .staff-table td,
+    .schedule-table th,
+    .schedule-table td {
+        display: table-cell !important;
+        width: auto !important;
+        margin: 0 !important;
+        border-bottom: 1px solid var(--input-border) !important;
+        border-radius: 0 !important;
+        padding: 13px 12px !important;
+        text-align: left !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+    }
+
+    .responsive-table td::before,
+    .staff-table td::before,
+    .schedule-table td::before,
+    .loading-text::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .responsive-table th,
+    .staff-table th,
+    .schedule-table th {
+        background: var(--coffee-dark) !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+    }
+
+    .staff-table th:nth-child(1),
+    .staff-table td:nth-child(1) {
+        min-width: 150px;
+        font-weight: 700;
+    }
+
+    .staff-table th:nth-child(2),
+    .staff-table td:nth-child(2) {
+        min-width: 145px;
+    }
+
+    .staff-table th:nth-child(3),
+    .staff-table td:nth-child(3),
+    .staff-table th:nth-child(4),
+    .staff-table td:nth-child(4) {
+        min-width: 205px;
+    }
+
+    .staff-table th:nth-child(5),
+    .staff-table td:nth-child(5) {
+        min-width: 120px;
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+        min-width: 118px;
+    }
+
+    .schedule-table th:nth-child(1),
+    .schedule-table td:nth-child(1) {
+        min-width: 170px;
+        font-weight: 700;
+    }
+
+    select.table-select {
+        width: 100% !important;
+        min-width: 175px !important;
+        max-width: none !important;
+        margin: 0 !important;
+        min-height: 44px;
+    }
+
+    .schedule-table select.table-select {
+        min-width: 108px !important;
+    }
+
+    .staff-table .btn,
+    .schedule-table .btn,
+    .responsive-table .btn {
+        width: auto !important;
+        min-width: 116px !important;
+        margin: 0 !important;
+        text-align: center !important;
+        white-space: nowrap;
+    }
+
+    .loading-text {
+        display: table-cell !important;
+        text-align: center !important;
+        padding: 24px 12px !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .responsive-table td,
+    .staff-table td,
+    .schedule-table td {
+        display: table-cell !important;
+        align-items: unset !important;
+        flex-direction: unset !important;
+        gap: 0 !important;
+        text-align: left !important;
+    }
+
+    select.table-select,
+    .responsive-table .btn,
+    .staff-table .btn,
+    .schedule-table .btn {
+        width: auto !important;
+        margin-left: 0 !important;
+    }
+}

@@ -763,3 +763,322 @@ tbody tr:nth-child(even) {
         flex: 0 0 auto;
     }
 }
+
+/* =========================================================
+   FINAL OVERRIDE: Compact product report header + clearer actions
+========================================================= */
+.hero-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.hero-buttons .btn {
+    min-width: 142px;
+}
+
+@media (max-width: 760px) {
+    .report-nav {
+        position: static !important;
+        padding: 10px 12px !important;
+        gap: 10px;
+    }
+
+    .nav-logo {
+        width: 30px !important;
+    }
+
+    .nav-brand h2 {
+        font-size: 15px !important;
+    }
+
+    .nav-brand p {
+        display: none;
+    }
+
+    .nav-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        width: 100%;
+    }
+
+    .report-container {
+        margin: 10px auto 24px !important;
+        padding: 0 10px !important;
+        gap: 12px !important;
+    }
+
+    .report-hero-card {
+        padding: 12px !important;
+        gap: 10px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .report-hero-card .eyebrow {
+        font-size: 10px;
+        margin-bottom: 2px;
+    }
+
+    .report-hero-card h1 {
+        font-size: 19px !important;
+        margin: 2px 0 !important;
+        line-height: 1.15;
+    }
+
+    .report-hero-card p {
+        font-size: 11px !important;
+        line-height: 1.35;
+        margin-top: 4px;
+    }
+
+    .hero-buttons {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px !important;
+        width: 100%;
+        margin-top: 4px;
+    }
+
+    .hero-buttons .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 44px;
+    }
+
+    .filters-card,
+    .details-card,
+    .report-card,
+    .report-panel {
+        padding: 13px !important;
+    }
+
+    .section-header.compact-header {
+        margin-bottom: 10px;
+        padding-bottom: 9px;
+    }
+
+    .section-header.compact-header h3 {
+        font-size: 16px;
+    }
+
+    .section-header.compact-header p {
+        font-size: 11px;
+    }
+
+    .mobile-hint {
+        display: block !important;
+        margin: 0 0 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--input-border);
+        border-radius: 10px;
+        background: #faf9f6;
+        color: #6f6259;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* Detailed orders use horizontal table scrolling on mobile for admin-style view. */
+    .details-card .table-responsive {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--input-border);
+        border-radius: 12px;
+        padding-bottom: 8px;
+    }
+
+    .details-card .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .details-card .table-responsive::-webkit-scrollbar-track {
+        background: #f1ece5;
+        border-radius: 999px;
+    }
+
+    .details-card .table-responsive::-webkit-scrollbar-thumb {
+        background: var(--coffee-medium);
+        border-radius: 999px;
+    }
+
+    #ordersTable {
+        display: table !important;
+        width: 100% !important;
+        min-width: 1080px !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        font-size: 12.5px;
+    }
+
+    #ordersTable thead {
+        display: table-header-group !important;
+    }
+
+    #ordersTable tbody {
+        display: table-row-group !important;
+        width: auto !important;
+    }
+
+    #ordersTable tr {
+        display: table-row !important;
+        width: auto !important;
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+    }
+
+    #ordersTable th,
+    #ordersTable td {
+        display: table-cell !important;
+        width: auto !important;
+        margin: 0 !important;
+        border-bottom: 1px solid var(--input-border) !important;
+        border-radius: 0 !important;
+        padding: 11px 10px !important;
+        text-align: left !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+    }
+
+    #ordersTable th {
+        background: var(--coffee-dark) !important;
+        color: #ffffff !important;
+    }
+
+    #ordersTable td::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .qty-cell {
+        text-align: center !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .hero-buttons {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    #ordersTable td {
+        display: table-cell !important;
+        align-items: unset !important;
+        flex-direction: unset !important;
+        gap: 0 !important;
+        text-align: left !important;
+    }
+}
+
+/* =========================================================
+   Product order records optimization
+   Adds search, category filter, rows-per-page, and pagination.
+========================================================= */
+.records-toolbar {
+    display: grid;
+    grid-template-columns: minmax(260px, 2fr) minmax(180px, 1fr) minmax(150px, 0.7fr);
+    gap: 12px;
+    margin: 4px 0 12px;
+    align-items: end;
+}
+
+.records-search-group input[type="search"] {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.records-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 10px;
+    padding: 11px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    background: var(--soft-bg);
+}
+
+.records-status-row p {
+    color: var(--coffee-dark);
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pagination-controls span {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 88px;
+    text-align: center;
+}
+
+.details-card .table-responsive {
+    max-height: 620px;
+    overflow: auto;
+}
+
+.details-card #ordersTable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+@media (max-width: 760px) {
+    .records-toolbar {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .records-status-row {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .records-status-row p {
+        text-align: center;
+    }
+
+    .pagination-controls {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .pagination-controls .btn {
+        min-height: 42px;
+        width: 100%;
+    }
+
+    .pagination-controls span {
+        align-self: center;
+        min-width: 76px;
+    }
+
+    .details-card .table-responsive {
+        max-height: 60vh;
+        overflow: auto !important;
+    }
+
+    .details-card #ordersTable thead th {
+        position: sticky;
+        top: 0;
+    }
+}
