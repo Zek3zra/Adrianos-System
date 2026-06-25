@@ -7,8 +7,6 @@
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="admin-dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- PDF libraries: native PDF export, no screenshot/html2canvas export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -16,41 +14,58 @@
     <nav class="admin-nav">
         <div class="nav-brand">
             <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
-            <h2>Owner Portal</h2>
+            <div>
+                <h2>Owner Portal</h2>
+                <p>Staff and Schedule Management</p>
+            </div>
         </div>
 
-        <div class="nav-actions">
-            <a href="admin-product-report.html" class="btn secondary-btn small-btn nav-link-btn">Product Reports</a>
-            <button id="logoutBtn" class="btn outline-btn small-btn">Logout</button>
-        </div>
+        <button id="logoutBtn" class="btn outline-btn small-btn">Logout</button>
     </nav>
 
     <main class="dashboard-container">
-        <section class="dashboard-card quick-report-card">
-            <div class="card-header flex-header no-border-header">
-                <div class="header-text">
-                    <h3>Admin Dashboard</h3>
-                    <p>Manage staff records and weekly schedules. Product order reports are now on a separate page for better readability.</p>
-                </div>
-                <div class="export-actions">
-                    <a href="admin-product-report.html" class="btn secondary-btn small-btn nav-link-btn">Open Product Summary Report</a>
-                </div>
+        <section class="owner-hero">
+            <div class="hero-copy">
+                <span class="eyebrow">Admin Dashboard</span>
+                <h1>Manage your team in one clean workspace.</h1>
+                <p>Use this page for staff records, branch assignments, and weekly schedules. Product demand reports are separated for better readability.</p>
+            </div>
+
+            <div class="hero-actions-grid">
+                <a href="#staffSection" class="hero-action-card">
+                    <span>01</span>
+                    <strong>Staff List</strong>
+                    <small>Roles, branches, and profiles</small>
+                </a>
+                <a href="#scheduleSection" class="hero-action-card">
+                    <span>02</span>
+                    <strong>Weekly Schedule</strong>
+                    <small>Opening, closing, and day off</small>
+                </a>
+                <a href="admin-product-report.html" class="hero-action-card accent-card">
+                    <span>03</span>
+                    <strong>Product Report</strong>
+                    <small>Daily and range summaries</small>
+                </a>
             </div>
         </section>
 
-        <section class="dashboard-card">
+        <section id="staffSection" class="dashboard-card">
             <div class="card-header flex-header">
                 <div class="header-text">
-                    <h3>Staff Management</h3>
-                    <p>Manage branch deployment, update roles, and view profile files.</p>
+                    <span class="section-kicker">Staff Management</span>
+                    <h3>Team members</h3>
+                    <p>Update roles, assign branches, view full profiles, or export a staff PDF.</p>
                 </div>
                 <div class="export-actions">
                     <button id="exportStaffBtn" class="btn secondary-btn small-btn">Export Staff PDF</button>
                 </div>
             </div>
 
-            <div class="table-responsive">
-                <table id="usersTable">
+            <div class="mobile-hint">Swipe the table sideways or use the card layout below on small screens.</div>
+
+            <div class="table-responsive staff-table-wrap">
+                <table id="usersTable" class="responsive-table staff-table">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -69,28 +84,29 @@
             </div>
         </section>
 
-        <section class="dashboard-card">
+        <section id="scheduleSection" class="dashboard-card">
             <div class="card-header flex-header">
                 <div class="header-text">
-                    <h3>Weekly Schedule Maker</h3>
-                    <p>Assign standard schedules that repeat weekly.</p>
+                    <span class="section-kicker">Weekly Schedule</span>
+                    <h3>Schedule maker</h3>
+                    <p>Select a branch, then assign each employee to opening, closing, day off, or blank.</p>
                 </div>
                 <div class="export-actions">
                     <button id="exportPdfBtn" class="btn secondary-btn small-btn">Export Schedule PDF</button>
                 </div>
             </div>
 
-            <div class="schedule-controls">
+            <div class="schedule-controls control-card">
                 <div class="input-group">
-                    <label for="scheduleBranchSelect">Select Branch</label>
+                    <label for="scheduleBranchSelect">Branch to manage</label>
                     <select id="scheduleBranchSelect">
                         <option value="">Choose a branch to view schedule...</option>
                     </select>
                 </div>
             </div>
 
-            <div class="table-responsive">
-                <table id="scheduleTable">
+            <div class="table-responsive schedule-table-wrap">
+                <table id="scheduleTable" class="responsive-table schedule-table">
                     <thead>
                         <tr>
                             <th>Employee</th>
@@ -122,13 +138,13 @@
                 <span id="modalRoleBadge" class="role-badge">Employee</span>
             </div>
             <div class="modal-body">
-                <div class="info-group"><label>Username / ID:</label> <span id="modalUsername"></span></div>
-                <div class="info-group"><label>Phone Number:</label> <span id="modalPhone"></span></div>
-                <div class="info-group"><label>Email Address:</label> <span id="modalEmail"></span></div>
-                <div class="info-group"><label>Complete Address:</label> <span id="modalAddress"></span></div>
-                <div class="info-group"><label>Birthday:</label> <span id="modalBirthday"></span></div>
-                <div class="info-group"><label>Date Started:</label> <span id="modalDateStarted"></span></div>
-                <div class="info-group"><label>Emergency Contact:</label> <span id="modalEmergency"></span></div>
+                <div class="info-group"><label>Username / ID</label> <span id="modalUsername"></span></div>
+                <div class="info-group"><label>Phone Number</label> <span id="modalPhone"></span></div>
+                <div class="info-group"><label>Email Address</label> <span id="modalEmail"></span></div>
+                <div class="info-group"><label>Complete Address</label> <span id="modalAddress"></span></div>
+                <div class="info-group"><label>Birthday</label> <span id="modalBirthday"></span></div>
+                <div class="info-group"><label>Date Started</label> <span id="modalDateStarted"></span></div>
+                <div class="info-group"><label>Emergency Contact</label> <span id="modalEmergency"></span></div>
             </div>
         </div>
     </div>

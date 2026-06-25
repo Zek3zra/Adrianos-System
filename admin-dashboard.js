@@ -178,11 +178,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
 
             tr.innerHTML = `
-                <td><strong>${escapeHTML(user.full_name)}</strong></td>
-                <td><button class="btn outline-btn small-btn view-profile-btn" data-id="${escapeHTML(user.id)}">View Profile</button></td>
-                <td><select class="table-select role-select" data-user-id="${escapeHTML(user.id)}">${roleOptionsHTML}</select></td>
-                <td><select class="table-select branch-select" data-user-id="${escapeHTML(user.id)}">${branchOptionsHTML}</select></td>
-                <td><button class="btn danger-btn small-btn delete-user-btn" data-id="${escapeHTML(user.id)}">Delete</button></td>
+                <td data-label="Name"><strong>${escapeHTML(user.full_name)}</strong></td>
+                <td data-label="Profile"><button class="btn outline-btn small-btn view-profile-btn" data-id="${escapeHTML(user.id)}">View Profile</button></td>
+                <td data-label="Role"><select class="table-select role-select" data-user-id="${escapeHTML(user.id)}">${roleOptionsHTML}</select></td>
+                <td data-label="Branch"><select class="table-select branch-select" data-user-id="${escapeHTML(user.id)}">${branchOptionsHTML}</select></td>
+                <td data-label="Actions"><button class="btn danger-btn small-btn delete-user-btn" data-id="${escapeHTML(user.id)}">Delete</button></td>
             `;
 
             usersTableBody.appendChild(tr);
@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         employees.forEach(employee => {
             const tr = document.createElement('tr');
-            let rowHTML = `<td><strong>${escapeHTML(employee.full_name)}</strong></td>`;
+            let rowHTML = `<td data-label="Employee"><strong>${escapeHTML(employee.full_name)}</strong></td>`;
 
             daysOfWeek.forEach(day => {
                 const existingShift = existingSchedules.find(schedule => {
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const shiftValue = existingShift ? existingShift.shift_type : '';
 
                 rowHTML += `
-                    <td>
+                    <td data-label="${escapeHTML(day)}">
                         <select class="table-select shift-select" data-emp-id="${escapeHTML(employee.id)}" data-day="${escapeHTML(day)}">
                             <option value="" ${shiftValue === '' ? 'selected' : ''}>-</option>
                             <option value="opening" ${shiftValue === 'opening' ? 'selected' : ''}>Opening</option>

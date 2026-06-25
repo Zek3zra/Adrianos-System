@@ -316,16 +316,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             return `
                 <tr>
-                    <td>${escapeHTML(formatOrderDateShort(row.report_date))}</td>
-                    <td><strong>${escapeHTML(row.product_name || 'Unnamed Product')}</strong></td>
-                    <td>${escapeHTML(row.product_variant || 'Regular')}</td>
-                    <td>${escapeHTML(row.category || 'Uncategorized')}</td>
-                    <td>${escapeHTML(row.branch_name || 'Unassigned Branch')}</td>
-                    <td class="qty-cell">${qty}</td>
-                    <td>${escapeHTML(formatPeso(price))}</td>
-                    <td class="value-cell">${escapeHTML(formatPeso(estimatedTotal))}</td>
-                    <td>${escapeHTML(row.team_leader_name || 'Team Leader')}</td>
-                    <td>${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</td>
+                    <td data-label="Date">${escapeHTML(formatOrderDateShort(row.report_date))}</td>
+                    <td data-label="Product"><strong>${escapeHTML(row.product_name || 'Unnamed Product')}</strong></td>
+                    <td data-label="Variant">${escapeHTML(row.product_variant || 'Regular')}</td>
+                    <td data-label="Category">${escapeHTML(row.category || 'Uncategorized')}</td>
+                    <td data-label="Branch">${escapeHTML(row.branch_name || 'Unassigned Branch')}</td>
+                    <td data-label="Qty" class="qty-cell">${qty}</td>
+                    <td data-label="Price">${escapeHTML(formatPeso(price))}</td>
+                    <td data-label="Estimated Total" class="value-cell">${escapeHTML(formatPeso(estimatedTotal))}</td>
+                    <td data-label="Logged By">${escapeHTML(row.team_leader_name || 'Team Leader')}</td>
+                    <td data-label="Last Updated">${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</td>
                 </tr>
             `;
         }).join('');
