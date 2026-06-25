@@ -36,7 +36,10 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    position: static;
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    z-index: auto;
 }
 
 .nav-brand {
@@ -653,4 +656,15 @@ tbody tr:nth-child(even) {
         grid-template-columns: 1fr;
         gap: 5px;
     }
+}
+
+
+/* Header scroll behavior fix: header is only visible at the top of the page. */
+.report-nav {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: auto !important;
 }
