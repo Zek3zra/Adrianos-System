@@ -97,13 +97,13 @@ const productByKey = new Map(PRODUCTS.map(product => [product.key, product]));
 
 let currentUser = null;
 let currentBranch = null;
-let currentReportDate = getPHDateKey();
+let currentReportDate = getPHWeekStartKey();
 let counts = new Map();
 let currentCategory = 'all';
 let currentSearch = '';
 let saveTimers = new Map();
 let pendingSaveCount = 0;
-let dateChangeInProgress = false;
+let weekChangeInProgress = false;
 
 const elements = {};
 
@@ -137,7 +137,7 @@ function bindElements() {
 function bindEvents() {
     elements.logoutBtn.addEventListener('click', logout);
     elements.refreshBtn.addEventListener('click', refreshData);
-    elements.clearDayBtn.addEventListener('click', clearTodayOrders);
+    elements.clearDayBtn.addEventListener('click', clearWeekOrders);
 
     elements.searchInput.addEventListener('input', event => {
         currentSearch = event.target.value.trim().toLowerCase();
@@ -154,28 +154,35 @@ function bindEvents() {
         setCategory(button.dataset.category);
     });
 
-    elements.productGrid.addEventListener('click', async event => {
-        const button = event.target.closest('[data-action][data-key]');
-        if (!button) return;
+    elements.productGrid.addEventListener('input', async event => {
+        const input = event.target.closest('.quantity-input[data-key]');
+        if (!input) return;
 
-        await handleDateChangeIfNeeded(true);
+        const cleanedValue = sanitizeNumberInput(input.value);
+        if (input.value !== cleanedValue) input.value = cleanedValue;
 
-        const product = productByKey.get(button.dataset.key);
+        await handleWeekChangeIfNeeded(true);
+
+        const product = productByKey.get(input.dataset.key);
         if (!product) return;
 
-        const action = button.dataset.action;
-        const currentQty = getCount(product.key);
-        const nextQty = action === 'increase' ? currentQty + 1 : Math.max(0, currentQty - 1);
+        const quantity = Number(cleanedValue || 0);
         const targetReportDate = currentReportDate;
 
-        updateLocalCount(product, nextQty);
-        scheduleSave(product, nextQty, targetReportDate);
+        updateLocalCount(product, quantity, false);
+        scheduleSave(product, quantity, targetReportDate);
     });
+
+    elements.productGrid.addEventListener('blur', event => {
+        const input = event.target.closest('.quantity-input[data-key]');
+        if (!input) return;
+        input.value = String(Math.max(0, Number(input.value) || 0));
+    }, true);
 
     setInterval(() => {
         updateClockTexts();
-        handleDateChangeIfNeeded(false).catch(error => {
-            console.error('Automatic PH date check failed:', error);
+        handleWeekChangeIfNeeded(false).catch(error => {
+            console.error('Automatic PH week check failed:', error);
         });
     }, 30000);
 }
@@ -186,7 +193,7 @@ async function initDashboard() {
         await loadBranch();
         setupCategories();
         updateHeaderTexts();
-        await loadTodayOrders();
+        await loadCurrentWeekOrders();
         renderProducts();
         renderSummary();
     } catch (error) {
@@ -235,9 +242,7 @@ async function loadBranch() {
         .eq('id', currentUser.branch_id)
         .single();
 
-    if (!error && data) {
-        currentBranch = data;
-    }
+    if (!error && data) currentBranch = data;
 }
 
 function setupCategories() {
@@ -266,7 +271,7 @@ function setCategory(category) {
     renderProducts();
 }
 
-async function loadTodayOrders() {
+async function loadCurrentWeekOrders() {
     const { data, error } = await supabase
         .from(TABLE_NAME)
         .select('*')
@@ -274,7 +279,7 @@ async function loadTodayOrders() {
         .eq('branch_key', getBranchKey());
 
     if (error) {
-        throw new Error('Could not load today\'s inventory. Please check the Supabase table.');
+        throw new Error('Could not load this week\'s orders. Please check the Supabase table.');
     }
 
     counts = new Map();
@@ -284,37 +289,32 @@ async function loadTodayOrders() {
     });
 }
 
-async function handleDateChangeIfNeeded(silent = false) {
-    const latestReportDate = getPHDateKey();
+async function handleWeekChangeIfNeeded(silent = false) {
+    const latestReportDate = getPHWeekStartKey();
 
-    if (latestReportDate === currentReportDate) {
-        return false;
-    }
+    if (latestReportDate === currentReportDate) return false;
+    if (weekChangeInProgress) return true;
 
-    if (dateChangeInProgress) {
-        return true;
-    }
-
-    dateChangeInProgress = true;
+    weekChangeInProgress = true;
 
     try {
         currentReportDate = latestReportDate;
         updateHeaderTexts();
-        await loadTodayOrders();
+        await loadCurrentWeekOrders();
         renderProducts();
         renderSummary();
 
         if (!silent) {
-            showToast('New PH day started. Counts reset to zero.', 'success');
+            showToast('New PH week started. Counts are now for the new week.', 'success');
         }
 
         return true;
     } catch (error) {
-        console.error('Automatic date change failed:', error);
-        showToast('New PH day detected, but refresh failed. Please tap Refresh.', 'error');
+        console.error('Automatic week change failed:', error);
+        showToast('New PH week detected, but refresh failed. Please tap Refresh.', 'error');
         return false;
     } finally {
-        dateChangeInProgress = false;
+        weekChangeInProgress = false;
     }
 }
 
@@ -323,12 +323,12 @@ async function refreshData() {
     elements.refreshBtn.textContent = 'Refreshing...';
 
     try {
-        currentReportDate = getPHDateKey();
+        currentReportDate = getPHWeekStartKey();
         updateHeaderTexts();
-        await loadTodayOrders();
+        await loadCurrentWeekOrders();
         renderProducts();
         renderSummary();
-        showToast('Inventory refreshed.', 'success');
+        showToast('Weekly product tracker refreshed.', 'success');
     } catch (error) {
         console.error('Refresh failed:', error);
         showToast(error.message || 'Failed to refresh data.', 'error');
@@ -353,7 +353,7 @@ function renderProducts() {
     elements.productGrid.innerHTML = filteredProducts.map(product => {
         const count = getCount(product.key);
         const hasCountClass = count > 0 ? 'has-count' : '';
-        const detailText = [product.variant, formatPeso(product.price)].filter(Boolean).join(' • ');
+        const detailText = [product.variant || 'Regular', formatPeso(product.price)].filter(Boolean).join(' • ');
 
         return `
             <article class="product-card ${hasCountClass}" data-card-key="${escapeHTML(product.key)}">
@@ -363,11 +363,10 @@ function renderProducts() {
                     <span class="product-details">${escapeHTML(detailText)}</span>
                 </div>
 
-                <div class="counter-row">
-                    <button type="button" class="counter-btn minus" data-action="decrease" data-key="${escapeHTML(product.key)}" ${count <= 0 ? 'disabled' : ''}>−</button>
-                    <div class="count-box" id="count-${escapeHTML(product.key)}">${count}</div>
-                    <button type="button" class="counter-btn plus" data-action="increase" data-key="${escapeHTML(product.key)}">+</button>
-                </div>
+                <label class="quantity-field">
+                    <span>Orders this week</span>
+                    <input type="number" class="quantity-input" data-key="${escapeHTML(product.key)}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="${count}" aria-label="${escapeHTML(product.name)} weekly order quantity">
+                </label>
             </article>
         `;
     }).join('');
@@ -387,12 +386,12 @@ function renderSummary() {
         .slice(0, 10);
 
     if (!orderedItems.length) {
-        elements.topItemsList.innerHTML = '<div class="empty-state">No orders recorded yet.</div>';
+        elements.topItemsList.innerHTML = '<div class="empty-state">No orders recorded yet for this week.</div>';
         return;
     }
 
     elements.topItemsList.innerHTML = orderedItems.map(({ product, quantity }) => {
-        const detailText = [product.category, product.variant, formatPeso(product.price)].filter(Boolean).join(' • ');
+        const detailText = [product.category, product.variant || 'Regular', formatPeso(product.price)].filter(Boolean).join(' • ');
 
         return `
             <div class="top-item">
@@ -406,23 +405,21 @@ function renderSummary() {
     }).join('');
 }
 
-function updateLocalCount(product, quantity) {
-    counts.set(product.key, quantity);
+function updateLocalCount(product, quantity, syncInputValue = true) {
+    const safeQuantity = Math.max(0, Number(quantity) || 0);
+    counts.set(product.key, safeQuantity);
 
-    const countBox = document.getElementById(`count-${product.key}`);
+    const input = document.querySelector(`.quantity-input[data-key="${CSS.escape(product.key)}"]`);
     const card = document.querySelector(`[data-card-key="${CSS.escape(product.key)}"]`);
 
-    if (countBox) countBox.textContent = String(quantity);
-    if (card) {
-        card.classList.toggle('has-count', quantity > 0);
-        const minusButton = card.querySelector('[data-action="decrease"]');
-        if (minusButton) minusButton.disabled = quantity <= 0;
-    }
+    if (input && syncInputValue) input.value = String(safeQuantity);
+    if (card) card.classList.toggle('has-count', safeQuantity > 0);
 
     renderSummary();
 }
 
 function scheduleSave(product, quantity, reportDate = currentReportDate) {
+    const safeQuantity = Math.max(0, Number(quantity) || 0);
     const timerKey = getSaveTimerKey(product.key, reportDate);
 
     if (saveTimers.has(timerKey)) {
@@ -437,7 +434,7 @@ function scheduleSave(product, quantity, reportDate = currentReportDate) {
         saveTimers.delete(timerKey);
 
         try {
-            await persistQuantity(product, quantity, reportDate);
+            await persistQuantity(product, safeQuantity, reportDate);
         } catch (error) {
             console.error('Save failed:', error);
             showToast('Failed to save. Tap Refresh to check latest data.', 'error');
@@ -445,13 +442,15 @@ function scheduleSave(product, quantity, reportDate = currentReportDate) {
             pendingSaveCount = Math.max(0, pendingSaveCount - 1);
             updateSaveStatus();
         }
-    }, 350);
+    }, 500);
 
     saveTimers.set(timerKey, timerId);
 }
 
 async function persistQuantity(product, quantity, reportDate = currentReportDate) {
-    if (quantity <= 0) {
+    const safeQuantity = Math.max(0, Number(quantity) || 0);
+
+    if (safeQuantity <= 0) {
         const { error } = await supabase
             .from(TABLE_NAME)
             .delete()
@@ -475,7 +474,7 @@ async function persistQuantity(product, quantity, reportDate = currentReportDate
         product_variant: product.variant || null,
         category: product.category,
         price: product.price,
-        quantity,
+        quantity: safeQuantity,
         updated_at: new Date().toISOString()
     };
 
@@ -486,10 +485,10 @@ async function persistQuantity(product, quantity, reportDate = currentReportDate
     if (error) throw error;
 }
 
-async function clearTodayOrders() {
-    await handleDateChangeIfNeeded(true);
+async function clearWeekOrders() {
+    await handleWeekChangeIfNeeded(true);
 
-    const confirmClear = confirm('Clear all product counts for today? This cannot be undone.');
+    const confirmClear = confirm('Clear all product counts for this week? This cannot be undone.');
     if (!confirmClear) return;
 
     elements.clearDayBtn.disabled = true;
@@ -507,13 +506,13 @@ async function clearTodayOrders() {
         counts = new Map();
         renderProducts();
         renderSummary();
-        showToast('Today\'s counts cleared.', 'success');
+        showToast('This week\'s counts cleared.', 'success');
     } catch (error) {
         console.error('Clear failed:', error);
-        showToast('Failed to clear today\'s counts.', 'error');
+        showToast('Failed to clear this week\'s counts.', 'error');
     } finally {
         elements.clearDayBtn.disabled = false;
-        elements.clearDayBtn.textContent = 'Clear Today';
+        elements.clearDayBtn.textContent = 'Clear Week';
     }
 }
 
@@ -522,7 +521,7 @@ function updateHeaderTexts() {
     const branchName = getBranchName();
 
     elements.navBranchText.textContent = branchName;
-    elements.todayText.textContent = formatPHDateLong(currentReportDate);
+    elements.todayText.textContent = formatWeekRange(currentReportDate);
     elements.leaderText.textContent = `Team Leader: ${leaderName}`;
     elements.branchText.textContent = `Branch: ${branchName}`;
 
@@ -534,7 +533,9 @@ function updateClockTexts() {
 }
 
 function updateSaveStatus() {
-    elements.saveStatusText.textContent = pendingSaveCount > 0 ? 'Saving changes...' : 'Changes save automatically.';
+    elements.saveStatusText.textContent = pendingSaveCount > 0
+        ? 'Saving weekly count...'
+        : 'Type numbers only. Changes save automatically.';
 }
 
 function logout() {
@@ -554,6 +555,12 @@ function clearLoginSession() {
     ];
 
     keys.forEach(key => sessionStorage.removeItem(key));
+}
+
+function sanitizeNumberInput(value) {
+    const digitsOnly = String(value || '').replace(/[^0-9]/g, '');
+    if (!digitsOnly) return '';
+    return String(Math.min(99999, Number(digitsOnly)));
 }
 
 function getSaveTimerKey(productKey, reportDate) {
@@ -588,6 +595,34 @@ function getPHDateKey() {
     return `${year}-${month}-${day}`;
 }
 
+function getPHWeekStartKey(dateKey = getPHDateKey()) {
+    const [year, month, day] = String(dateKey).split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    const weekday = date.getUTCDay();
+    const daysFromMonday = (weekday + 6) % 7;
+    date.setUTCDate(date.getUTCDate() - daysFromMonday);
+    return formatUTCDateKey(date);
+}
+
+function addDaysToDateKey(dateKey, amount) {
+    const [year, month, day] = String(dateKey).split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    date.setUTCDate(date.getUTCDate() + amount);
+    return formatUTCDateKey(date);
+}
+
+function formatUTCDateKey(date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function formatWeekRange(weekStartKey) {
+    const weekEndKey = addDaysToDateKey(weekStartKey, 6);
+    return `${formatPHDateShort(weekStartKey)} - ${formatPHDateShort(weekEndKey)}`;
+}
+
 function getPHTimeText() {
     return new Intl.DateTimeFormat('en-PH', {
         timeZone: PH_TIMEZONE,
@@ -597,14 +632,13 @@ function getPHTimeText() {
     }).format(new Date());
 }
 
-function formatPHDateLong(dateKey) {
-    const date = new Date(`${dateKey}T00:00:00+08:00`);
+function formatPHDateShort(dateKey) {
+    const [year, month, day] = String(dateKey).split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
     return new Intl.DateTimeFormat('en-PH', {
-        timeZone: PH_TIMEZONE,
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric'
     }).format(date);
 }
 
@@ -633,13 +667,7 @@ function createSingleSizeProducts(category, names, size, price) {
 function createProduct(category, name, variant, price) {
     const key = slugify(`${category}-${name}-${variant || 'regular'}-${price}`);
 
-    return {
-        key,
-        category,
-        name,
-        variant,
-        price
-    };
+    return { key, category, name, variant, price };
 }
 
 function slugify(value) {

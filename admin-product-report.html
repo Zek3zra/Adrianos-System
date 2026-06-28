@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Product Orders Report - Adrianos System</title>
+    <title>Weekly Product Report - Adrianos System</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-product-report.css?v=records-pagination-20260626">
+    <link rel="stylesheet" href="admin-product-report.css?v=weekly-graph-20260628">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
@@ -15,7 +15,7 @@
         <div class="nav-brand">
             <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
             <div>
-                <h2>Product Report</h2>
+                <h2>Weekly Report</h2>
                 <p>Owner Portal</p>
             </div>
         </div>
@@ -30,8 +30,8 @@
         <section class="report-hero-card">
             <div class="hero-copy">
                 <span class="eyebrow">Team Leader Logs</span>
-                <h1>Product Orders Summary</h1>
-                <p>Check which products are in demand by day, week, month, custom range, or branch.</p>
+                <h1>Weekly Product Summary</h1>
+                <p>Check which products sold the most within the selected week or week range.</p>
             </div>
             <div class="hero-buttons">
                 <button id="exportOrdersPdfBtn" class="btn secondary-btn">Export PDF</button>
@@ -52,20 +52,20 @@
                 <div class="input-group">
                     <label for="orderQuickRangeSelect">Quick Range</label>
                     <select id="orderQuickRangeSelect">
-                        <option value="today">Today</option>
-                        <option value="7days">Last 7 Days</option>
-                        <option value="30days">Last 30 Days</option>
+                        <option value="thisWeek">This Week</option>
+                        <option value="4weeks">Last 4 Weeks</option>
+                        <option value="8weeks">Last 8 Weeks</option>
                         <option value="custom">Custom Range</option>
                     </select>
                 </div>
 
                 <div class="input-group">
-                    <label for="orderStartDateInput">From Date</label>
+                    <label for="orderStartDateInput">From Week</label>
                     <input type="date" id="orderStartDateInput">
                 </div>
 
                 <div class="input-group">
-                    <label for="orderEndDateInput">To Date</label>
+                    <label for="orderEndDateInput">To Week</label>
                     <input type="date" id="orderEndDateInput">
                 </div>
 
@@ -77,7 +77,7 @@
                 </div>
             </div>
 
-            <p class="range-note" id="ordersRangeNote">Showing orders for today.</p>
+            <p class="range-note" id="ordersRangeNote">Showing orders for this week.</p>
         </section>
 
         <section class="summary-grid">
@@ -98,12 +98,25 @@
                 <strong id="ordersBranchCount">0</strong>
             </div>
             <div class="summary-card">
-                <span>Days Logged</span>
+                <span>Weeks Logged</span>
                 <strong id="ordersDaysCovered">0</strong>
             </div>
             <div class="summary-card wide-summary">
                 <span>Top Product</span>
                 <strong id="ordersTopProduct">No orders yet</strong>
+            </div>
+        </section>
+
+        <section class="report-card chart-card">
+            <div class="section-header compact-header">
+                <div>
+                    <span class="section-kicker">Weekly graph</span>
+                    <h3>Product selling graph</h3>
+                    <p>Visual ranking of ordered products within the selected week range.</p>
+                </div>
+            </div>
+            <div id="weeklySalesChart" class="weekly-sales-chart">
+                <div class="empty-state">No graph data yet.</div>
             </div>
         </section>
 
@@ -120,11 +133,11 @@
 
             <div class="report-panel">
                 <div class="panel-title-row">
-                    <h4>Daily Breakdown</h4>
-                    <span>Total orders per date</span>
+                    <h4>Weekly Breakdown</h4>
+                    <span>Total orders per week</span>
                 </div>
                 <div id="dailyOrdersList" class="rank-list">
-                    <div class="empty-state">No daily orders found.</div>
+                    <div class="empty-state">No weekly orders found.</div>
                 </div>
             </div>
 
@@ -144,7 +157,7 @@
                 <div>
                     <span class="section-kicker">Detailed Logs</span>
                     <h3>Product order records</h3>
-                    <p>Full logged product data from the selected date range.</p>
+                    <p>Full logged product data from the selected week range.</p>
                 </div>
             </div>
 
@@ -187,7 +200,7 @@
                 <table id="ordersTable" class="responsive-orders-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
+                            <th>Week</th>
                             <th>Product</th>
                             <th>Variant</th>
                             <th>Category</th>
@@ -218,6 +231,6 @@
 
     <div id="toast" class="toast hidden"></div>
 
-    <script type="module" src="admin-product-report.js?v=records-pagination-20260626"></script>
+    <script type="module" src="admin-product-report.js?v=weekly-graph-20260628"></script>
 </body>
 </html>

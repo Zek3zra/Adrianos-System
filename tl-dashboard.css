@@ -565,3 +565,51 @@ body {
         min-height: 48px;
     }
 }
+
+
+/* Weekly number-input update */
+.quantity-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: auto;
+}
+
+.quantity-field span {
+    color: var(--coffee-medium);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.quantity-input {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--soft-bg);
+    color: var(--coffee-dark);
+    font-size: 20px;
+    font-weight: 800;
+    text-align: center;
+    outline: none;
+    -moz-appearance: textfield;
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quantity-input:focus {
+    border-color: var(--coffee-medium);
+    background: #ffffff;
+}
+
+.counter-row,
+.counter-btn,
+.count-box {
+    display: none !important;
+}

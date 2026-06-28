@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Team Leader Dashboard - Adrianos</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="tl-dashboard.css">
+    <link rel="stylesheet" href="tl-dashboard.css?v=weekly-input-20260628">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="pageLoader" class="page-loader">
         <div class="loader-card">
             <h2>Loading Inventory...</h2>
-            <p>Please wait while we prepare today's order tracker.</p>
+            <p>Please wait while we prepare this week's order tracker.</p>
         </div>
     </div>
 
@@ -30,8 +30,8 @@
     <main class="dashboard-container">
         <section class="summary-card">
             <div class="summary-main">
-                <span class="role-badge">Daily Product Orders</span>
-                <h2 id="todayText">Today</h2>
+                <span class="role-badge">Weekly Product Orders</span>
+                <h2 id="todayText">This Week</h2>
                 <p id="leaderText">Team Leader: Loading...</p>
                 <p id="branchText">Branch: Loading...</p>
             </div>
@@ -56,7 +56,7 @@
             <div class="card-header">
                 <div>
                     <h3>Inventory Order Counter</h3>
-                    <p>Tap plus or minus every time a product is ordered today.</p>
+                    <p>Type the total number of orders for each product this week. Numbers save automatically.</p>
                 </div>
             </div>
 
@@ -81,7 +81,7 @@
             <div class="card-header flex-header">
                 <div>
                     <h3>Product List</h3>
-                    <p id="saveStatusText">Changes save automatically.</p>
+                    <p id="saveStatusText">Type numbers only. Changes save automatically.</p>
                 </div>
                 <button id="refreshBtn" class="btn outline-btn small-btn">Refresh</button>
             </div>
@@ -94,10 +94,10 @@
         <section class="dashboard-card">
             <div class="card-header flex-header">
                 <div>
-                    <h3>Today's Top Items</h3>
-                    <p>Quick view of products with the highest count today.</p>
+                    <h3>This Week's Top Items</h3>
+                    <p>Quick view of products with the highest count this week.</p>
                 </div>
-                <button id="clearDayBtn" class="btn danger-outline-btn small-btn">Clear Today</button>
+                <button id="clearDayBtn" class="btn danger-outline-btn small-btn">Clear Week</button>
             </div>
 
             <div id="topItemsList" class="top-items-list">
@@ -108,6 +108,6 @@
 
     <div id="toast" class="toast hidden"></div>
 
-    <script type="module" src="tl-dashboard.js"></script>
+    <script type="module" src="tl-dashboard.js?v=weekly-input-20260628"></script>
 </body>
 </html>
