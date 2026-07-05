@@ -103,6 +103,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         return clean === 'kitchen' || clean === 'bar' ? clean : '';
     }
 
+    function normalizeShiftType(value) {
+        const clean = String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[\s-]+/g, '_');
+
+        const aliases = {
+            '': '',
+            open: 'opening',
+            opening: 'opening',
+            mid: 'mid',
+            mid_shift: 'mid',
+            mid_10am: 'mid',
+            '10_am': 'mid',
+            close: 'closing',
+            closing: 'closing',
+            whole_day: 'whole_day',
+            opening_to_closing: 'whole_day',
+            open_to_close: 'whole_day',
+            off: 'day_off',
+            rest_day: 'day_off',
+            day_off: 'day_off'
+        };
+
+        return aliases[clean] ?? clean;
+    }
+
     function workAreaLabel(value) {
         const area = normalizeWorkArea(value);
         if (area === 'kitchen') return 'KITCHEN';
@@ -475,7 +502,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return schedule.employee_id === employee.id && schedule.day_of_week === day;
                 });
 
-                const shiftValue = existingShift ? existingShift.shift_type : '';
+                const shiftValue = normalizeShiftType(existingShift ? existingShift.shift_type : '');
                 const workAreaValue = normalizeWorkArea(existingShift?.work_area);
                 const workAreaDisabled = !shiftValue || shiftValue === 'day_off';
 
@@ -485,6 +512,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <select class="table-select shift-select" data-emp-id="${escapeHTML(employee.id)}" data-day="${escapeHTML(day)}">
                                 <option value="" ${shiftValue === '' ? 'selected' : ''}>-</option>
                                 <option value="opening" ${shiftValue === 'opening' ? 'selected' : ''}>Opening</option>
+                                <option value="mid" ${shiftValue === 'mid' || shiftValue === 'mid_shift' ? 'selected' : ''}>Mid (10 AM)</option>
                                 <option value="closing" ${shiftValue === 'closing' ? 'selected' : ''}>Closing</option>
                                 <option value="whole_day" ${shiftValue === 'whole_day' || shiftValue === 'opening_to_closing' ? 'selected' : ''}>Opening to Closing</option>
                                 <option value="day_off" ${shiftValue === 'day_off' ? 'selected' : ''}>Day Off</option>
@@ -513,7 +541,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             select.addEventListener('change', async event => {
                 const empId = event.target.getAttribute('data-emp-id');
                 const day = event.target.getAttribute('data-day');
-                const shiftType = event.target.value;
+                const shiftType = normalizeShiftType(event.target.value);
                 const areaSelect = scheduleTableBody.querySelector(`.work-area-select[data-emp-id="${CSS.escape(empId)}"][data-day="${CSS.escape(day)}"]`);
                 let workArea = normalizeWorkArea(areaSelect?.value);
 
@@ -531,8 +559,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await saveScheduleAssignment(branchId, empId, day, shiftType, workArea);
                     updateCurrentScheduleCache(empId, day, branchId, shiftType, workArea);
                 } catch (error) {
-                    console.error('Schedule save failed:', JSON.stringify(error, null, 2));
-                    alert('Failed to save schedule. Please make sure the work_area column was added in Supabase, then try again.');
+                    console.error('Schedule save failed:', error);
+                    alert(getScheduleSaveErrorMessage(error));
                     await reloadSchedule();
                 }
             });
@@ -543,7 +571,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const empId = event.target.getAttribute('data-emp-id');
                 const day = event.target.getAttribute('data-day');
                 const shiftSelect = scheduleTableBody.querySelector(`.shift-select[data-emp-id="${CSS.escape(empId)}"][data-day="${CSS.escape(day)}"]`);
-                const shiftType = shiftSelect?.value || '';
+                const shiftType = normalizeShiftType(shiftSelect?.value || '');
                 const workArea = normalizeWorkArea(event.target.value);
 
                 if (!shiftType || shiftType === 'day_off') {
@@ -556,12 +584,50 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await saveScheduleAssignment(branchId, empId, day, shiftType, workArea);
                     updateCurrentScheduleCache(empId, day, branchId, shiftType, workArea);
                 } catch (error) {
-                    console.error('Work area save failed:', JSON.stringify(error, null, 2));
-                    alert('Failed to save Kitchen/Bar assignment. Please make sure the work_area column was added in Supabase.');
+                    console.error('Work area save failed:', error);
+                    alert(getScheduleSaveErrorMessage(error, true));
                     await reloadSchedule();
                 }
             });
         });
+    }
+
+    function getScheduleSaveErrorMessage(error, isWorkAreaOnly = false) {
+        const code = String(error?.code || '');
+        const rawMessage = String(error?.message || error?.details || '');
+        const message = rawMessage.toLowerCase();
+        const constraint = String(error?.constraint || '').toLowerCase();
+        const details = [code && `Code: ${code}`, constraint && `Constraint: ${constraint}`, rawMessage]
+            .filter(Boolean)
+            .join(' | ');
+
+        if (constraint.includes('work_area') || message.includes('work_area')) {
+            return `Supabase rejected the Kitchen/Bar value. Only kitchen, bar, or blank are allowed.${details ? `\n\n${details}` : ''}`;
+        }
+
+        if (constraint.includes('shift_type') || message.includes('shift_type') || (code === '23514' && !isWorkAreaOnly)) {
+            return `Supabase rejected the shift value. The page now converts Mid (10 AM) to the exact database value "mid". Replace both admin-dashboard.html and admin-dashboard.js, then hard-refresh the page.${details ? `\n\n${details}` : ''}`;
+        }
+
+        if (code === '42703' || code === 'PGRST204' || (message.includes('column') && message.includes('work_area'))) {
+            return `The schedules.work_area column is not available to the API yet. Reload the Supabase schema cache, then refresh this page.${details ? `\n\n${details}` : ''}`;
+        }
+
+        if (code === '42501' || message.includes('row-level security') || message.includes('permission denied')) {
+            return `Supabase blocked the schedule update because of permissions or Row Level Security.${details ? `\n\n${details}` : ''}`;
+        }
+
+        if (isWorkAreaOnly) {
+            return `Failed to save Kitchen/Bar assignment.${details ? `\n\n${details}` : ''}`;
+        }
+
+        return `Failed to save schedule.${details ? `\n\n${details}` : ''}`;
+    }
+
+    function isShiftConstraintError(error) {
+        const code = String(error?.code || '');
+        const message = String(error?.message || '').toLowerCase();
+        return code === '23514' || message.includes('check constraint') || message.includes('shift_type');
     }
 
     function updateCurrentScheduleCache(employeeId, day, branchId, shiftType, workArea) {
@@ -586,7 +652,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function saveScheduleAssignment(branchId, employeeId, day, shiftType, workArea = '') {
+        shiftType = normalizeShiftType(shiftType);
         const normalizedArea = normalizeWorkArea(workArea) || null;
+
+        const allowedShiftTypes = new Set(['', 'opening', 'mid', 'closing', 'whole_day', 'day_off']);
+        if (!allowedShiftTypes.has(shiftType)) {
+            const clientError = new Error(`Unsupported shift value before save: ${shiftType}`);
+            clientError.code = 'CLIENT_SHIFT_VALUE';
+            throw clientError;
+        }
         const { data: existingRows, error: findError } = await supabase
             .from('schedules')
             .select('id, branch_id, shift_type, work_area, created_at')
@@ -628,22 +702,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         if (mainRow) {
-            const { error: updateError } = await supabase
+            let { error: updateError } = await supabase
                 .from('schedules')
                 .update(payload)
                 .eq('id', mainRow.id);
+
+            // Compatibility fallback for projects that previously stored the same shift
+            // under the opening_to_closing name instead of whole_day.
+            if (updateError && payload.shift_type === 'whole_day' && isShiftConstraintError(updateError)) {
+                const fallbackPayload = { ...payload, shift_type: 'opening_to_closing' };
+                const fallbackResult = await supabase
+                    .from('schedules')
+                    .update(fallbackPayload)
+                    .eq('id', mainRow.id);
+                updateError = fallbackResult.error;
+            }
 
             if (updateError) throw updateError;
             return;
         }
 
-        const { error: insertError } = await supabase
+        let insertPayload = {
+            employee_id: employeeId,
+            day_of_week: day,
+            ...payload
+        };
+        let { error: insertError } = await supabase
             .from('schedules')
-            .insert({
-                employee_id: employeeId,
-                day_of_week: day,
-                ...payload
-            });
+            .insert(insertPayload);
+
+        if (insertError && payload.shift_type === 'whole_day' && isShiftConstraintError(insertError)) {
+            insertPayload = { ...insertPayload, shift_type: 'opening_to_closing' };
+            const fallbackResult = await supabase
+                .from('schedules')
+                .insert(insertPayload);
+            insertError = fallbackResult.error;
+        }
 
         if (insertError) {
             const isConflictError =
@@ -663,10 +757,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (retryFindError) throw retryFindError;
             if (!retryRows || retryRows.length === 0) throw insertError;
 
-            const { error: retryUpdateError } = await supabase
+            let { error: retryUpdateError } = await supabase
                 .from('schedules')
                 .update(payload)
                 .eq('id', retryRows[0].id);
+
+            if (retryUpdateError && payload.shift_type === 'whole_day' && isShiftConstraintError(retryUpdateError)) {
+                const fallbackResult = await supabase
+                    .from('schedules')
+                    .update({ ...payload, shift_type: 'opening_to_closing' })
+                    .eq('id', retryRows[0].id);
+                retryUpdateError = fallbackResult.error;
+            }
 
             if (retryUpdateError) throw retryUpdateError;
         }
@@ -752,6 +854,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function shiftLabel(shiftType) {
         const cleanShift = String(shiftType || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
         if (cleanShift === 'opening') return 'OPENING';
+        if (cleanShift === 'mid' || cleanShift === 'mid_shift') return 'MID (10 AM)';
         if (cleanShift === 'closing') return 'CLOSING';
         if (cleanShift === 'whole_day' || cleanShift === 'opening_to_closing') return 'WHOLE DAY';
         if (cleanShift === 'day_off') return 'DAY OFF';
@@ -1344,6 +1447,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (value.startsWith('OPENING')) {
                             data.cell.styles.textColor = [36, 113, 163];
                             data.cell.styles.fillColor = [236, 246, 253];
+                        } else if (value.startsWith('MID')) {
+                            data.cell.styles.textColor = [139, 94, 52];
+                            data.cell.styles.fillColor = [250, 244, 236];
                         } else if (value.startsWith('CLOSING')) {
                             data.cell.styles.textColor = [183, 149, 11];
                             data.cell.styles.fillColor = [255, 249, 225];

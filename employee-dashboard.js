@@ -325,6 +325,14 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
+        if (cleanShift === 'mid' || cleanShift === 'mid_shift' || cleanShift === '10_am') {
+            return {
+                label: 'MID (10 AM)',
+                className: 'shift-mid',
+                note: 'Assigned mid shift starting at 10:00 AM'
+            };
+        }
+
         if (cleanShift === 'closing' || cleanShift === 'close') {
             return {
                 label: 'CLOSING',
