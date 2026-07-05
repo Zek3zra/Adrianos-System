@@ -255,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         scheduleRows.forEach(row => {
             const dayKey = normalizeDay(row.day_of_week || row.day || row.week_day);
             const shiftValue = row.shift_type || row.shift || row.schedule || '';
+            const workArea = normalizeWorkArea(row.work_area || row.area_assignment || row.station || '');
             const rowBranchName = plainText(
                 row.branch_name || row.branch || row.assigned_branch || row.branch_assigned,
                 defaultBranchName
@@ -263,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dayKey) {
                 scheduleMap.set(dayKey, {
                     shiftType: shiftValue,
+                    workArea,
                     branchName: rowBranchName
                 });
             }
@@ -273,10 +275,12 @@ document.addEventListener('DOMContentLoaded', () => {
         daysOfWeek.forEach(day => {
             const scheduleData = scheduleMap.get(day.key) || {
                 shiftType: '',
+                workArea: '',
                 branchName: defaultBranchName
             };
             const shiftData = getShiftData(scheduleData.shiftType);
             const branchName = plainText(scheduleData.branchName, defaultBranchName);
+            const areaData = getWorkAreaData(scheduleData.workArea, shiftData.label);
 
             const card = document.createElement('div');
             card.className = 'schedule-day-card';
@@ -286,11 +290,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <h4>${escapeHTML(day.label)} <span class="day-branch-separator">-</span> <span class="day-branch-name">${escapeHTML(branchName)}</span></h4>
                 <span class="shift-pill ${shiftData.className}">${escapeHTML(shiftData.label)}</span>
-                <p class="schedule-note">${escapeHTML(shiftData.note)}</p>
+                ${areaData ? `<span class="work-area-pill ${areaData.className}">${escapeHTML(areaData.label)}</span>` : ''}
+                <p class="schedule-note">${escapeHTML(areaData ? `${shiftData.note} • Assigned to ${areaData.label}` : shiftData.note)}</p>
             `;
 
             scheduleGrid.appendChild(card);
         });
+    }
+
+    function normalizeWorkArea(value) {
+        const clean = String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+        return clean === 'kitchen' || clean === 'bar' ? clean : '';
+    }
+
+    function getWorkAreaData(workArea, shiftLabel) {
+        if (shiftLabel === 'DAY OFF' || shiftLabel === 'NO SCHEDULE') return null;
+        const cleanArea = normalizeWorkArea(workArea);
+        if (cleanArea === 'kitchen') return { label: 'KITCHEN', className: 'area-kitchen' };
+        if (cleanArea === 'bar') return { label: 'BAR', className: 'area-bar' };
+        return null;
     }
 
     function getShiftData(shiftType) {
@@ -312,6 +330,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 label: 'CLOSING',
                 className: 'shift-closing',
                 note: 'Assigned closing shift'
+            };
+        }
+
+        if (cleanShift === 'whole_day' || cleanShift === 'opening_to_closing' || cleanShift === 'open_to_close') {
+            return {
+                label: 'OPENING TO CLOSING',
+                className: 'shift-whole-day',
+                note: 'Assigned whole-day shift'
             };
         }
 

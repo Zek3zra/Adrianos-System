@@ -92,6 +92,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         return branchesList.find(branch => branch.id === branchId)?.name || 'Unassigned';
     }
 
+
+    function isMainStoreBranch(branchId) {
+        const branchName = getBranchName(branchId).toLowerCase();
+        return branchName.includes('main store') || branchName === 'main' || branchName.includes('main branch');
+    }
+
+    function normalizeWorkArea(value) {
+        const clean = String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+        return clean === 'kitchen' || clean === 'bar' ? clean : '';
+    }
+
+    function workAreaLabel(value) {
+        const area = normalizeWorkArea(value);
+        if (area === 'kitchen') return 'KITCHEN';
+        if (area === 'bar') return 'BAR';
+        return '';
+    }
+
     function sortEmployees(list) {
         return [...list].sort((a, b) => {
             const branchCompare = getBranchName(a.branch_id).localeCompare(getBranchName(b.branch_id));
@@ -435,10 +453,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const text = `${employee.full_name || ''} ${employee.username || ''}`.toLowerCase();
             return !searchValue || text.includes(searchValue);
         });
+        const mainStoreSelected = isMainStoreBranch(branchId);
 
         if (scheduleCountText) {
             scheduleCountText.textContent = branchId
-                ? `${visibleEmployees.length} of ${employees.length} shown`
+                ? `${visibleEmployees.length} of ${employees.length} shown${mainStoreSelected ? ' • Kitchen/Bar enabled' : ''}`
                 : 'Select a branch';
         }
 
@@ -457,15 +476,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
 
                 const shiftValue = existingShift ? existingShift.shift_type : '';
+                const workAreaValue = normalizeWorkArea(existingShift?.work_area);
+                const workAreaDisabled = !shiftValue || shiftValue === 'day_off';
 
                 rowHTML += `
                     <td>
-                        <select class="table-select shift-select" data-emp-id="${escapeHTML(employee.id)}" data-day="${escapeHTML(day)}">
-                            <option value="" ${shiftValue === '' ? 'selected' : ''}>-</option>
-                            <option value="opening" ${shiftValue === 'opening' ? 'selected' : ''}>Opening</option>
-                            <option value="closing" ${shiftValue === 'closing' ? 'selected' : ''}>Closing</option>
-                            <option value="day_off" ${shiftValue === 'day_off' ? 'selected' : ''}>Day Off</option>
-                        </select>
+                        <div class="schedule-cell-controls">
+                            <select class="table-select shift-select" data-emp-id="${escapeHTML(employee.id)}" data-day="${escapeHTML(day)}">
+                                <option value="" ${shiftValue === '' ? 'selected' : ''}>-</option>
+                                <option value="opening" ${shiftValue === 'opening' ? 'selected' : ''}>Opening</option>
+                                <option value="closing" ${shiftValue === 'closing' ? 'selected' : ''}>Closing</option>
+                                <option value="whole_day" ${shiftValue === 'whole_day' || shiftValue === 'opening_to_closing' ? 'selected' : ''}>Opening to Closing</option>
+                                <option value="day_off" ${shiftValue === 'day_off' ? 'selected' : ''}>Day Off</option>
+                            </select>
+                            ${mainStoreSelected ? `
+                                <select class="table-select work-area-select" data-emp-id="${escapeHTML(employee.id)}" data-day="${escapeHTML(day)}" ${workAreaDisabled ? 'disabled' : ''}>
+                                    <option value="" ${workAreaValue === '' ? 'selected' : ''}>Area</option>
+                                    <option value="kitchen" ${workAreaValue === 'kitchen' ? 'selected' : ''}>Kitchen</option>
+                                    <option value="bar" ${workAreaValue === 'bar' ? 'selected' : ''}>Bar</option>
+                                </select>
+                            ` : ''}
+                        </div>
                     </td>
                 `;
             });
@@ -483,22 +514,82 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const empId = event.target.getAttribute('data-emp-id');
                 const day = event.target.getAttribute('data-day');
                 const shiftType = event.target.value;
+                const areaSelect = scheduleTableBody.querySelector(`.work-area-select[data-emp-id="${CSS.escape(empId)}"][data-day="${CSS.escape(day)}"]`);
+                let workArea = normalizeWorkArea(areaSelect?.value);
+
+                if (!shiftType || shiftType === 'day_off') {
+                    workArea = '';
+                    if (areaSelect) {
+                        areaSelect.value = '';
+                        areaSelect.disabled = true;
+                    }
+                } else if (areaSelect) {
+                    areaSelect.disabled = false;
+                }
 
                 try {
-                    await saveShift(branchId, empId, day, shiftType);
+                    await saveScheduleAssignment(branchId, empId, day, shiftType, workArea);
+                    updateCurrentScheduleCache(empId, day, branchId, shiftType, workArea);
                 } catch (error) {
                     console.error('Schedule save failed:', JSON.stringify(error, null, 2));
-                    alert('Failed to save schedule. Please try again.');
+                    alert('Failed to save schedule. Please make sure the work_area column was added in Supabase, then try again.');
+                    await reloadSchedule();
+                }
+            });
+        });
+
+        document.querySelectorAll('.work-area-select').forEach(select => {
+            select.addEventListener('change', async event => {
+                const empId = event.target.getAttribute('data-emp-id');
+                const day = event.target.getAttribute('data-day');
+                const shiftSelect = scheduleTableBody.querySelector(`.shift-select[data-emp-id="${CSS.escape(empId)}"][data-day="${CSS.escape(day)}"]`);
+                const shiftType = shiftSelect?.value || '';
+                const workArea = normalizeWorkArea(event.target.value);
+
+                if (!shiftType || shiftType === 'day_off') {
+                    event.target.value = '';
+                    event.target.disabled = true;
+                    return;
+                }
+
+                try {
+                    await saveScheduleAssignment(branchId, empId, day, shiftType, workArea);
+                    updateCurrentScheduleCache(empId, day, branchId, shiftType, workArea);
+                } catch (error) {
+                    console.error('Work area save failed:', JSON.stringify(error, null, 2));
+                    alert('Failed to save Kitchen/Bar assignment. Please make sure the work_area column was added in Supabase.');
                     await reloadSchedule();
                 }
             });
         });
     }
 
-    async function saveShift(branchId, employeeId, day, shiftType) {
+    function updateCurrentScheduleCache(employeeId, day, branchId, shiftType, workArea) {
+        const rowIndex = currentScheduleRows.findIndex(row => row.employee_id === employeeId && row.day_of_week === day);
+
+        if (!shiftType) {
+            if (rowIndex >= 0) currentScheduleRows.splice(rowIndex, 1);
+            return;
+        }
+
+        const nextRow = {
+            ...(rowIndex >= 0 ? currentScheduleRows[rowIndex] : {}),
+            employee_id: employeeId,
+            branch_id: branchId,
+            day_of_week: day,
+            shift_type: shiftType,
+            work_area: normalizeWorkArea(workArea) || null
+        };
+
+        if (rowIndex >= 0) currentScheduleRows[rowIndex] = nextRow;
+        else currentScheduleRows.push(nextRow);
+    }
+
+    async function saveScheduleAssignment(branchId, employeeId, day, shiftType, workArea = '') {
+        const normalizedArea = normalizeWorkArea(workArea) || null;
         const { data: existingRows, error: findError } = await supabase
             .from('schedules')
-            .select('id, branch_id, shift_type, created_at')
+            .select('id, branch_id, shift_type, work_area, created_at')
             .eq('employee_id', employeeId)
             .eq('day_of_week', day)
             .order('created_at', { ascending: true });
@@ -511,7 +602,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (duplicateRows.length > 0) {
             const duplicateIds = duplicateRows.map(row => row.id);
-
             const { error: duplicateDeleteError } = await supabase
                 .from('schedules')
                 .delete()
@@ -522,7 +612,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (!shiftType) {
             if (!mainRow) return;
-
             const { error: deleteError } = await supabase
                 .from('schedules')
                 .delete()
@@ -532,13 +621,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        const payload = {
+            branch_id: branchId,
+            shift_type: shiftType,
+            work_area: shiftType === 'day_off' ? null : normalizedArea
+        };
+
         if (mainRow) {
             const { error: updateError } = await supabase
                 .from('schedules')
-                .update({
-                    branch_id: branchId,
-                    shift_type: shiftType
-                })
+                .update(payload)
                 .eq('id', mainRow.id);
 
             if (updateError) throw updateError;
@@ -549,9 +641,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             .from('schedules')
             .insert({
                 employee_id: employeeId,
-                branch_id: branchId,
                 day_of_week: day,
-                shift_type: shiftType
+                ...payload
             });
 
         if (insertError) {
@@ -560,9 +651,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 insertError.status === 409 ||
                 String(insertError.message || '').toLowerCase().includes('duplicate');
 
-            if (!isConflictError) {
-                throw insertError;
-            }
+            if (!isConflictError) throw insertError;
 
             const { data: retryRows, error: retryFindError } = await supabase
                 .from('schedules')
@@ -572,17 +661,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .limit(1);
 
             if (retryFindError) throw retryFindError;
-
-            if (!retryRows || retryRows.length === 0) {
-                throw insertError;
-            }
+            if (!retryRows || retryRows.length === 0) throw insertError;
 
             const { error: retryUpdateError } = await supabase
                 .from('schedules')
-                .update({
-                    branch_id: branchId,
-                    shift_type: shiftType
-                })
+                .update(payload)
                 .eq('id', retryRows[0].id);
 
             if (retryUpdateError) throw retryUpdateError;
@@ -667,9 +750,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function shiftLabel(shiftType) {
-        if (shiftType === 'opening') return 'OPENING';
-        if (shiftType === 'closing') return 'CLOSING';
-        if (shiftType === 'day_off') return 'DAY OFF';
+        const cleanShift = String(shiftType || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+        if (cleanShift === 'opening') return 'OPENING';
+        if (cleanShift === 'closing') return 'CLOSING';
+        if (cleanShift === 'whole_day' || cleanShift === 'opening_to_closing') return 'WHOLE DAY';
+        if (cleanShift === 'day_off') return 'DAY OFF';
         return '-';
     }
 
@@ -680,7 +765,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 schedule.day_of_week === day;
         });
 
-        return shiftLabel(row?.shift_type);
+        const shift = shiftLabel(row?.shift_type);
+        const area = isMainStoreBranch(branch.id) ? workAreaLabel(row?.work_area) : '';
+        return area && shift !== 'DAY OFF' && shift !== '-' ? `${shift}\n${area}` : shift;
     }
 
     function initProductOrdersReport() {
@@ -1254,12 +1341,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (data.section === 'body' && data.column.index > 0) {
                         data.cell.styles.fontStyle = 'bold';
 
-                        if (value === 'OPENING') {
+                        if (value.startsWith('OPENING')) {
                             data.cell.styles.textColor = [36, 113, 163];
                             data.cell.styles.fillColor = [236, 246, 253];
-                        } else if (value === 'CLOSING') {
+                        } else if (value.startsWith('CLOSING')) {
                             data.cell.styles.textColor = [183, 149, 11];
                             data.cell.styles.fillColor = [255, 249, 225];
+                        } else if (value.startsWith('WHOLE DAY')) {
+                            data.cell.styles.textColor = [46, 125, 50];
+                            data.cell.styles.fillColor = [232, 245, 233];
                         } else if (value === 'DAY OFF') {
                             data.cell.styles.textColor = [100, 100, 100];
                             data.cell.styles.fillColor = [244, 244, 244];
@@ -1270,7 +1360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 },
                 didDrawPage() {
-                    drawPdfHeader(doc, 'MASTER WEEKLY SCHEDULE', 'Adrianos Coffee & Food Portal - Complete Operations Matrix');
+                    drawPdfHeader(doc, 'MASTER WEEKLY SCHEDULE', 'Adrianos Coffee & Food Portal - Shifts and Main Store Kitchen/Bar Assignments');
                 }
             });
 

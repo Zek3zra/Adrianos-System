@@ -687,3 +687,35 @@ body {
         max-width: unset;
     }
 }
+
+
+/* Whole-day shift and Main Store work-area display */
+.shift-whole-day {
+    color: #2E7D32;
+    background: #E8F5E9;
+}
+
+.work-area-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+}
+
+.area-kitchen {
+    color: #8A4B08;
+    background: #FFF3E0;
+    border: 1px solid #F2C48D;
+}
+
+.area-bar {
+    color: #6A1B9A;
+    background: #F3E5F5;
+    border: 1px solid #D1A8DD;
+}

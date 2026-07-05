@@ -1346,3 +1346,43 @@ select.table-select {
         margin-left: 0 !important;
     }
 }
+
+
+/* Schedule shift and Main Store work-area controls */
+.schedule-cell-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 142px;
+}
+
+.schedule-cell-controls .table-select {
+    min-width: 142px;
+}
+
+.work-area-select {
+    border-color: #c8b59f !important;
+    background-color: #fffaf3 !important;
+    font-weight: 600;
+}
+
+.work-area-select:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background-color: #f3f3f3 !important;
+}
+
+.schedule-table {
+    min-width: 1360px;
+}
+
+@media (max-width: 768px) {
+    .schedule-table {
+        min-width: 1360px;
+    }
+
+    .schedule-cell-controls,
+    .schedule-cell-controls .table-select {
+        min-width: 132px;
+    }
+}
