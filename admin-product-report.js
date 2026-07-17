@@ -224,7 +224,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { data, error } = await query;
             if (error) throw error;
 
-            productOrders = data || [];
+            productOrders = (data || []).map(row => ({
+                ...row,
+                category: normalizeProductCategory(row.category)
+            }));
             currentRecordsPage = 1;
             renderProductOrdersReport();
         } catch (error) {
@@ -741,6 +744,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function getOrderPrice(row) {
         return Math.max(0, Number(row.price) || 0);
+    }
+
+
+    function normalizeProductCategory(category) {
+        const original = String(category || '').trim();
+        const clean = original
+            .toLowerCase()
+            .replace(/[’']/g, '')
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim();
+
+        const starterCategories = new Set([
+            'fries and nachos series',
+            'quesadilla spree',
+            'quesadillas spree',
+            'dip it good',
+            'hunger crusher',
+            'hunger crushers',
+            'snack bar remix',
+            'snackbar remix'
+        ]);
+
+        const riceMealCategories = new Set([
+            'kanin get enough',
+            'flavor trip',
+            'the flavor trip',
+            'flavour trip',
+            'the flavour trip'
+        ]);
+
+        if (starterCategories.has(clean)) return 'Starters';
+        if (riceMealCategories.has(clean)) return 'Rice Meals';
+        if (clean === 'more to enjoy add ons') return 'More To Enjoy';
+
+        return original || 'Uncategorized';
     }
 
     function getBranchName(branchId) {

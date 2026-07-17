@@ -83,6 +83,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         return text.length ? text : fallback;
     }
 
+
+    function normalizeProductCategory(category) {
+        const original = String(category || '').trim();
+        const clean = original
+            .toLowerCase()
+            .replace(/[’']/g, '')
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim();
+
+        const starterCategories = new Set([
+            'fries and nachos series',
+            'quesadilla spree',
+            'quesadillas spree',
+            'dip it good',
+            'hunger crusher',
+            'hunger crushers',
+            'snack bar remix',
+            'snackbar remix'
+        ]);
+
+        const riceMealCategories = new Set([
+            'kanin get enough',
+            'flavor trip',
+            'the flavor trip',
+            'flavour trip',
+            'the flavour trip'
+        ]);
+
+        if (starterCategories.has(clean)) return 'Starters';
+        if (riceMealCategories.has(clean)) return 'Rice Meals';
+        if (clean === 'more to enjoy add ons') return 'More To Enjoy';
+
+        return original || 'Uncategorized';
+    }
+
     function getRoleLabel(role) {
         return role === 'team_leader' ? 'Team Leader' : 'Employee';
     }
@@ -901,7 +936,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (error) throw error;
 
-            dailyProductOrders = data || [];
+            dailyProductOrders = (data || []).map(row => ({
+                ...row,
+                category: normalizeProductCategory(row.category)
+            }));
             renderProductOrdersReport();
         } catch (error) {
             console.error('Product orders load failed:', JSON.stringify(error, null, 2));

@@ -31,39 +31,42 @@ const PRODUCTS = [
         { size: '16oz', price: 75 },
         { size: '22oz', price: 85 }
     ]),
-    createProduct('More To Enjoy / Add Ons', 'Thai Milk Tea', '', 130),
-    createProduct('More To Enjoy / Add Ons', 'Hot Chocolate', '', 70),
-    createProduct('More To Enjoy / Add Ons', 'Mineral Water', '', 25),
-    createProduct('More To Enjoy / Add Ons', 'Coke in Can', '', 70),
-    createProduct('More To Enjoy / Add Ons', 'Nata', '', 20),
-    createProduct('More To Enjoy / Add Ons', 'Cold Foam', '', 20),
-    createProduct('More To Enjoy / Add Ons', 'Oat Milk', '', 50),
+    createProduct('More To Enjoy', 'Thai Milk Tea', '', 130, 'More To Enjoy / Add Ons'),
+    createProduct('More To Enjoy', 'Hot Chocolate', '', 70, 'More To Enjoy / Add Ons'),
+    createProduct('More To Enjoy', 'Mineral Water', '', 25, 'More To Enjoy / Add Ons'),
+    createProduct('More To Enjoy', 'Coke in Can', '', 70, 'More To Enjoy / Add Ons'),
+    createProduct('More To Enjoy', 'Nata', '', 20, 'More To Enjoy / Add Ons'),
+    createProduct('More To Enjoy', 'Cold Foam', '', 20, 'More To Enjoy / Add Ons'),
+    createProduct('More To Enjoy', 'Oat Milk', '', 50, 'More To Enjoy / Add Ons'),
+    createProduct('More To Enjoy', 'Biscoff Spread', '', 25),
+    createProduct('More To Enjoy', 'Extra Single Shot Espresso', '', 25),
+    createProduct('More To Enjoy', 'Extra Double Shot Espresso', '', 50),
 
-    createProduct('Fries and Nachos Series', 'French Fries', 'Sour Cream', 90),
-    createProduct('Fries and Nachos Series', 'French Fries', 'BBQ', 90),
-    createProduct('Fries and Nachos Series', 'French Fries', 'Cheese', 90),
-    createProduct('Fries and Nachos Series', 'Nachos', '', 95),
-    createProduct('Fries and Nachos Series', 'Nachos Fries', '', 155),
-    createProduct('Fries and Nachos Series', 'Shawarma Fries', '', 100),
-    createProduct('Fries and Nachos Series', 'Cheesy Fries', '', 100),
-    createProduct('Quesadilla Spree', 'Cheese Quesadillas', '', 105),
-    createProduct('Quesadilla Spree', 'Chicken Quesadillas', '', 110),
-    createProduct('Quesadilla Spree', 'Pork Quesadillas', '', 115),
-    createProduct('Quesadilla Spree', 'Beef Quesadillas', '', 125),
-    createProduct('Quesadilla Spree', 'Tuna Melt Quesadillas', '', 135),
-    createProduct('Quesadilla Spree', 'Hawaiian Quesadillas', '', 145),
-
-    createProduct('Dip It Good', "Chips N' Dip", '', 125),
-    createProduct('Dip It Good', 'Onion Rings', '', 145),
-    createProduct('Dip It Good', 'Lumpia Shanghai', '', 135),
-    createProduct('Dip It Good', 'Chicken Skin', '', 160),
-    createProduct('Hunger Crushers', 'Chicken Tenders w/ Fries', '', 145),
-    createProduct('Hunger Crushers', 'Ramen', '', 135),
-    createProduct('Hunger Crushers', 'Chicken Alfredo', '', 170),
-    createProduct('Snack-Bar Remix', 'Vcut Con Nacho Fries', '', 135),
-    createProduct('Snack-Bar Remix', 'Vcut Con Nachos', '', 105),
-    createProduct('Snack-Bar Remix', 'Chippy Con Carne', 'Small', 60),
-    createProduct('Snack-Bar Remix', 'Chippy Con Carne', 'Big', 90),
+    createProduct('Starters', 'French Fries', 'Plain', 90),
+    createProduct('Starters', 'French Fries', 'Sour Cream', 90, 'Fries and Nachos Series'),
+    createProduct('Starters', 'French Fries', 'BBQ', 90, 'Fries and Nachos Series'),
+    createProduct('Starters', 'French Fries', 'Cheese', 90, 'Fries and Nachos Series'),
+    createProduct('Starters', 'Nachos', '', 95, 'Fries and Nachos Series'),
+    createProduct('Starters', 'Nachos Fries', '', 155, 'Fries and Nachos Series'),
+    createProduct('Starters', 'Shawarma Fries', '', 100, 'Fries and Nachos Series'),
+    createProduct('Starters', 'Cheesy Fries', '', 100, 'Fries and Nachos Series'),
+    createProduct('Starters', 'Cheese Quesadillas', '', 105, 'Quesadilla Spree'),
+    createProduct('Starters', 'Chicken Quesadillas', '', 110, 'Quesadilla Spree'),
+    createProduct('Starters', 'Pork Quesadillas', '', 115, 'Quesadilla Spree'),
+    createProduct('Starters', 'Beef Quesadillas', '', 125, 'Quesadilla Spree'),
+    createProduct('Starters', 'Tuna Melt Quesadillas', '', 135, 'Quesadilla Spree'),
+    createProduct('Starters', 'Hawaiian Quesadillas', '', 145, 'Quesadilla Spree'),
+    createProduct('Starters', "Chips N' Dip", '', 125, 'Dip It Good'),
+    createProduct('Starters', 'Onion Rings', '', 145, 'Dip It Good'),
+    createProduct('Starters', 'Lumpia Shanghai', '', 135, 'Dip It Good'),
+    createProduct('Starters', 'Chicken Skin', '', 160, 'Dip It Good'),
+    createProduct('Starters', 'Chicken Tenders w/ Fries', '', 145, 'Hunger Crushers'),
+    createProduct('Starters', 'Ramen', '', 135, 'Hunger Crushers'),
+    createProduct('Starters', 'Chicken Alfredo', '', 170, 'Hunger Crushers'),
+    createProduct('Starters', 'Vcut Con Nacho Fries', '', 135, 'Snack-Bar Remix'),
+    createProduct('Starters', 'Vcut Con Nachos', '', 105, 'Snack-Bar Remix'),
+    createProduct('Starters', 'Chippy Con Carne', 'Small', 60, 'Snack-Bar Remix'),
+    createProduct('Starters', 'Chippy Con Carne', 'Big', 90, 'Snack-Bar Remix'),
 
     createProduct('Bun Intended', 'Cheese Burger', '', 145),
     createProduct('Bun Intended', 'Chicken Burger', '', 135),
@@ -76,21 +79,22 @@ const PRODUCTS = [
     createProduct('Add Ons', 'Take-out Box', '', 10),
     createProduct('Add Ons', 'Egg', '', 25),
     createProduct('Add Ons', 'Sauce', '', 25),
+    createProduct('Add Ons', 'Cheese', '', 25),
 
-    createProduct('Kanin-Get Enough', 'Burger Steak', '', 165),
-    createProduct('Kanin-Get Enough', 'Chicken Tenders', '', 155),
-    createProduct('Kanin-Get Enough', 'Hungarian', '', 145),
-    createProduct('Kanin-Get Enough', 'Fish Fillet', '', 155),
-    createProduct('Kanin-Get Enough', 'Liempo', '', 165),
-    createProduct('Kanin-Get Enough', 'Sisig', '', 145),
-    createProduct('Kanin-Get Enough', 'Backribs', '', 200),
-    createProduct('Kanin-Get Enough', 'Chicken Katsu Curry', '', 195),
-    createProduct('The Flavor Trip', 'Shawarma Rice', 'Chicken', 110),
-    createProduct('The Flavor Trip', 'Shawarma Rice', 'Pork', 115),
-    createProduct('The Flavor Trip', 'Shawarma Rice', 'Beef', 125),
-    createProduct('The Flavor Trip', 'Burrito', 'Chicken', 125),
-    createProduct('The Flavor Trip', 'Burrito', 'Pork', 135),
-    createProduct('The Flavor Trip', 'Burrito', 'Beef', 145)
+    createProduct('Rice Meals', 'Burger Steak', '', 165, 'Kanin-Get Enough'),
+    createProduct('Rice Meals', 'Chicken Tenders', '', 155, 'Kanin-Get Enough'),
+    createProduct('Rice Meals', 'Hungarian', '', 145, 'Kanin-Get Enough'),
+    createProduct('Rice Meals', 'Fish Fillet', '', 155, 'Kanin-Get Enough'),
+    createProduct('Rice Meals', 'Liempo', '', 165, 'Kanin-Get Enough'),
+    createProduct('Rice Meals', 'Sisig', '', 145, 'Kanin-Get Enough'),
+    createProduct('Rice Meals', 'Backribs', '', 200, 'Kanin-Get Enough'),
+    createProduct('Rice Meals', 'Chicken Katsu Curry', '', 195, 'Kanin-Get Enough'),
+    createProduct('Rice Meals', 'Shawarma Rice', 'Chicken', 110, 'The Flavor Trip'),
+    createProduct('Rice Meals', 'Shawarma Rice', 'Pork', 115, 'The Flavor Trip'),
+    createProduct('Rice Meals', 'Shawarma Rice', 'Beef', 125, 'The Flavor Trip'),
+    createProduct('Rice Meals', 'Burrito', 'Chicken', 125, 'The Flavor Trip'),
+    createProduct('Rice Meals', 'Burrito', 'Pork', 135, 'The Flavor Trip'),
+    createProduct('Rice Meals', 'Burrito', 'Beef', 145, 'The Flavor Trip')
 ];
 
 const productByKey = new Map(PRODUCTS.map(product => [product.key, product]));
@@ -664,8 +668,9 @@ function createSingleSizeProducts(category, names, size, price) {
     return names.map(name => createProduct(category, name, size, price));
 }
 
-function createProduct(category, name, variant, price) {
-    const key = slugify(`${category}-${name}-${variant || 'regular'}-${price}`);
+function createProduct(category, name, variant, price, keyCategory = category) {
+    // keyCategory preserves existing database keys when only the visible category changes.
+    const key = slugify(`${keyCategory}-${name}-${variant || 'regular'}-${price}`);
 
     return { key, category, name, variant, price };
 }
