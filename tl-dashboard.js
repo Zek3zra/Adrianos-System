@@ -70,6 +70,7 @@ const PRODUCTS = [
 
     createProduct('Bun Intended', 'Cheese Burger', '', 145),
     createProduct('Bun Intended', 'Chicken Burger', '', 135),
+    createProduct('Bun Intended', 'Smoked Grilled Burger', '', 150),
     createProduct('That’s A Wrap', 'Shawarma Wrap', 'Beef', 85),
     createProduct('That’s A Wrap', 'Shawarma Wrap', 'Pork', 80),
     createProduct('That’s A Wrap', 'Shawarma Wrap', 'Chicken', 75),
@@ -89,6 +90,9 @@ const PRODUCTS = [
     createProduct('Rice Meals', 'Sisig', '', 145, 'Kanin-Get Enough'),
     createProduct('Rice Meals', 'Backribs', '', 200, 'Kanin-Get Enough'),
     createProduct('Rice Meals', 'Chicken Katsu Curry', '', 195, 'Kanin-Get Enough'),
+    createProduct('Rice Meals', 'Chicken Tonkatsu', '', 195),
+    createProduct('Rice Meals', 'Lasagna', 'Pork', 180),
+    createProduct('Rice Meals', 'Lasagna', 'Beef', 200),
     createProduct('Rice Meals', 'Shawarma Rice', 'Chicken', 110, 'The Flavor Trip'),
     createProduct('Rice Meals', 'Shawarma Rice', 'Pork', 115, 'The Flavor Trip'),
     createProduct('Rice Meals', 'Shawarma Rice', 'Beef', 125, 'The Flavor Trip'),
