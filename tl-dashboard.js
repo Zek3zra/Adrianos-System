@@ -31,8 +31,8 @@ const PRODUCTS = [
         { size: '16oz', price: 75 },
         { size: '22oz', price: 85 }
     ]),
-    createProduct('More To Enjoy', 'Thai Milk Tea', '', 130, 'More To Enjoy / Add Ons'),
-    createProduct('More To Enjoy', 'Hot Chocolate', '', 70, 'More To Enjoy / Add Ons'),
+    createProduct('More To Enjoy', 'Thai Milk Tea', '22oz', 130, 'More To Enjoy / Add Ons', ''),
+    createProduct('More To Enjoy', 'Hot Chocolate', '8oz', 70, 'More To Enjoy / Add Ons', ''),
     createProduct('More To Enjoy', 'Mineral Water', '', 25, 'More To Enjoy / Add Ons'),
     createProduct('More To Enjoy', 'Coke in Can', '', 70, 'More To Enjoy / Add Ons'),
     createProduct('More To Enjoy', 'Nata', '', 20, 'More To Enjoy / Add Ons'),
@@ -140,6 +140,7 @@ function bindElements() {
     elements.topItemsList = document.getElementById('topItemsList');
     elements.clearDayBtn = document.getElementById('clearDayBtn');
     elements.toast = document.getElementById('toast');
+    ensureCupUsagePanel();
 }
 
 function bindEvents() {
@@ -386,6 +387,7 @@ function renderSummary() {
 
     elements.totalOrdersText.textContent = String(totalOrders);
     elements.activeItemsText.textContent = String(activeItems);
+    renderCupUsage(getCupUsageFromCurrentCounts());
 
     const orderedItems = PRODUCTS
         .map(product => ({ product, quantity: getCount(product.key) }))
@@ -411,6 +413,64 @@ function renderSummary() {
             </div>
         `;
     }).join('');
+}
+
+function ensureCupUsagePanel() {
+    if (!elements.topItemsList || document.getElementById('automaticCupUsagePanel')) return;
+
+    const panel = document.createElement('section');
+    panel.id = 'automaticCupUsagePanel';
+    panel.setAttribute('aria-label', 'Automatic cup usage inventory');
+    panel.style.marginBottom = '16px';
+    panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;">
+            <div>
+                <strong>Automatic Cup Usage</strong><br>
+                <span style="font-size:0.82rem;opacity:0.75;">Calculated from recorded 16oz and 22oz drinks.</span>
+            </div>
+            <strong id="totalCupsUsedText">0 cups</strong>
+        </div>
+        <div class="top-item">
+            <div><strong>16oz Cups Used</strong><br><span>1 cup per recorded 16oz drink</span></div>
+            <div class="top-count" id="cups16ozUsedText">0</div>
+        </div>
+        <div class="top-item">
+            <div><strong>22oz Cups Used</strong><br><span>1 cup per recorded 22oz drink</span></div>
+            <div class="top-count" id="cups22ozUsedText">0</div>
+        </div>
+    `;
+
+    elements.topItemsList.parentElement?.insertBefore(panel, elements.topItemsList);
+    elements.cups16ozUsedText = panel.querySelector('#cups16ozUsedText');
+    elements.cups22ozUsedText = panel.querySelector('#cups22ozUsedText');
+    elements.totalCupsUsedText = panel.querySelector('#totalCupsUsedText');
+}
+
+function normalizeCupSize(value) {
+    const clean = String(value || '').toLowerCase().replace(/\s+/g, '');
+    if (clean === '16oz' || clean === '16ounce' || clean === '16ounces') return '16oz';
+    if (clean === '22oz' || clean === '22ounce' || clean === '22ounces') return '22oz';
+    return '';
+}
+
+function getCupUsageFromCurrentCounts() {
+    return PRODUCTS.reduce((usage, product) => {
+        const cupSize = normalizeCupSize(product.variant);
+        if (!cupSize) return usage;
+
+        const quantity = getCount(product.key);
+        if (cupSize === '16oz') usage.cups16oz += quantity;
+        if (cupSize === '22oz') usage.cups22oz += quantity;
+        usage.totalCups += quantity;
+        return usage;
+    }, { cups16oz: 0, cups22oz: 0, totalCups: 0 });
+}
+
+function renderCupUsage(usage) {
+    ensureCupUsagePanel();
+    if (elements.cups16ozUsedText) elements.cups16ozUsedText.textContent = String(usage.cups16oz || 0);
+    if (elements.cups22ozUsedText) elements.cups22ozUsedText.textContent = String(usage.cups22oz || 0);
+    if (elements.totalCupsUsedText) elements.totalCupsUsedText.textContent = `${usage.totalCups || 0} cup${usage.totalCups === 1 ? '' : 's'}`;
 }
 
 function updateLocalCount(product, quantity, syncInputValue = true) {
@@ -672,9 +732,9 @@ function createSingleSizeProducts(category, names, size, price) {
     return names.map(name => createProduct(category, name, size, price));
 }
 
-function createProduct(category, name, variant, price, keyCategory = category) {
-    // keyCategory preserves existing database keys when only the visible category changes.
-    const key = slugify(`${keyCategory}-${name}-${variant || 'regular'}-${price}`);
+function createProduct(category, name, variant, price, keyCategory = category, keyVariant = variant) {
+    // keyCategory and keyVariant preserve existing database keys when display details change.
+    const key = slugify(`${keyCategory}-${name}-${keyVariant || 'regular'}-${price}`);
 
     return { key, category, name, variant, price };
 }

@@ -956,12 +956,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const totalQty = rows.reduce((sum, row) => sum + getOrderQuantity(row), 0);
         const topProducts = getTopProducts(rows);
         const branchBreakdown = getBranchBreakdown(rows);
+        const cupUsage = getCupUsage(rows);
 
         ordersTotalQty.textContent = String(totalQty);
         ordersActiveProducts.textContent = String(new Set(rows.map(row => row.product_key)).size);
         ordersBranchCount.textContent = String(branchBreakdown.length);
         ordersTopProduct.textContent = topProducts.length ? `${topProducts[0].productName} (${topProducts[0].quantity})` : 'No orders yet';
 
+        renderCupUsage(cupUsage);
         renderTopProducts(topProducts);
         renderBranchBreakdown(branchBreakdown);
         renderProductOrdersTable(rows);
@@ -972,6 +974,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ordersActiveProducts.textContent = '0';
         ordersBranchCount.textContent = '0';
         ordersTopProduct.textContent = 'No orders yet';
+        renderCupUsage({ cups16oz: 0, cups22oz: 0, totalCups: 0 });
         topProductsList.innerHTML = `<div class="empty-state">${escapeHTML(message)}</div>`;
         branchOrdersList.innerHTML = `<div class="empty-state">${escapeHTML(message)}</div>`;
         ordersTableBody.innerHTML = `<tr><td colspan="9" class="loading-text">${escapeHTML(message)}</td></tr>`;
@@ -1009,7 +1012,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="rank-item">
                     <div>
                         <strong>${escapeHTML(item.branchName)}</strong>
-                        <span>${item.activeProducts} active product${item.activeProducts === 1 ? '' : 's'} • ${formatPeso(item.estimatedTotal)}</span>
+                        <span>${item.activeProducts} active product${item.activeProducts === 1 ? '' : 's'} • 16oz: ${item.cups16oz} • 22oz: ${item.cups22oz} • ${formatPeso(item.estimatedTotal)}</span>
                     </div>
                     <div class="rank-count">${item.quantity}</div>
                 </div>
@@ -1094,7 +1097,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     branchName: row.branch_name || getBranchName(row.branch_id) || 'Unassigned Branch',
                     quantity: 0,
                     estimatedTotal: 0,
-                    products: new Set()
+                    products: new Set(),
+                    cups16oz: 0,
+                    cups22oz: 0,
+                    totalCups: 0
                 });
             }
 
@@ -1102,6 +1108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             item.quantity += qty;
             item.estimatedTotal += qty * price;
             if (row.product_key) item.products.add(row.product_key);
+            addRowCupUsage(item, row);
         });
 
         return [...map.values()]
@@ -1110,9 +1117,74 @@ document.addEventListener('DOMContentLoaded', async () => {
                 branchName: item.branchName,
                 quantity: item.quantity,
                 estimatedTotal: item.estimatedTotal,
-                activeProducts: item.products.size
+                activeProducts: item.products.size,
+                cups16oz: item.cups16oz,
+                cups22oz: item.cups22oz,
+                totalCups: item.totalCups
             }))
             .sort((a, b) => b.quantity - a.quantity || a.branchName.localeCompare(b.branchName));
+    }
+
+    function ensureCupUsagePanel() {
+        if (document.getElementById('automaticCupUsagePanel')) return;
+
+        const anchor = typeof ordersTopProduct !== 'undefined' && ordersTopProduct
+            ? ordersTopProduct.closest('.card, section, div')
+            : (typeof topProductsList !== 'undefined' ? topProductsList : null);
+        if (!anchor) return;
+
+        const panel = document.createElement('section');
+        panel.id = 'automaticCupUsagePanel';
+        panel.style.margin = '14px 0';
+        panel.style.padding = '14px';
+        panel.style.border = '1px solid rgba(80,57,41,0.18)';
+        panel.style.borderRadius = '12px';
+        panel.innerHTML = `
+            <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;">
+                <div><strong>Automatic Cup Inventory</strong><br><span style="font-size:0.82rem;opacity:0.72;">Calculated from recorded 16oz and 22oz drinks.</span></div>
+                <strong id="adminTotalCupsText">0 cups</strong>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+                <div><span style="font-size:0.8rem;opacity:0.72;">16oz Cups Used</span><br><strong id="admin16ozCupsText">0</strong></div>
+                <div><span style="font-size:0.8rem;opacity:0.72;">22oz Cups Used</span><br><strong id="admin22ozCupsText">0</strong></div>
+            </div>
+        `;
+        anchor.insertAdjacentElement('afterend', panel);
+    }
+
+    function normalizeCupSize(value, productName = '') {
+        const clean = String(value || '').toLowerCase().replace(/\s+/g, '');
+        if (clean === '16oz' || clean === '16ounce' || clean === '16ounces') return '16oz';
+        if (clean === '22oz' || clean === '22ounce' || clean === '22ounces') return '22oz';
+
+        // Compatibility for records saved before these menu sizes were specified.
+        const cleanName = String(productName || '').trim().toLowerCase();
+        if (cleanName === 'thai milk tea') return '22oz';
+        return '';
+    }
+
+    function addRowCupUsage(target, row) {
+        const cupSize = normalizeCupSize(row.product_variant, row.product_name);
+        if (!cupSize) return target;
+        const quantity = getOrderQuantity(row);
+        if (cupSize === '16oz') target.cups16oz = (target.cups16oz || 0) + quantity;
+        if (cupSize === '22oz') target.cups22oz = (target.cups22oz || 0) + quantity;
+        target.totalCups = (target.totalCups || 0) + quantity;
+        return target;
+    }
+
+    function getCupUsage(rows) {
+        return rows.reduce((usage, row) => addRowCupUsage(usage, row), { cups16oz: 0, cups22oz: 0, totalCups: 0 });
+    }
+
+    function renderCupUsage(usage) {
+        ensureCupUsagePanel();
+        const cups16 = document.getElementById('admin16ozCupsText');
+        const cups22 = document.getElementById('admin22ozCupsText');
+        const total = document.getElementById('adminTotalCupsText');
+        if (cups16) cups16.textContent = String(usage.cups16oz || 0);
+        if (cups22) cups22.textContent = String(usage.cups22oz || 0);
+        if (total) total.textContent = `${usage.totalCups || 0} cup${usage.totalCups === 1 ? '' : 's'}`;
     }
 
     function getOrderQuantity(row) {
@@ -1213,6 +1285,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const branchBreakdown = getBranchBreakdown(rows);
             const totalQty = rows.reduce((sum, row) => sum + getOrderQuantity(row), 0);
             const estimatedTotal = rows.reduce((sum, row) => sum + (getOrderQuantity(row) * getOrderPrice(row)), 0);
+            const cupUsage = getCupUsage(rows);
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
@@ -1223,6 +1296,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ['Total Orders', String(totalQty)],
                     ['Active Products', String(new Set(rows.map(row => row.product_key)).size)],
                     ['Branches Logged', String(branchBreakdown.length)],
+                    ['16oz Cups Used', String(cupUsage.cups16oz)],
+                    ['22oz Cups Used', String(cupUsage.cups22oz)],
+                    ['Total Cups Used', String(cupUsage.totalCups)],
                     ['Estimated Total Value', formatPeso(estimatedTotal)]
                 ],
                 startY: 34,
@@ -1279,11 +1355,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             doc.autoTable({
-                head: [['Branch', 'Active Products', 'Total Qty', 'Estimated Value']],
+                head: [['Branch', 'Active Products', 'Total Qty', '16oz Cups', '22oz Cups', 'Total Cups', 'Estimated Value']],
                 body: branchBreakdown.map(item => [
                     item.branchName,
                     String(item.activeProducts),
                     String(item.quantity),
+                    String(item.cups16oz),
+                    String(item.cups22oz),
+                    String(item.totalCups),
                     formatPeso(item.estimatedTotal)
                 ]),
                 startY: doc.lastAutoTable.finalY + 7,
