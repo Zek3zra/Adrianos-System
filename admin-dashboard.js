@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const ORDERS_TABLE_NAME = 'daily_product_orders';
+    const DAILY_EXPENSES_TABLE_NAME = 'daily_expenses';
     const PH_TIMEZONE = 'Asia/Manila';
     // ADMIN PAGE PROTECTION
     const ADMIN_SESSION_MAX_AGE = 8 * 60 * 60 * 1000; // 8 hours
@@ -42,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentScheduleEmployees = [];
     let currentScheduleRows = [];
     let currentScheduleBranchId = '';
+    let adminExpenseSummaryRows = [];
     const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     const coffeeDark = [44, 30, 22];
@@ -53,6 +55,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function initDashboard() {
         await fetchBranches();
         await fetchUsers();
+        ensureAdminExpenseSummaryPanel();
+        await loadAdminExpenseSummary();
 
         scheduleBranchSelect.addEventListener('change', reloadSchedule);
 
@@ -1860,6 +1864,170 @@ document.addEventListener('DOMContentLoaded', async () => {
         } finally {
             hidePdfLoading();
         }
+    }
+
+
+    function ensureAdminExpenseSummaryPanel() {
+        if (document.getElementById('adminExpenseSummaryPanel')) return;
+
+        if (!document.getElementById('adminExpenseSummaryStyles')) {
+            const style = document.createElement('style');
+            style.id = 'adminExpenseSummaryStyles';
+            style.textContent = `
+                #adminExpenseSummaryPanel { margin: 18px 0; padding: 18px; border: 1px solid rgba(80,57,41,.16); border-radius: 14px; background: #fff; box-shadow: 0 12px 30px rgba(54,39,28,.07); }
+                .admin-expense-summary-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
+                .admin-expense-summary-head h2 { margin:2px 0 4px; font-size:1.15rem; }
+                .admin-expense-summary-head p { margin:0; opacity:.7; font-size:.86rem; }
+                .admin-expense-summary-actions { display:flex; flex-wrap:wrap; gap:8px; }
+                .admin-expense-summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+                .admin-expense-summary-card { padding:12px; border:1px solid rgba(80,57,41,.14); border-radius:11px; background:#fdfbf7; }
+                .admin-expense-summary-card span { display:block; font-size:.78rem; opacity:.72; }
+                .admin-expense-summary-card strong { display:block; margin-top:5px; font-size:1.18rem; color:#2c1e16; overflow-wrap:anywhere; }
+                @media(max-width:760px){.admin-expense-summary-head{flex-direction:column}.admin-expense-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-expense-summary-actions{width:100%}.admin-expense-summary-actions .btn{flex:1}}
+            `;
+            document.head.appendChild(style);
+        }
+
+        const panel = document.createElement('section');
+        panel.id = 'adminExpenseSummaryPanel';
+        panel.innerHTML = `
+            <div class="admin-expense-summary-head">
+                <div>
+                    <span style="font-size:.72rem;font-weight:800;letter-spacing:.1em;opacity:.7;">CURRENT WEEK</span>
+                    <h2>Daily Expense Summary</h2>
+                    <p id="adminExpenseWeekLabel">Monday to Sunday • all branches</p>
+                </div>
+                <div class="admin-expense-summary-actions">
+                    <button type="button" class="btn outline-btn" id="adminOpenExpensesBtn">Open Expense Reports</button>
+                    <button type="button" class="btn primary-btn" id="adminExportExpensesBtn">Export This Week PDF</button>
+                </div>
+            </div>
+            <div class="admin-expense-summary-grid">
+                <div class="admin-expense-summary-card"><span>Weekly Total</span><strong id="adminExpenseWeekTotal">₱0</strong></div>
+                <div class="admin-expense-summary-card"><span>Today's Total</span><strong id="adminExpenseTodayTotal">₱0</strong></div>
+                <div class="admin-expense-summary-card"><span>Expense Entries</span><strong id="adminExpenseEntryCount">0</strong></div>
+                <div class="admin-expense-summary-card"><span>Branches Reporting</span><strong id="adminExpenseBranchCount">0</strong></div>
+            </div>
+        `;
+
+        const mainTarget = document.querySelector('main, .admin-main, .dashboard-content, .container') || document.body;
+        const firstCard = mainTarget.querySelector('section, .card, .panel');
+        if (firstCard?.parentElement === mainTarget) mainTarget.insertBefore(panel, firstCard);
+        else mainTarget.appendChild(panel);
+
+        panel.querySelector('#adminOpenExpensesBtn').addEventListener('click', () => window.location.assign('admin-expenses.html'));
+        panel.querySelector('#adminExportExpensesBtn').addEventListener('click', exportAdminCurrentWeekExpensesPdf);
+    }
+
+    async function loadAdminExpenseSummary() {
+        ensureAdminExpenseSummaryPanel();
+        const startDate = getAdminExpenseWeekStartKey();
+        const endDate = addAdminExpenseDays(startDate, 6);
+        const label = document.getElementById('adminExpenseWeekLabel');
+        if (label) label.textContent = `${formatAdminExpenseDate(startDate)} to ${formatAdminExpenseDate(endDate)} • all branches`;
+
+        try {
+            const { data, error } = await supabase
+                .from(DAILY_EXPENSES_TABLE_NAME)
+                .select('*')
+                .gte('expense_date', startDate)
+                .lte('expense_date', endDate)
+                .order('expense_date', { ascending: true });
+            if (error) throw error;
+
+            adminExpenseSummaryRows = (data || []).filter(row => Number(row.amount) > 0);
+            renderAdminExpenseSummary();
+        } catch (error) {
+            console.error('Admin expense summary failed:', error);
+            adminExpenseSummaryRows = [];
+            renderAdminExpenseSummary(error);
+        }
+    }
+
+    function renderAdminExpenseSummary(error = null) {
+        const today = getPHDateKey();
+        const weekTotal = adminExpenseSummaryRows.reduce((sum, row) => sum + Math.max(0, Number(row.amount) || 0), 0);
+        const todayTotal = adminExpenseSummaryRows.filter(row => row.expense_date === today).reduce((sum, row) => sum + Math.max(0, Number(row.amount) || 0), 0);
+        const branches = new Set(adminExpenseSummaryRows.map(row => row.branch_key || row.branch_name));
+
+        const weekTotalEl = document.getElementById('adminExpenseWeekTotal');
+        const todayTotalEl = document.getElementById('adminExpenseTodayTotal');
+        const entryCountEl = document.getElementById('adminExpenseEntryCount');
+        const branchCountEl = document.getElementById('adminExpenseBranchCount');
+        const exportBtn = document.getElementById('adminExportExpensesBtn');
+
+        if (weekTotalEl) weekTotalEl.textContent = error ? 'Unavailable' : formatPeso(weekTotal);
+        if (todayTotalEl) todayTotalEl.textContent = error ? 'Unavailable' : formatPeso(todayTotal);
+        if (entryCountEl) entryCountEl.textContent = error ? '—' : String(adminExpenseSummaryRows.length);
+        if (branchCountEl) branchCountEl.textContent = error ? '—' : String(branches.size);
+        if (exportBtn) exportBtn.disabled = Boolean(error) || adminExpenseSummaryRows.length === 0;
+    }
+
+    async function exportAdminCurrentWeekExpensesPdf() {
+        if (!adminExpenseSummaryRows.length) {
+            alert('No positive-value expenses are available for the current week.');
+            return;
+        }
+        if (!ensurePdfLibraryReady()) return;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const startDate = getAdminExpenseWeekStartKey();
+        const endDate = addAdminExpenseDays(startDate, 6);
+        const total = adminExpenseSummaryRows.reduce((sum, row) => sum + Math.max(0, Number(row.amount) || 0), 0);
+
+        doc.setFillColor(253, 251, 247);
+        doc.rect(0, 0, 297, 29, 'F');
+        doc.setTextColor(44, 30, 22);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text("ADRIANO'S CURRENT WEEK EXPENSE REPORT", 148.5, 12, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.text(`${formatAdminExpenseDate(startDate)} to ${formatAdminExpenseDate(endDate)} • All Branches`, 148.5, 19, { align: 'center' });
+        doc.text(`Total Expenses: PHP ${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 148.5, 24, { align: 'center' });
+
+        doc.autoTable({
+            startY: 34,
+            head: [['Date', 'Branch', 'Expense', 'Amount', 'Submitted By', 'Last Updated']],
+            body: [...adminExpenseSummaryRows]
+                .sort((a, b) => String(a.expense_date).localeCompare(String(b.expense_date)) || String(a.branch_name).localeCompare(String(b.branch_name)) || String(a.expense_name).localeCompare(String(b.expense_name)))
+                .map(row => [
+                    formatAdminExpenseDate(row.expense_date),
+                    row.branch_name || 'Unassigned Branch',
+                    row.expense_name || 'Unnamed Expense',
+                    `PHP ${Number(row.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    row.team_leader_name || 'Team Leader',
+                    formatPHDateTime(row.updated_at || row.created_at)
+                ]),
+            theme: 'grid',
+            styles: { fontSize: 7.5, cellPadding: 2 },
+            headStyles: { fillColor: [76, 52, 37] },
+            columnStyles: { 3: { halign: 'right' } }
+        });
+
+        addPdfPageNumbers(doc);
+        doc.save(`Adrianos_Current_Week_Expenses_${startDate}_to_${endDate}.pdf`);
+    }
+
+    function getAdminExpenseWeekStartKey(dateKey = getPHDateKey()) {
+        const [year, month, day] = String(dateKey).split('-').map(Number);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        const daysFromMonday = (date.getUTCDay() + 6) % 7;
+        date.setUTCDate(date.getUTCDate() - daysFromMonday);
+        return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+    }
+
+    function addAdminExpenseDays(dateKey, amount) {
+        const [year, month, day] = String(dateKey).split('-').map(Number);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        date.setUTCDate(date.getUTCDate() + amount);
+        return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+    }
+
+    function formatAdminExpenseDate(dateKey) {
+        const [year, month, day] = String(dateKey).split('-').map(Number);
+        return new Intl.DateTimeFormat('en-PH', { month: 'short', day: '2-digit', year: 'numeric' }).format(new Date(Date.UTC(year, month - 1, day)));
     }
 
     exportPdfBtn.addEventListener('click', exportMasterSchedulePdf);

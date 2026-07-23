@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Reports | Adriano's Admin</title>
+    <link rel="stylesheet" href="./admin-expenses.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
+</head>
+<body>
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-card"><div class="spinner"></div><p>Loading admin expense reports...</p></div>
+    </div>
+
+    <header class="topbar">
+        <div>
+            <span class="eyebrow">ADRIANO'S ADMIN PORTAL</span>
+            <h1>Expense Reports</h1>
+            <p>Daily branch submissions summarized and exported by week.</p>
+        </div>
+        <div class="topbar-actions">
+            <button type="button" class="btn btn-secondary" id="backBtn">Back to Admin</button>
+            <button type="button" class="btn btn-danger" id="logoutBtn">Logout</button>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <section class="card filter-card">
+            <div class="filter-field">
+                <label for="weekPicker">Week</label>
+                <input type="date" id="weekPicker">
+                <small id="weekRangeText">Monday to Sunday</small>
+            </div>
+            <div class="filter-field">
+                <label for="branchSelect">Branch</label>
+                <select id="branchSelect"><option value="all">All Branches</option></select>
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="btn btn-secondary" id="refreshBtn">Refresh</button>
+                <button type="button" class="btn btn-primary" id="exportPdfBtn">Export Weekly PDF</button>
+            </div>
+        </section>
+
+        <section class="summary-grid">
+            <article class="summary-card"><span>Weekly Total</span><strong id="weeklyTotalText">₱0</strong><small id="weeklyEntriesText">0 entries</small></article>
+            <article class="summary-card"><span>Today's Total</span><strong id="todayTotalText">₱0</strong><small id="todayDateText">Today</small></article>
+            <article class="summary-card"><span>Branches Reporting</span><strong id="branchCountText">0</strong><small>Positive-value records</small></article>
+            <article class="summary-card"><span>Top Expense</span><strong id="topExpenseText">None</strong><small id="topExpenseAmountText">₱0</small></article>
+        </section>
+
+        <section class="dashboard-grid">
+            <article class="card">
+                <div class="section-heading"><div><span class="eyebrow">DAILY TOTALS</span><h2>Monday to Sunday</h2></div></div>
+                <div id="dailyBreakdownList" class="rank-list"></div>
+            </article>
+            <article class="card">
+                <div class="section-heading"><div><span class="eyebrow">BY EXPENSE</span><h2>Top expenses</h2></div></div>
+                <div id="expenseBreakdownList" class="rank-list"></div>
+            </article>
+            <article class="card">
+                <div class="section-heading"><div><span class="eyebrow">BY BRANCH</span><h2>Branch totals</h2></div></div>
+                <div id="branchBreakdownList" class="rank-list"></div>
+            </article>
+        </section>
+
+        <section class="card">
+            <div class="table-heading">
+                <div><span class="eyebrow">DETAILED RECORDS</span><h2>Daily expense submissions</h2></div>
+                <div class="search-field"><label for="searchInput">Search</label><input type="search" id="searchInput" placeholder="Expense, branch, team leader..."></div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Date</th><th>Branch</th><th>Expense</th><th>Amount</th><th>Submitted By</th><th>Last Updated</th></tr>
+                    </thead>
+                    <tbody id="recordsBody"><tr><td colspan="6" class="table-empty">No records loaded.</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast hidden" role="status"></div>
+    <script type="module" src="./admin-expenses.js"></script>
+</body>
+</html>

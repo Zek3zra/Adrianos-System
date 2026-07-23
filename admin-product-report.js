@@ -55,8 +55,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         initWeekRange();
         bindEvents();
         ensureCupUsagePanel();
+        ensureAdminExpensesShortcut();
         await fetchBranches();
         await loadProductOrdersReport();
+    }
+
+
+    function ensureAdminExpensesShortcut() {
+        if (document.getElementById('adminExpensesPageShortcut')) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.id = 'adminExpensesPageShortcut';
+        button.className = 'btn outline-btn';
+        button.textContent = 'Expense Reports';
+        button.addEventListener('click', () => window.location.assign('admin-expenses.html'));
+
+        const host = elements.exportOrdersPdfBtn?.parentElement || elements.refreshOrdersBtn?.parentElement;
+        if (host) host.appendChild(button);
+        else (document.querySelector('main, .container') || document.body).prepend(button);
     }
 
     function protectAdminPage() {

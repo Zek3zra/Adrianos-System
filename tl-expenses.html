@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Expenses | Adriano's</title>
+    <link rel="stylesheet" href="./tl-expenses.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
+</head>
+<body>
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-card">
+            <div class="spinner"></div>
+            <p>Loading expense records...</p>
+        </div>
+    </div>
+
+    <header class="topbar">
+        <div>
+            <span class="eyebrow">ADRIANO'S TEAM LEADER PORTAL</span>
+            <h1>Daily Expense Log</h1>
+            <p id="headerMeta">Loading branch and date...</p>
+        </div>
+        <div class="topbar-actions">
+            <button type="button" class="btn btn-secondary" id="backBtn">Back to Dashboard</button>
+            <button type="button" class="btn btn-danger" id="logoutBtn">Logout</button>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <section class="info-banner">
+            <strong>Daily logging, weekly reporting</strong>
+            <span>Amounts entered today are the running total for today. Submitting again on the same date updates the same daily record instead of creating a duplicate.</span>
+        </section>
+
+        <section class="toolbar card">
+            <div class="toolbar-group">
+                <label for="weekPicker">Weekly summary</label>
+                <input type="date" id="weekPicker">
+                <small id="weekRangeText">Monday to Sunday</small>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="btn btn-secondary" id="refreshBtn">Refresh</button>
+                <button type="button" class="btn btn-secondary" id="exportWeeklyPdfBtn">Export Weekly PDF</button>
+            </div>
+        </section>
+
+        <section class="summary-grid" aria-label="Expense summary">
+            <article class="summary-card">
+                <span>Today's Total</span>
+                <strong id="todayTotalText">₱0</strong>
+                <small id="todayDateText">Today</small>
+            </article>
+            <article class="summary-card">
+                <span>Selected Week Total</span>
+                <strong id="weekTotalText">₱0</strong>
+                <small id="weekEntriesText">0 entries</small>
+            </article>
+            <article class="summary-card">
+                <span>Today's Entries</span>
+                <strong id="todayEntriesText">0</strong>
+                <small>Positive-value expenses</small>
+            </article>
+            <article class="summary-card">
+                <span>Saved Expense Names</span>
+                <strong id="expenseNamesCountText">0</strong>
+                <small>Retained for future dates</small>
+            </article>
+        </section>
+
+        <section class="card entry-card">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">TODAY'S REPORT</span>
+                    <h2 id="dailyReportTitle">Enter today's expenses</h2>
+                    <p>Blank or zero values will not be saved and will not appear in PDF reports.</p>
+                </div>
+                <span class="status-pill" id="saveStatusText">Ready</span>
+            </div>
+
+            <form id="addExpenseForm" class="add-expense-form">
+                <div>
+                    <label for="newExpenseNameInput">Add expense name</label>
+                    <input id="newExpenseNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: LPG, supplies, transportation" required>
+                </div>
+                <button class="btn btn-primary" type="submit">Add Expense</button>
+            </form>
+
+            <div id="expenseList" class="expense-list">
+                <div class="empty-state">No saved expense names yet.</div>
+            </div>
+
+            <div class="submit-row">
+                <div>
+                    <strong id="liveTodayTotalText">Today's running total: ₱0</strong>
+                    <span>Use Submit to save or update today's report.</span>
+                </div>
+                <button type="button" class="btn btn-primary btn-large" id="submitDailyReportBtn">Submit Today's Report</button>
+            </div>
+        </section>
+
+        <section class="two-column-grid">
+            <article class="card">
+                <div class="section-heading compact">
+                    <div>
+                        <span class="eyebrow">WEEKLY SUMMARY</span>
+                        <h2>Daily totals</h2>
+                    </div>
+                </div>
+                <div id="dailySummaryList" class="daily-summary-list"></div>
+            </article>
+
+            <article class="card">
+                <div class="section-heading compact">
+                    <div>
+                        <span class="eyebrow">TOP EXPENSES</span>
+                        <h2>Expense totals</h2>
+                    </div>
+                </div>
+                <div id="expenseSummaryList" class="daily-summary-list"></div>
+            </article>
+        </section>
+
+        <section class="card">
+            <div class="section-heading compact">
+                <div>
+                    <span class="eyebrow">DETAILS</span>
+                    <h2>Selected week records</h2>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Expense</th>
+                            <th>Amount</th>
+                            <th>Submitted By</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="weeklyDetailsBody">
+                        <tr><td colspan="5" class="table-empty">No records loaded.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast hidden" role="status"></div>
+
+    <script type="module" src="./tl-expenses.js"></script>
+</body>
+</html>
