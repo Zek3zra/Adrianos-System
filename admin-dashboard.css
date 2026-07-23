@@ -1534,3 +1534,39 @@ select.table-select {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+/* Extra mobile polish for the Admin expense summary */
+@media (max-width: 760px) {
+    .expense-summary-dashboard-card {
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(44, 30, 22, 0.06);
+    }
+
+    .admin-expense-summary-head h3 {
+        font-size: 17px;
+    }
+
+    .admin-expense-summary-head p {
+        margin-top: 3px;
+        font-size: 11px;
+        line-height: 1.45;
+    }
+
+    .admin-expense-summary-grid .admin-expense-summary-card:first-child {
+        grid-column: 1 / -1;
+        min-height: 92px;
+        background: #fff8ef;
+        border-color: #ead8c4;
+    }
+
+    .admin-expense-summary-grid .admin-expense-summary-card:first-child strong {
+        font-size: 28px;
+    }
+
+    .admin-expense-summary-card {
+        min-height: 82px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+}

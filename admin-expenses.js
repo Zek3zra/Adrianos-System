@@ -10,7 +10,8 @@ const state = {
     selectedWeekStart: '',
     selectedBranchKey: 'all',
     search: '',
-    busy: false
+    busy: false,
+    selectedDailyDate: ''
 };
 
 const elements = {};
@@ -43,7 +44,10 @@ function bindElements() {
         'refreshBtn', 'exportPdfBtn', 'weeklyTotalText', 'weeklyEntriesText', 'todayTotalText',
         'todayDateText', 'branchCountText', 'topExpenseText', 'topExpenseAmountText',
         'dailyBreakdownList', 'expenseBreakdownList', 'branchBreakdownList', 'searchInput',
-        'recordsBody', 'recordsCards', 'toast'
+        'recordsBody', 'recordsCards', 'recordsCountText', 'reportScopeText', 'heroWeekText',
+        'mobileWeeklyTotalText', 'mobileExportPdfBtn', 'toast', 'dayDetailModal',
+        'closeDayDetailBtn', 'dayDetailDateText', 'dayDetailScopeText', 'dayDetailTotalText',
+        'dayDetailBranchCountText', 'dayDetailEntryCountText', 'dayDetailContent'
     ];
     ids.forEach(id => { elements[id] = document.getElementById(id); });
 }
@@ -51,10 +55,15 @@ function bindElements() {
 function bindEvents() {
     elements.backBtn.addEventListener('click', () => window.location.assign('admin-dashboard.html'));
     elements.logoutBtn.addEventListener('click', logout);
-    elements.refreshBtn.addEventListener('click', loadExpenseReport);
+    elements.refreshBtn.addEventListener('click', async () => {
+        closeDailyBreakdown();
+        await loadExpenseReport();
+    });
     elements.exportPdfBtn.addEventListener('click', exportWeeklyPdf);
+    elements.mobileExportPdfBtn?.addEventListener('click', exportWeeklyPdf);
 
     elements.weekPicker.addEventListener('change', async () => {
+        closeDailyBreakdown();
         state.selectedWeekStart = getPHWeekStartKey(elements.weekPicker.value || getPHDateKey());
         elements.weekPicker.value = state.selectedWeekStart;
         updateWeekRangeText();
@@ -62,8 +71,28 @@ function bindEvents() {
     });
 
     elements.branchSelect.addEventListener('change', async () => {
+        closeDailyBreakdown();
         state.selectedBranchKey = elements.branchSelect.value || 'all';
         await loadExpenseReport();
+    });
+
+    elements.dailyBreakdownList.addEventListener('click', event => {
+        const button = event.target.closest('.daily-breakdown-button[data-date]');
+        if (!button) return;
+        openDailyBreakdown(button.dataset.date);
+    });
+
+    elements.closeDayDetailBtn?.addEventListener('click', closeDailyBreakdown);
+    elements.dayDetailModal?.addEventListener('click', event => {
+        if (event.target === elements.dayDetailModal || event.target.classList.contains('day-detail-backdrop')) {
+            closeDailyBreakdown();
+        }
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && elements.dayDetailModal && !elements.dayDetailModal.classList.contains('hidden')) {
+            closeDailyBreakdown();
+        }
     });
 
     elements.searchInput.addEventListener('input', event => {
@@ -153,6 +182,7 @@ function renderSummaryCards() {
     elements.branchCountText.textContent = String(branchCount);
     elements.topExpenseText.textContent = topExpense?.label || 'None';
     elements.topExpenseAmountText.textContent = formatPeso(topExpense?.total || 0);
+    if (elements.mobileWeeklyTotalText) elements.mobileWeeklyTotalText.textContent = formatPeso(weeklyTotal);
 }
 
 function renderBreakdowns() {
@@ -160,13 +190,13 @@ function renderBreakdowns() {
     for (let i = 0; i < 7; i += 1) {
         const date = addDaysToDateKey(state.selectedWeekStart, i);
         const rows = state.rows.filter(row => row.expense_date === date);
-        dailyItems.push({ label: formatDateWithWeekday(date), total: rows.reduce((sum, row) => sum + getAmount(row), 0), count: rows.length });
+        dailyItems.push({ date, label: formatDateWithWeekday(date), total: rows.reduce((sum, row) => sum + getAmount(row), 0), count: rows.length });
     }
 
     const expenseItems = buildGroupedTotals(state.rows, row => row.expense_id || row.expense_name, row => row.expense_name || 'Unnamed Expense');
     const branchItems = buildGroupedTotals(state.rows, row => row.branch_key || row.branch_name, row => row.branch_name || 'Unassigned Branch');
 
-    elements.dailyBreakdownList.innerHTML = renderRankItems(dailyItems, 'entries');
+    elements.dailyBreakdownList.innerHTML = renderDailyRankItems(dailyItems);
     elements.expenseBreakdownList.innerHTML = renderRankItems(expenseItems, 'daily entries');
     elements.branchBreakdownList.innerHTML = renderRankItems(branchItems, 'entries');
 }
@@ -193,6 +223,98 @@ function renderRankItems(items, countLabel) {
     `).join('');
 }
 
+function renderDailyRankItems(items) {
+    return items.map(item => `
+        <button type="button" class="rank-row daily-breakdown-button" data-date="${escapeHTML(item.date)}" aria-label="View expense breakdown for ${escapeHTML(item.label)}">
+            <div>
+                <strong>${escapeHTML(item.label)}</strong><br>
+                <span>${item.count} entr${item.count === 1 ? 'y' : 'ies'} • Tap to view breakdown</span>
+            </div>
+            <div class="daily-rank-value">
+                <strong>${escapeHTML(formatPeso(item.total))}</strong>
+                <span aria-hidden="true">›</span>
+            </div>
+        </button>
+    `).join('');
+}
+
+function openDailyBreakdown(dateKey) {
+    if (!dateKey || !elements.dayDetailModal) return;
+
+    state.selectedDailyDate = dateKey;
+    const rows = state.rows
+        .filter(row => row.expense_date === dateKey)
+        .sort((a, b) => String(a.branch_name || '').localeCompare(String(b.branch_name || '')) || String(a.expense_name || '').localeCompare(String(b.expense_name || '')));
+    const dailyTotal = rows.reduce((sum, row) => sum + getAmount(row), 0);
+    const branchGroups = buildDailyBranchGroups(rows);
+    const selectedBranchLabel = elements.branchSelect?.options[elements.branchSelect.selectedIndex]?.textContent || 'All Branches';
+
+    elements.dayDetailDateText.textContent = formatDateWithWeekday(dateKey);
+    elements.dayDetailScopeText.textContent = state.selectedBranchKey === 'all'
+        ? 'Expense breakdown across all reporting branches'
+        : `${selectedBranchLabel} expense breakdown`;
+    elements.dayDetailTotalText.textContent = formatPeso(dailyTotal);
+    elements.dayDetailBranchCountText.textContent = String(branchGroups.length);
+    elements.dayDetailEntryCountText.textContent = String(rows.length);
+
+    elements.dayDetailContent.innerHTML = branchGroups.length
+        ? branchGroups.map(group => `
+            <section class="day-branch-card">
+                <div class="day-branch-header">
+                    <div>
+                        <span>Branch</span>
+                        <strong>${escapeHTML(group.branchName)}</strong>
+                    </div>
+                    <strong>${escapeHTML(formatPeso(group.total))}</strong>
+                </div>
+                <div class="day-expense-list">
+                    ${group.rows.map(row => `
+                        <article class="day-expense-row">
+                            <div>
+                                <strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong>
+                                <span>Submitted by ${escapeHTML(row.team_leader_name || 'Team Leader')}</span>
+                                <small>Updated ${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</small>
+                            </div>
+                            <strong>${escapeHTML(formatPeso(getAmount(row)))}</strong>
+                        </article>
+                    `).join('')}
+                </div>
+            </section>
+        `).join('')
+        : '<div class="day-detail-empty"><strong>No expenses logged.</strong><span>This date has no positive expense values for the selected branch filter.</span></div>';
+
+    elements.dayDetailModal.classList.remove('hidden');
+    elements.dayDetailModal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    window.requestAnimationFrame(() => elements.closeDayDetailBtn?.focus());
+}
+
+function buildDailyBranchGroups(rows) {
+    const map = new Map();
+    rows.forEach(row => {
+        const key = row.branch_key || row.branch_name || 'unassigned';
+        if (!map.has(key)) {
+            map.set(key, {
+                branchName: row.branch_name || 'Unassigned Branch',
+                total: 0,
+                rows: []
+            });
+        }
+        const group = map.get(key);
+        group.total += getAmount(row);
+        group.rows.push(row);
+    });
+    return [...map.values()].sort((a, b) => b.total - a.total || a.branchName.localeCompare(b.branchName));
+}
+
+function closeDailyBreakdown() {
+    if (!elements.dayDetailModal) return;
+    state.selectedDailyDate = '';
+    elements.dayDetailModal.classList.add('hidden');
+    elements.dayDetailModal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+}
+
 function renderRecordsTable() {
     const rows = [...state.rows]
         .filter(row => {
@@ -201,6 +323,10 @@ function renderRecordsTable() {
             return text.includes(state.search);
         })
         .sort((a, b) => String(b.expense_date).localeCompare(String(a.expense_date)) || String(a.branch_name).localeCompare(String(b.branch_name)) || String(a.expense_name).localeCompare(String(b.expense_name)));
+
+    if (elements.recordsCountText) {
+        elements.recordsCountText.textContent = `${rows.length} record${rows.length === 1 ? '' : 's'} shown`;
+    }
 
     elements.recordsBody.innerHTML = rows.length
         ? rows.map(row => `
@@ -342,12 +468,20 @@ function setBusy(isBusy) {
     state.busy = isBusy;
     elements.refreshBtn.disabled = isBusy;
     elements.exportPdfBtn.disabled = isBusy;
+    if (elements.mobileExportPdfBtn) elements.mobileExportPdfBtn.disabled = isBusy;
     elements.refreshBtn.textContent = isBusy ? 'Loading...' : 'Refresh';
 }
 
 function updateWeekRangeText() {
     const end = addDaysToDateKey(state.selectedWeekStart, 6);
-    elements.weekRangeText.textContent = `${formatDateLong(state.selectedWeekStart)} to ${formatDateLong(end)}`;
+    const rangeLabel = `${formatDateLong(state.selectedWeekStart)} to ${formatDateLong(end)}`;
+    elements.weekRangeText.textContent = rangeLabel;
+    if (elements.heroWeekText) elements.heroWeekText.textContent = rangeLabel;
+
+    const branchLabel = elements.branchSelect?.options[elements.branchSelect.selectedIndex]?.textContent || 'All Branches';
+    if (elements.reportScopeText) {
+        elements.reportScopeText.textContent = `${rangeLabel} • ${branchLabel}`;
+    }
 }
 
 function getFriendlyDataError(error) {
