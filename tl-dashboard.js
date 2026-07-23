@@ -141,29 +141,8 @@ function bindElements() {
     elements.clearDayBtn = document.getElementById('clearDayBtn');
     elements.toast = document.getElementById('toast');
     ensureCupUsagePanel();
-    ensureDailyExpensesNavigation();
 }
 
-
-function ensureDailyExpensesNavigation() {
-    if (document.getElementById('dailyExpensesPageBtn')) return;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.id = 'dailyExpensesPageBtn';
-    button.className = 'btn outline-btn';
-    button.textContent = 'Daily Expenses';
-    button.title = 'Log daily expenses and export weekly expense reports';
-    button.addEventListener('click', () => window.location.assign('tl-expenses.html'));
-
-    const actionHost = elements.refreshBtn?.parentElement || elements.clearDayBtn?.parentElement;
-    if (actionHost) {
-        actionHost.insertBefore(button, elements.refreshBtn || actionHost.firstChild);
-    } else {
-        const fallback = document.querySelector('main, .dashboard-container, .container') || document.body;
-        fallback.prepend(button);
-    }
-}
 
 function bindEvents() {
     elements.logoutBtn.addEventListener('click', logout);

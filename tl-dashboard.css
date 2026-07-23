@@ -613,3 +613,97 @@ body {
 .count-box {
     display: none !important;
 }
+
+
+/* Mobile-first header actions for Daily Expenses */
+.nav-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.nav-expenses-btn {
+    background: var(--coffee-dark);
+    color: var(--white);
+    border: 1px solid var(--coffee-dark);
+    text-decoration: none;
+    min-height: 40px;
+}
+
+.nav-expenses-btn:active,
+.outline-btn:active {
+    transform: scale(0.98);
+}
+
+.nav-btn-short {
+    display: none;
+}
+
+@media (max-width: 680px) {
+    .tl-nav {
+        gap: 8px;
+    }
+
+    .nav-actions {
+        gap: 6px;
+    }
+
+    .nav-actions .btn {
+        min-height: 40px;
+        padding: 8px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 430px) {
+    .tl-nav {
+        padding: 10px;
+    }
+
+    .nav-brand {
+        gap: 8px;
+    }
+
+    .nav-logo {
+        width: 33px;
+    }
+
+    .nav-brand h1 {
+        font-size: 14px;
+    }
+
+    .nav-brand p {
+        max-width: 105px;
+        font-size: 10px;
+    }
+
+    .nav-btn-full {
+        display: none;
+    }
+
+    .nav-btn-short {
+        display: inline;
+    }
+
+    .nav-actions .btn {
+        padding: 7px 9px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 360px) {
+    .nav-brand p {
+        display: none;
+    }
+
+    .nav-actions {
+        gap: 4px;
+    }
+
+    .nav-actions .btn {
+        padding-inline: 8px;
+    }
+}

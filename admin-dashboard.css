@@ -1386,3 +1386,151 @@ select.table-select {
         min-width: 132px;
     }
 }
+
+
+/* Daily expense navigation and summary */
+.nav-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.nav-expenses-btn {
+    text-decoration: none;
+    min-height: 40px;
+}
+
+.hero-action-card.expense-card {
+    border-color: rgba(139, 94, 52, 0.34);
+    background: #fffaf3;
+}
+
+.expense-summary-dashboard-card {
+    padding: 18px;
+}
+
+.admin-expense-summary-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--input-border);
+}
+
+.admin-expense-summary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-expense-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.admin-expense-summary-card {
+    padding: 13px;
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    background: #fdfbf7;
+}
+
+.admin-expense-summary-card span {
+    display: block;
+    color: var(--coffee-medium);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
+}
+
+.admin-expense-summary-card strong {
+    display: block;
+    margin-top: 5px;
+    color: var(--coffee-dark);
+    font-size: 20px;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+    .admin-nav {
+        gap: 8px;
+    }
+
+    .nav-actions {
+        gap: 6px;
+    }
+
+    .nav-actions .btn {
+        min-height: 40px;
+        padding: 8px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .expense-summary-dashboard-card {
+        padding: 15px;
+    }
+
+    .admin-expense-summary-head {
+        flex-direction: column;
+    }
+
+    .admin-expense-summary-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .admin-expense-summary-actions .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .admin-expense-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .admin-expense-summary-card {
+        padding: 11px;
+    }
+
+    .admin-expense-summary-card strong {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 430px) {
+    .admin-nav {
+        padding: 10px;
+    }
+
+    .admin-nav .nav-logo {
+        width: 30px;
+    }
+
+    .admin-nav h2 {
+        font-size: 14px;
+    }
+
+    .admin-nav .nav-brand p {
+        display: none;
+    }
+
+    .nav-actions .btn {
+        padding-inline: 8px;
+        font-size: 11px;
+    }
+}
+
+@media (min-width: 761px) {
+    .hero-actions-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

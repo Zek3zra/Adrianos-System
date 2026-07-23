@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Team Leader Dashboard - Adrianos</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="tl-dashboard.css?v=weekly-input-20260628">
+    <link rel="stylesheet" href="tl-dashboard.css?v=mobile-expenses-20260723">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -24,7 +24,13 @@
                 <p id="navBranchText">Inventory Dashboard</p>
             </div>
         </div>
-        <button id="logoutBtn" class="btn outline-btn small-btn">Logout</button>
+        <div class="nav-actions">
+            <a id="dailyExpensesPageBtn" href="tl-expenses.html" class="btn nav-expenses-btn small-btn" title="Open daily expense logging">
+                <span class="nav-btn-full">Daily Expenses</span>
+                <span class="nav-btn-short">Expenses</span>
+            </a>
+            <button id="logoutBtn" class="btn outline-btn small-btn">Logout</button>
+        </div>
     </nav>
 
     <main class="dashboard-container">
@@ -108,6 +114,6 @@
 
     <div id="toast" class="toast hidden"></div>
 
-    <script type="module" src="tl-dashboard.js?v=weekly-input-20260628"></script>
+    <script type="module" src="tl-dashboard.js?v=mobile-expenses-20260723"></script>
 </body>
 </html>

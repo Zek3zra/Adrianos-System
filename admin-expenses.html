@@ -2,85 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Reports | Adriano's Admin</title>
-    <link rel="stylesheet" href="./admin-expenses.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Expense Reports - Adrianos Admin</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="admin-expenses.css?v=mobile-20260723">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
 </head>
 <body>
-    <div id="pageLoader" class="page-loader">
-        <div class="loader-card"><div class="spinner"></div><p>Loading admin expense reports...</p></div>
-    </div>
+    <div id="pageLoader" class="page-loader"><div class="loader-card"><h2>Loading Reports...</h2><p>Preparing weekly expense data.</p></div></div>
 
-    <header class="topbar">
-        <div>
-            <span class="eyebrow">ADRIANO'S ADMIN PORTAL</span>
-            <h1>Expense Reports</h1>
-            <p>Daily branch submissions summarized and exported by week.</p>
+    <nav class="page-nav">
+        <div class="nav-brand">
+            <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
+            <div><h1>Expense Reports</h1><p>Admin weekly summary</p></div>
         </div>
-        <div class="topbar-actions">
-            <button type="button" class="btn btn-secondary" id="backBtn">Back to Admin</button>
-            <button type="button" class="btn btn-danger" id="logoutBtn">Logout</button>
+        <div class="nav-actions">
+            <button type="button" class="btn outline-btn small-btn" id="backBtn">Back</button>
+            <button type="button" class="btn danger-btn small-btn" id="logoutBtn">Logout</button>
         </div>
-    </header>
+    </nav>
 
-    <main class="page-shell">
-        <section class="card filter-card">
-            <div class="filter-field">
-                <label for="weekPicker">Week</label>
-                <input type="date" id="weekPicker">
-                <small id="weekRangeText">Monday to Sunday</small>
-            </div>
-            <div class="filter-field">
-                <label for="branchSelect">Branch</label>
-                <select id="branchSelect"><option value="all">All Branches</option></select>
-            </div>
-            <div class="filter-actions">
-                <button type="button" class="btn btn-secondary" id="refreshBtn">Refresh</button>
-                <button type="button" class="btn btn-primary" id="exportPdfBtn">Export Weekly PDF</button>
-            </div>
+    <main class="dashboard-container expense-page">
+        <section class="dashboard-card filter-card">
+            <div class="input-group"><label for="weekPicker">Week</label><input type="date" id="weekPicker"><small id="weekRangeText">Monday to Sunday</small></div>
+            <div class="input-group"><label for="branchSelect">Branch</label><select id="branchSelect"><option value="all">All Branches</option></select></div>
+            <div class="filter-actions"><button type="button" class="btn outline-btn" id="refreshBtn">Refresh</button><button type="button" class="btn secondary-btn" id="exportPdfBtn">Export Week PDF</button></div>
         </section>
 
         <section class="summary-grid">
             <article class="summary-card"><span>Weekly Total</span><strong id="weeklyTotalText">₱0</strong><small id="weeklyEntriesText">0 entries</small></article>
             <article class="summary-card"><span>Today's Total</span><strong id="todayTotalText">₱0</strong><small id="todayDateText">Today</small></article>
-            <article class="summary-card"><span>Branches Reporting</span><strong id="branchCountText">0</strong><small>Positive-value records</small></article>
+            <article class="summary-card"><span>Branches</span><strong id="branchCountText">0</strong><small>Reporting this week</small></article>
             <article class="summary-card"><span>Top Expense</span><strong id="topExpenseText">None</strong><small id="topExpenseAmountText">₱0</small></article>
         </section>
 
-        <section class="dashboard-grid">
-            <article class="card">
-                <div class="section-heading"><div><span class="eyebrow">DAILY TOTALS</span><h2>Monday to Sunday</h2></div></div>
-                <div id="dailyBreakdownList" class="rank-list"></div>
-            </article>
-            <article class="card">
-                <div class="section-heading"><div><span class="eyebrow">BY EXPENSE</span><h2>Top expenses</h2></div></div>
-                <div id="expenseBreakdownList" class="rank-list"></div>
-            </article>
-            <article class="card">
-                <div class="section-heading"><div><span class="eyebrow">BY BRANCH</span><h2>Branch totals</h2></div></div>
-                <div id="branchBreakdownList" class="rank-list"></div>
-            </article>
+        <section class="summary-panels three-panels">
+            <article class="dashboard-card"><div class="card-header"><span class="section-kicker">Daily Totals</span><h3>Monday to Sunday</h3></div><div id="dailyBreakdownList" class="rank-list"></div></article>
+            <article class="dashboard-card"><div class="card-header"><span class="section-kicker">By Expense</span><h3>Top expenses</h3></div><div id="expenseBreakdownList" class="rank-list"></div></article>
+            <article class="dashboard-card"><div class="card-header"><span class="section-kicker">By Branch</span><h3>Branch totals</h3></div><div id="branchBreakdownList" class="rank-list"></div></article>
         </section>
 
-        <section class="card">
-            <div class="table-heading">
-                <div><span class="eyebrow">DETAILED RECORDS</span><h2>Daily expense submissions</h2></div>
-                <div class="search-field"><label for="searchInput">Search</label><input type="search" id="searchInput" placeholder="Expense, branch, team leader..."></div>
+        <section class="dashboard-card records-section">
+            <div class="card-header records-header">
+                <div><span class="section-kicker">Detailed Records</span><h3>Daily expense submissions</h3></div>
+                <div class="input-group search-group"><label for="searchInput">Search records</label><input type="search" id="searchInput" placeholder="Expense, branch, team leader..."></div>
             </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr><th>Date</th><th>Branch</th><th>Expense</th><th>Amount</th><th>Submitted By</th><th>Last Updated</th></tr>
-                    </thead>
-                    <tbody id="recordsBody"><tr><td colspan="6" class="table-empty">No records loaded.</td></tr></tbody>
-                </table>
+            <div id="recordsCards" class="mobile-record-list"></div>
+            <div class="table-wrap desktop-table-wrap">
+                <table><thead><tr><th>Date</th><th>Branch</th><th>Expense</th><th>Amount</th><th>Submitted By</th><th>Last Updated</th></tr></thead><tbody id="recordsBody"><tr><td colspan="6" class="table-empty">No records loaded.</td></tr></tbody></table>
             </div>
         </section>
     </main>
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="./admin-expenses.js"></script>
+    <script type="module" src="admin-expenses.js?v=mobile-20260723"></script>
 </body>
 </html>

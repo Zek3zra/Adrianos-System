@@ -2,154 +2,108 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Expenses | Adriano's</title>
-    <link rel="stylesheet" href="./tl-expenses.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Expenses - Adrianos</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="tl-expenses.css?v=mobile-20260723">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
 </head>
 <body>
     <div id="pageLoader" class="page-loader">
-        <div class="loader-card">
-            <div class="spinner"></div>
-            <p>Loading expense records...</p>
-        </div>
+        <div class="loader-card"><h2>Loading Expenses...</h2><p>Preparing today's report.</p></div>
     </div>
 
-    <header class="topbar">
-        <div>
-            <span class="eyebrow">ADRIANO'S TEAM LEADER PORTAL</span>
-            <h1>Daily Expense Log</h1>
-            <p id="headerMeta">Loading branch and date...</p>
+    <nav class="page-nav">
+        <div class="nav-brand">
+            <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
+            <div>
+                <h1>Daily Expenses</h1>
+                <p id="headerMeta">Loading branch and date...</p>
+            </div>
         </div>
-        <div class="topbar-actions">
-            <button type="button" class="btn btn-secondary" id="backBtn">Back to Dashboard</button>
-            <button type="button" class="btn btn-danger" id="logoutBtn">Logout</button>
+        <div class="nav-actions">
+            <button type="button" class="btn outline-btn small-btn" id="backBtn">Back</button>
+            <button type="button" class="btn danger-btn small-btn" id="logoutBtn">Logout</button>
         </div>
-    </header>
+    </nav>
 
-    <main class="page-shell">
+    <main class="dashboard-container expense-page">
         <section class="info-banner">
             <strong>Daily logging, weekly reporting</strong>
-            <span>Amounts entered today are the running total for today. Submitting again on the same date updates the same daily record instead of creating a duplicate.</span>
+            <span>Submit the running total for each expense today. Submitting again updates today's same record.</span>
         </section>
 
-        <section class="toolbar card">
-            <div class="toolbar-group">
+        <section class="dashboard-card toolbar-card">
+            <div class="input-group">
                 <label for="weekPicker">Weekly summary</label>
                 <input type="date" id="weekPicker">
                 <small id="weekRangeText">Monday to Sunday</small>
             </div>
             <div class="toolbar-actions">
-                <button type="button" class="btn btn-secondary" id="refreshBtn">Refresh</button>
-                <button type="button" class="btn btn-secondary" id="exportWeeklyPdfBtn">Export Weekly PDF</button>
+                <button type="button" class="btn outline-btn" id="refreshBtn">Refresh</button>
+                <button type="button" class="btn secondary-btn" id="exportWeeklyPdfBtn">Export Week PDF</button>
             </div>
         </section>
 
         <section class="summary-grid" aria-label="Expense summary">
-            <article class="summary-card">
-                <span>Today's Total</span>
-                <strong id="todayTotalText">₱0</strong>
-                <small id="todayDateText">Today</small>
-            </article>
-            <article class="summary-card">
-                <span>Selected Week Total</span>
-                <strong id="weekTotalText">₱0</strong>
-                <small id="weekEntriesText">0 entries</small>
-            </article>
-            <article class="summary-card">
-                <span>Today's Entries</span>
-                <strong id="todayEntriesText">0</strong>
-                <small>Positive-value expenses</small>
-            </article>
-            <article class="summary-card">
-                <span>Saved Expense Names</span>
-                <strong id="expenseNamesCountText">0</strong>
-                <small>Retained for future dates</small>
-            </article>
+            <article class="summary-card"><span>Today's Total</span><strong id="todayTotalText">₱0</strong><small id="todayDateText">Today</small></article>
+            <article class="summary-card"><span>Week Total</span><strong id="weekTotalText">₱0</strong><small id="weekEntriesText">0 entries</small></article>
+            <article class="summary-card"><span>Today's Entries</span><strong id="todayEntriesText">0</strong><small>Positive amounts</small></article>
+            <article class="summary-card"><span>Saved Names</span><strong id="expenseNamesCountText">0</strong><small>Available tomorrow</small></article>
         </section>
 
-        <section class="card entry-card">
-            <div class="section-heading">
+        <section class="dashboard-card entry-card">
+            <div class="card-header flex-header">
                 <div>
-                    <span class="eyebrow">TODAY'S REPORT</span>
-                    <h2 id="dailyReportTitle">Enter today's expenses</h2>
-                    <p>Blank or zero values will not be saved and will not appear in PDF reports.</p>
+                    <span class="section-kicker">Today's Report</span>
+                    <h3 id="dailyReportTitle">Enter today's expenses</h3>
+                    <p>Blank or zero values are excluded from reports.</p>
                 </div>
                 <span class="status-pill" id="saveStatusText">Ready</span>
             </div>
 
             <form id="addExpenseForm" class="add-expense-form">
-                <div>
+                <div class="input-group">
                     <label for="newExpenseNameInput">Add expense name</label>
-                    <input id="newExpenseNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: LPG, supplies, transportation" required>
+                    <input id="newExpenseNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: LPG or supplies" required>
                 </div>
-                <button class="btn btn-primary" type="submit">Add Expense</button>
+                <button class="btn secondary-btn" type="submit">Add Name</button>
             </form>
 
-            <div id="expenseList" class="expense-list">
-                <div class="empty-state">No saved expense names yet.</div>
-            </div>
+            <div id="expenseList" class="expense-list"><div class="empty-state">No saved expense names yet.</div></div>
 
             <div class="submit-row">
-                <div>
-                    <strong id="liveTodayTotalText">Today's running total: ₱0</strong>
-                    <span>Use Submit to save or update today's report.</span>
-                </div>
-                <button type="button" class="btn btn-primary btn-large" id="submitDailyReportBtn">Submit Today's Report</button>
+                <div><strong id="liveTodayTotalText">Today's running total: ₱0</strong><span>Submit to save or update today's report.</span></div>
+                <button type="button" class="btn secondary-btn submit-btn" id="submitDailyReportBtn">Submit Today's Report</button>
             </div>
         </section>
 
-        <section class="two-column-grid">
-            <article class="card">
-                <div class="section-heading compact">
-                    <div>
-                        <span class="eyebrow">WEEKLY SUMMARY</span>
-                        <h2>Daily totals</h2>
-                    </div>
-                </div>
-                <div id="dailySummaryList" class="daily-summary-list"></div>
+        <section class="summary-panels">
+            <article class="dashboard-card">
+                <div class="card-header"><span class="section-kicker">Weekly Summary</span><h3>Daily totals</h3></div>
+                <div id="dailySummaryList" class="rank-list"></div>
             </article>
-
-            <article class="card">
-                <div class="section-heading compact">
-                    <div>
-                        <span class="eyebrow">TOP EXPENSES</span>
-                        <h2>Expense totals</h2>
-                    </div>
-                </div>
-                <div id="expenseSummaryList" class="daily-summary-list"></div>
+            <article class="dashboard-card">
+                <div class="card-header"><span class="section-kicker">Top Expenses</span><h3>Expense totals</h3></div>
+                <div id="expenseSummaryList" class="rank-list"></div>
             </article>
         </section>
 
-        <section class="card">
-            <div class="section-heading compact">
-                <div>
-                    <span class="eyebrow">DETAILS</span>
-                    <h2>Selected week records</h2>
-                </div>
-            </div>
-            <div class="table-wrap">
+        <section class="dashboard-card records-section">
+            <div class="card-header"><span class="section-kicker">Details</span><h3>Selected week records</h3><p>Daily records included in the weekly export.</p></div>
+            <div id="weeklyDetailsCards" class="mobile-record-list"></div>
+            <div class="table-wrap desktop-table-wrap">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Expense</th>
-                            <th>Amount</th>
-                            <th>Submitted By</th>
-                            <th>Last Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody id="weeklyDetailsBody">
-                        <tr><td colspan="5" class="table-empty">No records loaded.</td></tr>
-                    </tbody>
+                    <thead><tr><th>Date</th><th>Expense</th><th>Amount</th><th>Submitted By</th><th>Last Updated</th></tr></thead>
+                    <tbody id="weeklyDetailsBody"><tr><td colspan="5" class="table-empty">No records loaded.</td></tr></tbody>
                 </table>
             </div>
         </section>
     </main>
 
     <div id="toast" class="toast hidden" role="status"></div>
-
-    <script type="module" src="./tl-expenses.js"></script>
+    <script type="module" src="tl-expenses.js?v=mobile-20260723"></script>
 </body>
 </html>

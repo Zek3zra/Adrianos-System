@@ -1868,55 +1868,50 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     function ensureAdminExpenseSummaryPanel() {
-        if (document.getElementById('adminExpenseSummaryPanel')) return;
+        let panel = document.getElementById('adminExpenseSummaryPanel');
 
-        if (!document.getElementById('adminExpenseSummaryStyles')) {
-            const style = document.createElement('style');
-            style.id = 'adminExpenseSummaryStyles';
-            style.textContent = `
-                #adminExpenseSummaryPanel { margin: 18px 0; padding: 18px; border: 1px solid rgba(80,57,41,.16); border-radius: 14px; background: #fff; box-shadow: 0 12px 30px rgba(54,39,28,.07); }
-                .admin-expense-summary-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
-                .admin-expense-summary-head h2 { margin:2px 0 4px; font-size:1.15rem; }
-                .admin-expense-summary-head p { margin:0; opacity:.7; font-size:.86rem; }
-                .admin-expense-summary-actions { display:flex; flex-wrap:wrap; gap:8px; }
-                .admin-expense-summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
-                .admin-expense-summary-card { padding:12px; border:1px solid rgba(80,57,41,.14); border-radius:11px; background:#fdfbf7; }
-                .admin-expense-summary-card span { display:block; font-size:.78rem; opacity:.72; }
-                .admin-expense-summary-card strong { display:block; margin-top:5px; font-size:1.18rem; color:#2c1e16; overflow-wrap:anywhere; }
-                @media(max-width:760px){.admin-expense-summary-head{flex-direction:column}.admin-expense-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-expense-summary-actions{width:100%}.admin-expense-summary-actions .btn{flex:1}}
+        if (!panel) {
+            panel = document.createElement('section');
+            panel.id = 'adminExpenseSummaryPanel';
+            panel.className = 'dashboard-card expense-summary-dashboard-card';
+            panel.innerHTML = `
+                <div class="admin-expense-summary-head">
+                    <div class="header-text">
+                        <span class="section-kicker">Current Week</span>
+                        <h3>Daily expense summary</h3>
+                        <p id="adminExpenseWeekLabel">Monday to Sunday • all branches</p>
+                    </div>
+                    <div class="admin-expense-summary-actions">
+                        <button type="button" class="btn outline-btn small-btn" id="adminOpenExpensesBtn">Open Reports</button>
+                        <button type="button" class="btn secondary-btn small-btn" id="adminExportExpensesBtn">Export Week PDF</button>
+                    </div>
+                </div>
+                <div class="admin-expense-summary-grid">
+                    <div class="admin-expense-summary-card"><span>Weekly Total</span><strong id="adminExpenseWeekTotal">₱0</strong></div>
+                    <div class="admin-expense-summary-card"><span>Today's Total</span><strong id="adminExpenseTodayTotal">₱0</strong></div>
+                    <div class="admin-expense-summary-card"><span>Entries</span><strong id="adminExpenseEntryCount">0</strong></div>
+                    <div class="admin-expense-summary-card"><span>Branches</span><strong id="adminExpenseBranchCount">0</strong></div>
+                </div>
             `;
-            document.head.appendChild(style);
+
+            const mainTarget = document.querySelector('main, .admin-main, .dashboard-content, .container') || document.body;
+            const staffSection = document.getElementById('staffSection');
+            if (staffSection?.parentElement === mainTarget) mainTarget.insertBefore(panel, staffSection);
+            else mainTarget.appendChild(panel);
         }
 
-        const panel = document.createElement('section');
-        panel.id = 'adminExpenseSummaryPanel';
-        panel.innerHTML = `
-            <div class="admin-expense-summary-head">
-                <div>
-                    <span style="font-size:.72rem;font-weight:800;letter-spacing:.1em;opacity:.7;">CURRENT WEEK</span>
-                    <h2>Daily Expense Summary</h2>
-                    <p id="adminExpenseWeekLabel">Monday to Sunday • all branches</p>
-                </div>
-                <div class="admin-expense-summary-actions">
-                    <button type="button" class="btn outline-btn" id="adminOpenExpensesBtn">Open Expense Reports</button>
-                    <button type="button" class="btn primary-btn" id="adminExportExpensesBtn">Export This Week PDF</button>
-                </div>
-            </div>
-            <div class="admin-expense-summary-grid">
-                <div class="admin-expense-summary-card"><span>Weekly Total</span><strong id="adminExpenseWeekTotal">₱0</strong></div>
-                <div class="admin-expense-summary-card"><span>Today's Total</span><strong id="adminExpenseTodayTotal">₱0</strong></div>
-                <div class="admin-expense-summary-card"><span>Expense Entries</span><strong id="adminExpenseEntryCount">0</strong></div>
-                <div class="admin-expense-summary-card"><span>Branches Reporting</span><strong id="adminExpenseBranchCount">0</strong></div>
-            </div>
-        `;
+        const openBtn = panel.querySelector('#adminOpenExpensesBtn');
+        const exportBtn = panel.querySelector('#adminExportExpensesBtn');
 
-        const mainTarget = document.querySelector('main, .admin-main, .dashboard-content, .container') || document.body;
-        const firstCard = mainTarget.querySelector('section, .card, .panel');
-        if (firstCard?.parentElement === mainTarget) mainTarget.insertBefore(panel, firstCard);
-        else mainTarget.appendChild(panel);
+        if (openBtn && openBtn.dataset.bound !== 'true') {
+            openBtn.dataset.bound = 'true';
+            openBtn.addEventListener('click', () => window.location.assign('admin-expenses.html'));
+        }
 
-        panel.querySelector('#adminOpenExpensesBtn').addEventListener('click', () => window.location.assign('admin-expenses.html'));
-        panel.querySelector('#adminExportExpensesBtn').addEventListener('click', exportAdminCurrentWeekExpensesPdf);
+        if (exportBtn && exportBtn.dataset.bound !== 'true') {
+            exportBtn.dataset.bound = 'true';
+            exportBtn.addEventListener('click', exportAdminCurrentWeekExpensesPdf);
+        }
     }
 
     async function loadAdminExpenseSummary() {

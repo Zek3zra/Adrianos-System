@@ -49,7 +49,7 @@ function bindElements() {
         'weekEntriesText', 'todayEntriesText', 'expenseNamesCountText', 'dailyReportTitle',
         'saveStatusText', 'addExpenseForm', 'newExpenseNameInput', 'expenseList',
         'liveTodayTotalText', 'submitDailyReportBtn', 'dailySummaryList', 'expenseSummaryList',
-        'weeklyDetailsBody', 'toast'
+        'weeklyDetailsBody', 'weeklyDetailsCards', 'toast'
     ];
 
     ids.forEach(id => { elements[id] = document.getElementById(id); });
@@ -294,6 +294,24 @@ function renderWeeklySummary() {
             </tr>
         `).join('')
         : '<tr><td colspan="5" class="table-empty">No submitted expenses greater than zero for this week.</td></tr>';
+
+    if (elements.weeklyDetailsCards) {
+        elements.weeklyDetailsCards.innerHTML = sortedRows.length
+            ? sortedRows.map(row => `
+                <article class="mobile-record-card">
+                    <div class="mobile-record-head">
+                        <div><strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong></div>
+                        <div class="mobile-record-amount">${escapeHTML(formatPeso(getAmount(row)))}</div>
+                    </div>
+                    <div class="mobile-record-meta">
+                        <span>${escapeHTML(formatDateWithWeekday(row.expense_date))}</span>
+                        <span>Submitted by ${escapeHTML(row.team_leader_name || 'Team Leader')}</span>
+                        <span>Updated ${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</span>
+                    </div>
+                </article>
+            `).join('')
+            : '<div class="empty-state">No submitted expenses greater than zero for this week.</div>';
+    }
 
     renderTopSummary();
 }

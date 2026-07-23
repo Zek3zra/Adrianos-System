@@ -43,7 +43,7 @@ function bindElements() {
         'refreshBtn', 'exportPdfBtn', 'weeklyTotalText', 'weeklyEntriesText', 'todayTotalText',
         'todayDateText', 'branchCountText', 'topExpenseText', 'topExpenseAmountText',
         'dailyBreakdownList', 'expenseBreakdownList', 'branchBreakdownList', 'searchInput',
-        'recordsBody', 'toast'
+        'recordsBody', 'recordsCards', 'toast'
     ];
     ids.forEach(id => { elements[id] = document.getElementById(id); });
 }
@@ -214,6 +214,26 @@ function renderRecordsTable() {
             </tr>
         `).join('')
         : '<tr><td colspan="6" class="table-empty">No matching positive-value expense records.</td></tr>';
+
+
+    if (elements.recordsCards) {
+        elements.recordsCards.innerHTML = rows.length
+            ? rows.map(row => `
+                <article class="mobile-record-card">
+                    <span class="record-branch">${escapeHTML(row.branch_name || 'Unassigned Branch')}</span>
+                    <div class="mobile-record-head">
+                        <div><strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong></div>
+                        <div class="mobile-record-amount">${escapeHTML(formatPeso(getAmount(row)))}</div>
+                    </div>
+                    <div class="mobile-record-meta">
+                        <span>${escapeHTML(formatDateWithWeekday(row.expense_date))}</span>
+                        <span>Submitted by ${escapeHTML(row.team_leader_name || 'Team Leader')}</span>
+                        <span>Updated ${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</span>
+                    </div>
+                </article>
+            `).join('')
+            : '<div class="empty-state">No matching positive-value expense records.</div>';
+    }
 }
 
 function exportWeeklyPdf() {
