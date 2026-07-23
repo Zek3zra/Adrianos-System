@@ -1249,3 +1249,216 @@ body.modal-open {
         grid-column: 1 / -1;
     }
 }
+
+
+/* Inline daily expense dropdown */
+.daily-accordion-item {
+    overflow: hidden;
+    border-bottom: 1px solid #EEE9E3;
+}
+
+.daily-accordion-item:last-child {
+    border-bottom: 0;
+}
+
+.daily-accordion-item .daily-breakdown-button {
+    border-bottom: 0;
+}
+
+.daily-accordion-item.is-open {
+    margin: 6px 0;
+    border: 1px solid #E5D8CB;
+    border-radius: 13px;
+    background: #FFFDFC;
+    box-shadow: 0 6px 18px rgba(44, 30, 22, 0.06);
+}
+
+.daily-accordion-item.is-open .daily-breakdown-button {
+    padding-inline: 10px;
+    background: #FFF8EF;
+}
+
+.daily-chevron {
+    display: inline-block;
+    transition: transform 0.18s ease;
+}
+
+.daily-accordion-item.is-open .daily-chevron {
+    transform: rotate(180deg);
+}
+
+.daily-inline-detail {
+    padding: 0 10px 11px;
+    animation: dailyDropdownIn 0.18s ease-out;
+}
+
+@keyframes dailyDropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.daily-inline-summary {
+    display: grid;
+    grid-template-columns: 1.4fr repeat(2, minmax(0, 0.7fr));
+    gap: 6px;
+    margin: 4px 0 9px;
+}
+
+.daily-inline-summary > div {
+    min-width: 0;
+    padding: 9px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--white);
+}
+
+.daily-inline-summary > div:first-child {
+    background: #FFF8EF;
+    border-color: #EAD8C4;
+}
+
+.daily-inline-summary span,
+.daily-inline-branch-card header span {
+    display: block;
+    color: var(--coffee-medium);
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+}
+
+.daily-inline-summary strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--coffee-dark);
+    font-size: 14px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.daily-inline-summary > div:first-child strong {
+    font-size: 17px;
+}
+
+.daily-inline-branches {
+    display: grid;
+    gap: 8px;
+}
+
+.daily-inline-branch-card {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--white);
+}
+
+.daily-inline-branch-card > header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    background: var(--soft-bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.daily-inline-branch-card > header > div {
+    min-width: 0;
+}
+
+.daily-inline-branch-card > header strong {
+    color: var(--coffee-dark);
+    font-size: 10px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.daily-inline-branch-card > header > strong {
+    flex: 0 0 auto;
+    font-size: 12px;
+}
+
+.daily-inline-expense-list {
+    display: grid;
+}
+
+.daily-inline-expense-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border-bottom: 1px solid #EEE9E3;
+}
+
+.daily-inline-expense-row:last-child {
+    border-bottom: 0;
+}
+
+.daily-inline-expense-row > div {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.daily-inline-expense-row strong {
+    color: var(--coffee-dark);
+    font-size: 10px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.daily-inline-expense-row > strong {
+    flex: 0 0 auto;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.daily-inline-expense-row span,
+.daily-inline-expense-row small {
+    color: var(--text-muted);
+    font-size: 8px;
+    line-height: 1.4;
+}
+
+.daily-inline-empty {
+    padding: 18px 12px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: 11px;
+    background: var(--white);
+}
+
+.daily-inline-empty strong,
+.daily-inline-empty span {
+    display: block;
+}
+
+.daily-inline-empty strong {
+    color: var(--coffee-dark);
+    font-size: 12px;
+}
+
+.daily-inline-empty span {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 9px;
+    line-height: 1.45;
+}
+
+@media (min-width: 700px) {
+    .daily-inline-detail {
+        padding-inline: 12px;
+    }
+
+    .daily-inline-branches {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+    }
+}
