@@ -605,6 +605,20 @@ async function uploadReceipt(event) {
     event.preventDefault();
     if (state.busy) return;
 
+    // Always stamp the receipt using the Philippine date at the exact moment
+    // the Team Leader taps Upload Receipt. This prevents a page left open
+    // overnight from saving the receipt under the previous day.
+    const receiptDate = getPHDateKey();
+    const receiptWeekStart = getPHWeekStartKey(receiptDate);
+
+    if (receiptDate !== state.currentDate || receiptWeekStart !== state.selectedWeekStart) {
+        state.currentDate = receiptDate;
+        state.selectedWeekStart = receiptWeekStart;
+        elements.weekPicker.value = receiptWeekStart;
+        updateStaticHeader();
+        updateWeekRangeText();
+    }
+
     const receiptName = elements.receiptNameInput.value.trim();
     const file = state.selectedReceiptFile || elements.receiptImageInput.files?.[0];
     if (!receiptName) {
@@ -621,7 +635,7 @@ async function uploadReceipt(event) {
     let storagePath = '';
     try {
         const imageBlob = await compressReceiptImage(file);
-        storagePath = `${getBranchKey()}/${state.currentDate}/${Date.now()}-${slugify(receiptName) || 'receipt'}.jpg`;
+        storagePath = `${getBranchKey()}/${receiptDate}/${Date.now()}-${slugify(receiptName) || 'receipt'}.jpg`;
 
         setReceiptStatus('Uploading image...');
         const { error: uploadError } = await supabase.storage
@@ -636,7 +650,7 @@ async function uploadReceipt(event) {
         const { error: insertError } = await supabase
             .from(EXPENSE_RECEIPTS_TABLE)
             .insert({
-                expense_date: state.currentDate,
+                expense_date: receiptDate,
                 branch_key: getBranchKey(),
                 branch_id: state.currentUser.branch_id || null,
                 branch_name: getBranchName(),
@@ -654,7 +668,7 @@ async function uploadReceipt(event) {
         renderTopSummary();
         renderReceipts();
         setReceiptStatus('Uploaded');
-        showToast('Receipt image uploaded successfully.');
+        showToast(`Receipt uploaded and logged for ${formatDateWithWeekday(receiptDate)}.`);
     } catch (error) {
         console.error('Receipt upload failed:', error);
         if (storagePath) {
