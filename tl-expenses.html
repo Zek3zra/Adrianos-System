@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Daily Expenses - Adrianos</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="tl-expenses.css?v=submit-static-20260728">
+    <link rel="stylesheet" href="tl-expenses.css?v=formal-receipts-20260728">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -89,34 +89,53 @@
         </section>
 
         <section class="dashboard-card receipt-card">
-            <div class="card-header flex-header">
+            <div class="card-header flex-header receipt-section-header">
                 <div>
-                    <span class="section-kicker">Receipt Attachments</span>
-                    <h3>Upload a receipt</h3>
-                    <p>Add one receipt name and one image. It is separate from the expense categories.</p>
+                    <span class="section-kicker">Receipt Documentation</span>
+                    <h3>Add a receipt record</h3>
+                    <p>Save a clearly named receipt image for the selected reporting week. Receipts remain separate from expense categories.</p>
                 </div>
-                <span class="status-pill" id="receiptStatusText">Ready</span>
+                <span class="status-pill receipt-status-pill" id="receiptStatusText">Ready</span>
             </div>
 
             <form id="receiptUploadForm" class="receipt-upload-form">
-                <div class="input-group">
-                    <label for="receiptNameInput">Receipt name</label>
-                    <input id="receiptNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: Grocery receipt" required>
+                <div class="receipt-form-grid">
+                    <div class="input-group receipt-input-group">
+                        <label for="receiptNameInput">Receipt title</label>
+                        <input id="receiptNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: Grocery supplies receipt" required>
+                        <small>Use a short, specific name so the receipt is easy to identify later.</small>
+                    </div>
+
+                    <div class="input-group receipt-input-group receipt-file-group">
+                        <label for="receiptImageInput">Receipt image</label>
+                        <input id="receiptImageInput" type="file" accept="image/*" required>
+                        <small>Select an image from Gallery/Photos or use the camera. Maximum original file size: 12 MB.</small>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="receiptImageInput">Receipt image</label>
-                    <input id="receiptImageInput" type="file" accept="image/*" required>
-                    <small>Choose a receipt image from your gallery or use your phone camera. Maximum original file size: 12 MB.</small>
-                </div>
+
                 <div id="receiptPreviewWrap" class="receipt-preview-wrap hidden">
-                    <img id="receiptPreviewImage" alt="Selected receipt preview">
-                    <button type="button" class="btn outline-btn small-btn" id="clearReceiptImageBtn">Remove Image</button>
+                    <div class="receipt-preview-frame">
+                        <img id="receiptPreviewImage" alt="Selected receipt preview">
+                    </div>
+                    <div class="receipt-preview-details">
+                        <strong>Image ready for upload</strong>
+                        <span>Review the image before saving this receipt record.</span>
+                        <button type="button" class="btn receipt-remove-image-btn" id="clearReceiptImageBtn">Remove selected image</button>
+                    </div>
                 </div>
-                <button type="submit" class="btn secondary-btn" id="uploadReceiptBtn">Upload Receipt</button>
+
+                <div class="receipt-form-actions">
+                    <span class="receipt-security-note">The receipt will be logged using the current Philippine date.</span>
+                    <button type="submit" class="btn receipt-upload-btn" id="uploadReceiptBtn">Save Receipt</button>
+                </div>
             </form>
 
             <div class="receipt-list-head">
-                <div><strong>Receipts for selected week</strong><span id="receiptListCountText">0 receipts</span></div>
+                <div>
+                    <span class="section-kicker">Saved Documents</span>
+                    <strong>Receipts for the selected week</strong>
+                </div>
+                <span id="receiptListCountText" class="receipt-count-badge">0 receipts</span>
             </div>
             <div id="receiptList" class="receipt-list"><div class="empty-state">No receipt images uploaded for this week.</div></div>
         </section>
