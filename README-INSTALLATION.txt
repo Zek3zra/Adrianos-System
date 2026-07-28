@@ -1,44 +1,91 @@
-ADRIANOS MOBILE-FIRST DAILY EXPENSES UPDATE
-=============================================
+ADRIANO'S RECEIPTS, INVENTORY CATEGORIES, AND CASH ADVANCE UPDATE
+================================================================
 
-WHAT CHANGED
-- Daily Expenses is now a fixed button beside Logout in the Team Leader header.
-- The old JavaScript-injected expense button near Product List was removed.
-- Team Leader and Admin expense pages now use the uploaded dashboard coffee/cream UI.
-- Mobile records use cards instead of wide tables.
-- Summary cards use a compact 2-column phone layout.
-- Inputs and buttons have larger touch targets.
-- Team Leader Submit Today's Report stays visible near the bottom while entering values.
-- Admin main dashboard includes an Expense Report shortcut and current-week expense summary.
+1. RUN THE SQL FIRST
+--------------------
+Open Supabase > SQL Editor and run:
+    supabase-receipts-cash-advances.sql
 
-FILES TO REPLACE
-1. tl-dashboard.html
-2. tl-dashboard.css
-3. tl-dashboard.js
-4. admin-dashboard.html
-5. admin-dashboard.css
-6. admin-dashboard.js
-7. admin-product-report.js
+This creates:
+- expense_receipts table
+- weekly_cash_advances table
+- expense-receipts Storage bucket and required policies
 
-NEW/EXPENSE PAGE FILES
-8. tl-expenses.html
-9. tl-expenses.css
-10. tl-expenses.js
-11. admin-expenses.html
-12. admin-expenses.css
-13. admin-expenses.js
+2. REPLACE EXISTING FILES
+-------------------------
+Replace these files in the project:
+- tl-dashboard.html
+- tl-dashboard.css
+- tl-dashboard.js
+- tl-expenses.html
+- tl-expenses.css
+- tl-expenses.js
+- admin-dashboard.html
+- admin-dashboard.css
+- admin-dashboard.js
+- admin-expenses.html
+- admin-expenses.css
+- admin-expenses.js
+- admin-product-report.js
 
-DATABASE
-- Run supabase-daily-expenses.sql once if it has not already been run.
-- If the tables already exist from the previous expense update, do not rerun unless needed.
+The existing admin-product-report.html and admin-product-report.css do not require functional changes,
+but matching copies are included in this package for convenience.
 
-BEHAVIOR
-- Expense amounts are daily and date-based in Asia/Manila.
-- At 12:00 AM PH time, the new date loads blank values while saved expense names remain.
-- Re-submitting on the same day updates that day's values.
-- Weekly reports and PDFs cover Monday through Sunday.
-- Blank/zero values are not included in exports.
+3. ADD NEW FILES
+----------------
+Upload these new pages beside the other dashboard files:
+- tl-cash-advance.html
+- tl-cash-advance.css
+- tl-cash-advance.js
+- admin-cash-advances.html
+- admin-cash-advances.css
+- admin-cash-advances.js
 
-DEPLOYMENT
-- Upload all files in this package to the same folder as supabaseClient.js and logo.png.
-- Hard-refresh the browser after deployment (Ctrl+F5 on desktop or clear site cache on mobile).
+4. DEPLOY AND REFRESH
+---------------------
+Deploy to Vercel and perform a hard refresh on each phone/browser.
+
+FEATURE BEHAVIOR
+----------------
+EXPENSE SEARCH
+- Team Leaders can search retained expense names.
+- The weekly expense details and top-expense list also follow the search.
+- Hidden expense inputs are still preserved when submitting.
+
+RECEIPTS
+- Receipt upload is separate from expense names/categories.
+- The Team Leader enters a receipt name and selects/takes one image.
+- Images are compressed before upload for mobile use.
+- Receipts are stored by branch and date and shown in the selected week.
+- Admins can view receipt thumbnails and open full images in Expense Reports.
+
+INVENTORY CATEGORY CHANGES
+- Shawarma Wrap -> Starters
+- Lasagna -> Starters
+- Bun Intended -> Burgers
+- More To Enjoy -> Drinks Add Ons/Other Drinks
+- New Pastries category:
+  Biscoff Cheesecake 190
+  Blueberry Cheesecake 190
+  Choco Caramel 180
+  Cookies 75
+  Cream Cheese Flan 180
+  Garlic Cheesy Bun 80
+  Muffins 70
+
+Old product keys are preserved for renamed/moved products so historical product totals do not split.
+
+CASH ADVANCES
+- Team Leaders see staff assigned to their branch.
+- Tap a staff card/name, enter the weekly amount, and submit.
+- Re-submitting updates the same employee/week record.
+- Blank or zero removes that employee's record for the selected week.
+- Every Monday starts a blank form automatically; previous weeks remain stored.
+- Admin Dashboard shows the current-week cash advance summary.
+- Admin Cash Advance Reports supports week, branch, search, summary, and PDF export.
+
+SECURITY NOTE
+-------------
+The current project uses a custom browser session and anon Supabase access. The included Storage
+policies match that design. For stronger security later, migrate login to Supabase Auth and add RLS
+policies restricted by authenticated user and branch.

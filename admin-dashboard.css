@@ -1570,3 +1570,17 @@ select.table-select {
         justify-content: center;
     }
 }
+
+
+/* Weekly cash advance dashboard card */
+.hero-action-card.cash-advance-card {
+    border-color: rgba(44, 30, 22, 0.26);
+    background: #f8f3ed;
+}
+.cash-advance-summary-dashboard-card {
+    border-color: #d9c8b6;
+}
+.cash-advance-summary-dashboard-card .admin-expense-summary-grid .admin-expense-summary-card:first-child {
+    background: #f8f3ed;
+    border-color: #d9c8b6;
+}

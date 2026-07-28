@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient.js';
 document.addEventListener('DOMContentLoaded', async () => {
     const ORDERS_TABLE_NAME = 'daily_product_orders';
     const DAILY_EXPENSES_TABLE_NAME = 'daily_expenses';
+    const CASH_ADVANCES_TABLE_NAME = 'weekly_cash_advances';
     const PH_TIMEZONE = 'Asia/Manila';
     // ADMIN PAGE PROTECTION
     const ADMIN_SESSION_MAX_AGE = 8 * 60 * 60 * 1000; // 8 hours
@@ -44,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentScheduleRows = [];
     let currentScheduleBranchId = '';
     let adminExpenseSummaryRows = [];
+    let adminCashAdvanceSummaryRows = [];
     const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     const coffeeDark = [44, 30, 22];
@@ -57,6 +59,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         await fetchUsers();
         ensureAdminExpenseSummaryPanel();
         await loadAdminExpenseSummary();
+        ensureAdminCashAdvanceSummaryPanel();
+        await loadAdminCashAdvanceSummary();
 
         scheduleBranchSelect.addEventListener('change', reloadSchedule);
 
@@ -88,37 +92,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
-    function normalizeProductCategory(category) {
+    function normalizeProductCategory(category, productName = '') {
         const original = String(category || '').trim();
         const clean = original
             .toLowerCase()
             .replace(/[’']/g, '')
             .replace(/[^a-z0-9]+/g, ' ')
             .trim();
+        const productClean = String(productName || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
         const starterCategories = new Set([
-            'fries and nachos series',
-            'quesadilla spree',
-            'quesadillas spree',
-            'dip it good',
-            'hunger crusher',
-            'hunger crushers',
-            'snack bar remix',
-            'snackbar remix'
+            'fries and nachos series', 'quesadilla spree', 'quesadillas spree',
+            'dip it good', 'hunger crusher', 'hunger crushers',
+            'snack bar remix', 'snackbar remix', 'thats a wrap'
         ]);
-
         const riceMealCategories = new Set([
-            'kanin get enough',
-            'flavor trip',
-            'the flavor trip',
-            'flavour trip',
-            'the flavour trip'
+            'kanin get enough', 'flavor trip', 'the flavor trip',
+            'flavour trip', 'the flavour trip'
         ]);
 
+        if (productClean === 'lasagna' || productClean === 'shawarma wrap') return 'Starters';
+        if (clean === 'bun intended' || clean === 'burgers') return 'Burgers';
+        if (clean === 'more to enjoy' || clean === 'more to enjoy add ons' || clean === 'drinks add ons other drinks') return 'Drinks Add Ons/Other Drinks';
         if (starterCategories.has(clean)) return 'Starters';
         if (riceMealCategories.has(clean)) return 'Rice Meals';
-        if (clean === 'more to enjoy add ons') return 'More To Enjoy';
-
         return original || 'Uncategorized';
     }
 
@@ -942,7 +939,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             dailyProductOrders = (data || []).map(row => ({
                 ...row,
-                category: normalizeProductCategory(row.category)
+                category: normalizeProductCategory(row.category, row.product_name)
             }));
             renderProductOrdersReport();
         } catch (error) {
@@ -2003,6 +2000,135 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         addPdfPageNumbers(doc);
         doc.save(`Adrianos_Current_Week_Expenses_${startDate}_to_${endDate}.pdf`);
+    }
+
+
+
+    function ensureAdminCashAdvanceSummaryPanel() {
+        let panel = document.getElementById('adminCashAdvanceSummaryPanel');
+        if (!panel) {
+            panel = document.createElement('section');
+            panel.id = 'adminCashAdvanceSummaryPanel';
+            panel.className = 'dashboard-card expense-summary-dashboard-card cash-advance-summary-dashboard-card';
+            panel.innerHTML = `
+                <div class="admin-expense-summary-head">
+                    <div class="header-text">
+                        <span class="section-kicker">Current Week</span>
+                        <h3>Cash advance summary</h3>
+                        <p id="adminCashAdvanceWeekLabel">Monday to Sunday • all branches</p>
+                    </div>
+                    <div class="admin-expense-summary-actions">
+                        <button type="button" class="btn outline-btn small-btn" id="adminOpenCashAdvancesBtn">Open Reports</button>
+                        <button type="button" class="btn secondary-btn small-btn" id="adminExportCashAdvancesBtn">Export Week PDF</button>
+                    </div>
+                </div>
+                <div class="admin-expense-summary-grid">
+                    <div class="admin-expense-summary-card"><span>Weekly Total</span><strong id="adminCashAdvanceWeekTotal">₱0</strong></div>
+                    <div class="admin-expense-summary-card"><span>Employees</span><strong id="adminCashAdvanceEmployeeCount">0</strong></div>
+                    <div class="admin-expense-summary-card"><span>Entries</span><strong id="adminCashAdvanceEntryCount">0</strong></div>
+                    <div class="admin-expense-summary-card"><span>Branches</span><strong id="adminCashAdvanceBranchCount">0</strong></div>
+                </div>
+            `;
+            const mainTarget = document.querySelector('main, .admin-main, .dashboard-content, .container') || document.body;
+            const staffSection = document.getElementById('staffSection');
+            if (staffSection?.parentElement === mainTarget) mainTarget.insertBefore(panel, staffSection);
+            else mainTarget.appendChild(panel);
+        }
+
+        const openBtn = panel.querySelector('#adminOpenCashAdvancesBtn');
+        const exportBtn = panel.querySelector('#adminExportCashAdvancesBtn');
+        if (openBtn && openBtn.dataset.bound !== 'true') {
+            openBtn.dataset.bound = 'true';
+            openBtn.addEventListener('click', () => window.location.assign('admin-cash-advances.html'));
+        }
+        if (exportBtn && exportBtn.dataset.bound !== 'true') {
+            exportBtn.dataset.bound = 'true';
+            exportBtn.addEventListener('click', exportAdminCurrentWeekCashAdvancesPdf);
+        }
+    }
+
+    async function loadAdminCashAdvanceSummary() {
+        ensureAdminCashAdvanceSummaryPanel();
+        const weekStart = getAdminExpenseWeekStartKey();
+        const weekEnd = addAdminExpenseDays(weekStart, 6);
+        const label = document.getElementById('adminCashAdvanceWeekLabel');
+        if (label) label.textContent = `${formatAdminExpenseDate(weekStart)} to ${formatAdminExpenseDate(weekEnd)} • all branches`;
+
+        try {
+            const { data, error } = await supabase
+                .from(CASH_ADVANCES_TABLE_NAME)
+                .select('*')
+                .eq('week_start', weekStart)
+                .order('branch_name', { ascending: true })
+                .order('employee_name', { ascending: true });
+            if (error) throw error;
+            adminCashAdvanceSummaryRows = (data || []).filter(row => Number(row.amount) > 0);
+            renderAdminCashAdvanceSummary();
+        } catch (error) {
+            console.error('Admin cash advance summary failed:', error);
+            adminCashAdvanceSummaryRows = [];
+            renderAdminCashAdvanceSummary(error);
+        }
+    }
+
+    function renderAdminCashAdvanceSummary(error = null) {
+        const total = adminCashAdvanceSummaryRows.reduce((sum, row) => sum + Math.max(0, Number(row.amount) || 0), 0);
+        const employees = new Set(adminCashAdvanceSummaryRows.map(row => row.employee_id || row.employee_name));
+        const branches = new Set(adminCashAdvanceSummaryRows.map(row => row.branch_key || row.branch_name));
+        const totalEl = document.getElementById('adminCashAdvanceWeekTotal');
+        const employeeEl = document.getElementById('adminCashAdvanceEmployeeCount');
+        const entryEl = document.getElementById('adminCashAdvanceEntryCount');
+        const branchEl = document.getElementById('adminCashAdvanceBranchCount');
+        const exportBtn = document.getElementById('adminExportCashAdvancesBtn');
+        if (totalEl) totalEl.textContent = error ? 'Unavailable' : formatPeso(total);
+        if (employeeEl) employeeEl.textContent = error ? '—' : String(employees.size);
+        if (entryEl) entryEl.textContent = error ? '—' : String(adminCashAdvanceSummaryRows.length);
+        if (branchEl) branchEl.textContent = error ? '—' : String(branches.size);
+        if (exportBtn) exportBtn.disabled = Boolean(error) || adminCashAdvanceSummaryRows.length === 0;
+    }
+
+    async function exportAdminCurrentWeekCashAdvancesPdf() {
+        if (!adminCashAdvanceSummaryRows.length) {
+            alert('No cash advances are available for the current week.');
+            return;
+        }
+        if (!ensurePdfLibraryReady()) return;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const weekStart = getAdminExpenseWeekStartKey();
+        const weekEnd = addAdminExpenseDays(weekStart, 6);
+        const total = adminCashAdvanceSummaryRows.reduce((sum, row) => sum + Math.max(0, Number(row.amount) || 0), 0);
+
+        doc.setFillColor(253, 251, 247);
+        doc.rect(0, 0, 297, 29, 'F');
+        doc.setTextColor(44, 30, 22);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text("ADRIANO'S CURRENT WEEK CASH ADVANCE REPORT", 148.5, 12, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.text(`${formatAdminExpenseDate(weekStart)} to ${formatAdminExpenseDate(weekEnd)} • All Branches`, 148.5, 19, { align: 'center' });
+        doc.text(`Total Cash Advances: PHP ${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 148.5, 24, { align: 'center' });
+
+        doc.autoTable({
+            startY: 34,
+            head: [['Branch', 'Employee', 'Cash Advance', 'Logged By', 'Last Updated']],
+            body: adminCashAdvanceSummaryRows.map(row => [
+                row.branch_name || 'Unassigned Branch',
+                row.employee_name || 'Employee',
+                `PHP ${Number(row.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                row.team_leader_name || 'Team Leader',
+                formatPHDateTime(row.updated_at || row.created_at)
+            ]),
+            theme: 'grid',
+            styles: { fontSize: 7.5, cellPadding: 2 },
+            headStyles: { fillColor: [76, 52, 37] },
+            columnStyles: { 2: { halign: 'right' } },
+            foot: [['TOTAL', '', `PHP ${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, '', '']],
+            footStyles: { fillColor: [245, 238, 230], textColor: [44, 30, 22], fontStyle: 'bold' }
+        });
+        addPdfPageNumbers(doc);
+        doc.save(`Adrianos_Current_Week_Cash_Advances_${weekStart}_to_${weekEnd}.pdf`);
     }
 
     function getAdminExpenseWeekStartKey(dateKey = getPHDateKey()) {

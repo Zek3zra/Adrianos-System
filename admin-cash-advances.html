@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cash Advance Reports - Adrianos Admin</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="admin-cash-advances.css?v=20260728">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
+</head>
+<body>
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-card"><div class="loader-mark">₱</div><h2>Loading Cash Advances...</h2><p>Preparing the weekly report.</p></div>
+    </div>
+
+    <nav class="page-nav">
+        <div class="nav-brand">
+            <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
+            <div><h1>Cash Advances</h1><p>Admin weekly report</p></div>
+        </div>
+        <div class="nav-actions">
+            <button type="button" class="btn outline-btn small-btn" id="backBtn">Back</button>
+            <button type="button" class="btn danger-btn small-btn" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        <section class="report-hero">
+            <div><span class="hero-kicker">Weekly Cash Advance Overview</span><h2>Review employee cash advances by branch.</h2><p id="reportScopeText">Loading selected week...</p></div>
+            <div class="hero-week-badge"><span>Selected Week</span><strong id="heroWeekText">Monday to Sunday</strong></div>
+        </section>
+
+        <section class="dashboard-card filter-card">
+            <div class="filter-head"><div><span class="section-kicker">Report Controls</span><h3>Choose report coverage</h3></div><span class="live-status">Live database</span></div>
+            <div class="filter-fields">
+                <div class="input-group"><label for="weekPicker">Week</label><input type="date" id="weekPicker"><small id="weekRangeText">Monday to Sunday</small></div>
+                <div class="input-group"><label for="branchSelect">Branch</label><select id="branchSelect"><option value="all">All Branches</option></select><small>Filter by assigned branch.</small></div>
+            </div>
+            <div class="filter-actions"><button type="button" class="btn outline-btn" id="refreshBtn">Refresh</button><button type="button" class="btn secondary-btn" id="exportPdfBtn">Export Weekly PDF</button></div>
+        </section>
+
+        <section class="summary-grid">
+            <article class="summary-card primary-summary"><span>Weekly Total</span><strong id="weekTotalText">₱0</strong><small id="entryCountText">0 entries</small></article>
+            <article class="summary-card"><span>Employees</span><strong id="employeeCountText">0</strong><small>With cash advance</small></article>
+            <article class="summary-card"><span>Branches</span><strong id="branchCountText">0</strong><small>Reporting this week</small></article>
+            <article class="summary-card wide-summary"><span>Highest Advance</span><strong id="topEmployeeText">None</strong><small id="topAmountText">₱0</small></article>
+        </section>
+
+        <section class="summary-panels">
+            <article class="dashboard-card"><div class="card-header"><span class="section-kicker">By Branch</span><h3>Branch totals</h3></div><div id="branchSummaryList" class="rank-list"></div></article>
+            <article class="dashboard-card"><div class="card-header"><span class="section-kicker">By Employee</span><h3>Employee totals</h3></div><div id="employeeSummaryList" class="rank-list"></div></article>
+        </section>
+
+        <section class="dashboard-card records-section">
+            <div class="card-header records-header">
+                <div><span class="section-kicker">Detailed Records</span><h3>Weekly cash advances</h3><p id="recordsCountText">0 records shown</p></div>
+                <div class="input-group"><label for="searchInput">Search employee</label><input type="search" id="searchInput" placeholder="Employee, branch, team leader..." autocomplete="off"></div>
+            </div>
+            <div id="recordCards" class="mobile-record-list"></div>
+            <div class="table-wrap desktop-table-wrap">
+                <table><thead><tr><th>Week</th><th>Branch</th><th>Employee</th><th>Amount</th><th>Logged By</th><th>Updated</th></tr></thead><tbody id="recordsBody"><tr><td colspan="6" class="empty-state">No records loaded.</td></tr></tbody></table>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast hidden" role="status"></div>
+    <script type="module" src="admin-cash-advances.js?v=20260728"></script>
+</body>
+</html>

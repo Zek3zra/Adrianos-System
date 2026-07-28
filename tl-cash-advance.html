@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Weekly Cash Advances - Adrianos</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="tl-cash-advance.css?v=20260728">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
+</head>
+<body>
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-card"><div class="loader-mark">₱</div><h2>Loading Cash Advances...</h2><p>Preparing this week's employee list.</p></div>
+    </div>
+
+    <nav class="page-nav">
+        <div class="nav-brand">
+            <img src="logo.png" alt="Adrianos Logo" class="nav-logo">
+            <div><h1>Cash Advances</h1><p id="headerMeta">Weekly branch log</p></div>
+        </div>
+        <div class="nav-actions">
+            <button type="button" class="btn outline-btn small-btn" id="backBtn">Back</button>
+            <button type="button" class="btn danger-btn small-btn" id="logoutBtn">Logout</button>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        <section class="info-banner">
+            <strong>Weekly cash advance logging</strong>
+            <span>Tap an employee, enter the total cash advance for the selected week, then submit. A new Monday opens a blank weekly form while previous weeks stay in history.</span>
+        </section>
+
+        <section class="dashboard-card toolbar-card">
+            <div class="input-group">
+                <label for="weekPicker">Week</label>
+                <input type="date" id="weekPicker">
+                <small id="weekRangeText">Monday to Sunday</small>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="btn outline-btn" id="refreshBtn">Refresh</button>
+                <button type="button" class="btn secondary-btn" id="exportPdfBtn">Export Week PDF</button>
+            </div>
+        </section>
+
+        <section class="summary-grid">
+            <article class="summary-card primary-summary"><span>Weekly Total</span><strong id="weekTotalText">₱0</strong><small id="weekLabelText">Current week</small></article>
+            <article class="summary-card"><span>Employees</span><strong id="employeeCountText">0</strong><small>Assigned to branch</small></article>
+            <article class="summary-card"><span>With Advance</span><strong id="advanceCountText">0</strong><small>Positive amounts</small></article>
+            <article class="summary-card"><span>Branch</span><strong id="branchNameText">Loading</strong><small>Current assignment</small></article>
+        </section>
+
+        <section class="dashboard-card employee-entry-card">
+            <div class="card-header flex-header">
+                <div><span class="section-kicker">Employee List</span><h3>Enter weekly cash advances</h3><p>Tap a name to focus its amount field. Submit again to update the same employee and week.</p></div>
+                <span class="status-pill" id="saveStatusText">Ready</span>
+            </div>
+
+            <div class="input-group employee-search">
+                <label for="employeeSearchInput">Search employee</label>
+                <input type="search" id="employeeSearchInput" placeholder="Search employee name..." autocomplete="off">
+                <small id="employeeSearchCountText">0 employees</small>
+            </div>
+
+            <div id="employeeList" class="employee-list"><div class="empty-state">Loading employees...</div></div>
+
+            <div class="submit-row">
+                <div><strong id="liveTotalText">Weekly running total: ₱0</strong><span>Zero or blank amounts are removed from this week.</span></div>
+                <button type="button" class="btn secondary-btn submit-btn" id="submitBtn">Submit Weekly Cash Advances</button>
+            </div>
+        </section>
+
+        <section class="dashboard-card">
+            <div class="card-header flex-header">
+                <div><span class="section-kicker">Saved Summary</span><h3>Employees with cash advance</h3><p id="savedSummaryText">0 saved entries</p></div>
+                <button type="button" class="btn danger-outline-btn small-btn" id="clearWeekBtn">Clear Week</button>
+            </div>
+            <div id="savedAdvanceList" class="saved-advance-list"><div class="empty-state">No cash advances saved for this week.</div></div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast hidden" role="status"></div>
+    <script type="module" src="tl-cash-advance.js?v=20260728"></script>
+</body>
+</html>

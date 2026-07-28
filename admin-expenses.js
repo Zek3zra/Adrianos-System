@@ -2,11 +2,13 @@ import { supabase } from './supabaseClient.js';
 
 const PH_TIMEZONE = 'Asia/Manila';
 const DAILY_EXPENSES_TABLE = 'daily_expenses';
+const EXPENSE_RECEIPTS_TABLE = 'expense_receipts';
 const ADMIN_SESSION_MAX_AGE = 8 * 60 * 60 * 1000;
 
 const state = {
     branches: [],
     rows: [],
+    receipts: [],
     selectedWeekStart: '',
     selectedBranchKey: 'all',
     search: '',
@@ -45,7 +47,8 @@ function bindElements() {
         'todayDateText', 'branchCountText', 'topExpenseText', 'topExpenseAmountText',
         'dailyBreakdownList', 'expenseBreakdownList', 'branchBreakdownList', 'searchInput',
         'recordsBody', 'recordsCards', 'recordsCountText', 'reportScopeText', 'heroWeekText',
-        'mobileWeeklyTotalText', 'mobileExportPdfBtn', 'toast'
+        'mobileWeeklyTotalText', 'mobileExportPdfBtn', 'receiptCountText', 'adminReceiptCountText',
+        'adminReceiptGallery', 'toast'
     ];
     ids.forEach(id => { elements[id] = document.getElementById(id); });
 }
@@ -118,7 +121,7 @@ async function loadExpenseReport() {
     const endDate = addDaysToDateKey(state.selectedWeekStart, 6);
 
     try {
-        let query = supabase
+        let expenseQuery = supabase
             .from(DAILY_EXPENSES_TABLE)
             .select('*')
             .gte('expense_date', state.selectedWeekStart)
@@ -127,18 +130,30 @@ async function loadExpenseReport() {
             .order('branch_name', { ascending: true })
             .order('expense_name', { ascending: true });
 
+        let receiptQuery = supabase
+            .from(EXPENSE_RECEIPTS_TABLE)
+            .select('*')
+            .gte('expense_date', state.selectedWeekStart)
+            .lte('expense_date', endDate)
+            .order('expense_date', { ascending: false })
+            .order('created_at', { ascending: false });
+
         if (state.selectedBranchKey !== 'all') {
-            query = query.eq('branch_key', state.selectedBranchKey);
+            expenseQuery = expenseQuery.eq('branch_key', state.selectedBranchKey);
+            receiptQuery = receiptQuery.eq('branch_key', state.selectedBranchKey);
         }
 
-        const { data, error } = await query;
-        if (error) throw error;
+        const [expenseResult, receiptResult] = await Promise.all([expenseQuery, receiptQuery]);
+        if (expenseResult.error) throw expenseResult.error;
+        if (receiptResult.error) throw receiptResult.error;
 
-        state.rows = (data || []).filter(row => getAmount(row) > 0);
+        state.rows = (expenseResult.data || []).filter(row => getAmount(row) > 0);
+        state.receipts = receiptResult.data || [];
         renderAll();
     } catch (error) {
         console.error('Admin expense report load failed:', error);
         state.rows = [];
+        state.receipts = [];
         renderAll();
         showToast(getFriendlyDataError(error), 'error');
     } finally {
@@ -150,6 +165,7 @@ function renderAll() {
     renderSummaryCards();
     renderBreakdowns();
     renderRecordsTable();
+    renderReceipts();
     updateWeekRangeText();
 }
 
@@ -169,6 +185,7 @@ function renderSummaryCards() {
     elements.branchCountText.textContent = String(branchCount);
     elements.topExpenseText.textContent = topExpense?.label || 'None';
     elements.topExpenseAmountText.textContent = formatPeso(topExpense?.total || 0);
+    if (elements.receiptCountText) elements.receiptCountText.textContent = String(state.receipts.length);
     if (elements.mobileWeeklyTotalText) elements.mobileWeeklyTotalText.textContent = formatPeso(weeklyTotal);
 }
 
@@ -398,9 +415,32 @@ function renderRecordsTable() {
     }
 }
 
+
+function renderReceipts() {
+    if (!elements.adminReceiptGallery) return;
+    if (elements.adminReceiptCountText) {
+        elements.adminReceiptCountText.textContent = `${state.receipts.length} receipt${state.receipts.length === 1 ? '' : 's'} shown`;
+    }
+
+    elements.adminReceiptGallery.innerHTML = state.receipts.length
+        ? state.receipts.map(receipt => `
+            <article class="admin-receipt-card">
+                <a href="${escapeHTML(receipt.receipt_url)}" target="_blank" rel="noopener" aria-label="Open ${escapeHTML(receipt.receipt_name || 'receipt')}">
+                    <img src="${escapeHTML(receipt.receipt_url)}" alt="${escapeHTML(receipt.receipt_name || 'Expense receipt')}" loading="lazy">
+                </a>
+                <div class="admin-receipt-body">
+                    <strong>${escapeHTML(receipt.receipt_name || 'Receipt')}</strong>
+                    <span>${escapeHTML(receipt.branch_name || 'Unassigned Branch')}<br>${escapeHTML(formatDateWithWeekday(receipt.expense_date))}<br>Uploaded by ${escapeHTML(receipt.team_leader_name || 'Team Leader')}</span>
+                    <a class="btn outline-btn" href="${escapeHTML(receipt.receipt_url)}" target="_blank" rel="noopener">View Full Image</a>
+                </div>
+            </article>
+        `).join('')
+        : '<div class="empty-state">No receipt images uploaded for this selection.</div>';
+}
+
 function exportWeeklyPdf() {
-    if (!state.rows.length) {
-        showToast('There are no positive expense values to export for this week.', 'error');
+    if (!state.rows.length && !state.receipts.length) {
+        showToast('There are no expenses or receipts to export for this week.', 'error');
         return;
     }
     if (!window.jspdf?.jsPDF) {
@@ -442,7 +482,7 @@ function exportWeeklyPdf() {
         body: [
             ['Week', `${formatDateLong(state.selectedWeekStart)} to ${formatDateLong(endDate)}`, 'Branch Filter', branchLabel],
             ['Expense Entries', String(state.rows.length), 'Branches Reporting', String(new Set(state.rows.map(row => row.branch_key || row.branch_name)).size)],
-            ['Weekly Total', formatPesoForPdf(total), 'Daily Reports', String(new Set(state.rows.map(row => `${row.expense_date}|${row.branch_key}`)).size)]
+            ['Weekly Total', formatPesoForPdf(total), 'Receipt Attachments', String(state.receipts.length)]
         ],
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2.4 },
@@ -486,6 +526,27 @@ function exportWeeklyPdf() {
         columnStyles: { 3: { halign: 'right' } }
     });
 
+    if (state.receipts.length) {
+        y = doc.lastAutoTable.finalY + 7;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('Receipt Attachments', 14, y);
+        doc.autoTable({
+            startY: y + 3,
+            head: [['Date', 'Branch', 'Receipt Name', 'Uploaded By', 'Uploaded']],
+            body: state.receipts.map(receipt => [
+                formatDateWithWeekday(receipt.expense_date),
+                receipt.branch_name || 'Unassigned Branch',
+                receipt.receipt_name || 'Receipt',
+                receipt.team_leader_name || 'Team Leader',
+                formatPHDateTime(receipt.created_at)
+            ]),
+            theme: 'grid',
+            styles: { fontSize: 7.2, cellPadding: 1.9 },
+            headStyles: { fillColor: [118, 81, 54] }
+        });
+    }
+
     addPdfPageNumbers(doc);
     doc.save(`Adrianos_Admin_Expenses_${state.selectedWeekStart}_to_${endDate}.pdf`);
 }
@@ -523,8 +584,8 @@ function updateWeekRangeText() {
 function getFriendlyDataError(error) {
     const code = String(error?.code || '');
     const message = String(error?.message || '').toLowerCase();
-    if (code === '42P01' || code === 'PGRST205' || message.includes('daily_expenses')) {
-        return 'The daily expense tables are not installed. Run supabase-daily-expenses.sql in Supabase.';
+    if (code === '42P01' || code === 'PGRST205' || (message.includes('daily_expenses') || message.includes('expense_receipts'))) {
+        return 'The receipt and expense tables are not installed. Run supabase-receipts-cash-advances.sql in Supabase.';
     }
     if (code === '42501' || message.includes('row-level security')) {
         return 'Supabase permissions blocked the expense report. Run the included SQL migration and reload the schema.';

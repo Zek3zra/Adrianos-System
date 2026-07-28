@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             productOrders = (data || []).map(row => ({
                 ...row,
-                category: normalizeProductCategory(row.category)
+                category: normalizeProductCategory(row.category, row.product_name)
             }));
             currentRecordsPage = 1;
             renderProductOrdersReport();
@@ -843,37 +843,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
-    function normalizeProductCategory(category) {
+    function normalizeProductCategory(category, productName = '') {
         const original = String(category || '').trim();
         const clean = original
             .toLowerCase()
             .replace(/[’']/g, '')
             .replace(/[^a-z0-9]+/g, ' ')
             .trim();
+        const productClean = String(productName || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
         const starterCategories = new Set([
-            'fries and nachos series',
-            'quesadilla spree',
-            'quesadillas spree',
-            'dip it good',
-            'hunger crusher',
-            'hunger crushers',
-            'snack bar remix',
-            'snackbar remix'
+            'fries and nachos series', 'quesadilla spree', 'quesadillas spree',
+            'dip it good', 'hunger crusher', 'hunger crushers',
+            'snack bar remix', 'snackbar remix', 'thats a wrap'
         ]);
-
         const riceMealCategories = new Set([
-            'kanin get enough',
-            'flavor trip',
-            'the flavor trip',
-            'flavour trip',
-            'the flavour trip'
+            'kanin get enough', 'flavor trip', 'the flavor trip',
+            'flavour trip', 'the flavour trip'
         ]);
 
+        if (productClean === 'lasagna' || productClean === 'shawarma wrap') return 'Starters';
+        if (clean === 'bun intended' || clean === 'burgers') return 'Burgers';
+        if (clean === 'more to enjoy' || clean === 'more to enjoy add ons' || clean === 'drinks add ons other drinks') {
+            return 'Drinks Add Ons/Other Drinks';
+        }
         if (starterCategories.has(clean)) return 'Starters';
         if (riceMealCategories.has(clean)) return 'Rice Meals';
-        if (clean === 'more to enjoy add ons') return 'More To Enjoy';
-
         return original || 'Uncategorized';
     }
 

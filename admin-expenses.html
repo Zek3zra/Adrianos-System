@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Expense Reports - Adrianos Admin</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-expenses.css?v=clean-mobile-export-20260723-5">
+    <link rel="stylesheet" href="admin-expenses.css?v=receipt-gallery-20260728">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -100,6 +100,11 @@
                 <strong id="topExpenseText">None</strong>
                 <small id="topExpenseAmountText">₱0</small>
             </article>
+            <article class="summary-card">
+                <span>Receipts</span>
+                <strong id="receiptCountText">0</strong>
+                <small>Uploaded this week</small>
+            </article>
         </section>
 
         <section class="summary-panels three-panels">
@@ -135,6 +140,20 @@
                 </div>
                 <div id="branchBreakdownList" class="rank-list"></div>
             </article>
+        </section>
+
+
+        <section class="dashboard-card admin-receipts-section">
+            <div class="card-header records-header">
+                <div>
+                    <span class="section-kicker">Receipt Attachments</span>
+                    <h3>Uploaded expense receipts</h3>
+                    <p id="adminReceiptCountText">0 receipts shown</p>
+                </div>
+            </div>
+            <div id="adminReceiptGallery" class="admin-receipt-gallery">
+                <div class="empty-state">No receipt images uploaded for this selection.</div>
+            </div>
         </section>
 
         <section class="dashboard-card records-section">
@@ -177,6 +196,6 @@
 
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="admin-expenses.js?v=clean-mobile-export-20260723-5"></script>
+    <script type="module" src="admin-expenses.js?v=receipt-gallery-20260728"></script>
 </body>
 </html>

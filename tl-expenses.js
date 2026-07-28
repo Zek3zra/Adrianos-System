@@ -3,6 +3,9 @@ import { supabase } from './supabaseClient.js';
 const PH_TIMEZONE = 'Asia/Manila';
 const EXPENSE_NAMES_TABLE = 'expense_names';
 const DAILY_EXPENSES_TABLE = 'daily_expenses';
+const EXPENSE_RECEIPTS_TABLE = 'expense_receipts';
+const RECEIPT_BUCKET = 'expense-receipts';
+const MAX_RECEIPT_BYTES = 12 * 1024 * 1024;
 
 const state = {
     currentUser: null,
@@ -12,6 +15,10 @@ const state = {
     expenseNames: [],
     todayRows: [],
     weekRows: [],
+    receipts: [],
+    expenseSearch: '',
+    selectedReceiptFile: null,
+    previewUrl: '',
     busy: false
 };
 
@@ -46,10 +53,13 @@ function bindElements() {
     const ids = [
         'pageLoader', 'headerMeta', 'backBtn', 'logoutBtn', 'weekPicker', 'weekRangeText',
         'refreshBtn', 'exportWeeklyPdfBtn', 'todayTotalText', 'todayDateText', 'weekTotalText',
-        'weekEntriesText', 'todayEntriesText', 'expenseNamesCountText', 'dailyReportTitle',
-        'saveStatusText', 'addExpenseForm', 'newExpenseNameInput', 'expenseList',
-        'liveTodayTotalText', 'submitDailyReportBtn', 'dailySummaryList', 'expenseSummaryList',
-        'weeklyDetailsBody', 'weeklyDetailsCards', 'toast'
+        'weekEntriesText', 'todayEntriesText', 'receiptCountText', 'dailyReportTitle',
+        'saveStatusText', 'addExpenseForm', 'newExpenseNameInput', 'expenseSearchInput',
+        'expenseSearchCountText', 'expenseList', 'liveTodayTotalText', 'submitDailyReportBtn',
+        'dailySummaryList', 'expenseSummaryList', 'weeklyDetailsBody', 'weeklyDetailsCards',
+        'receiptStatusText', 'receiptUploadForm', 'receiptNameInput', 'receiptImageInput',
+        'receiptPreviewWrap', 'receiptPreviewImage', 'clearReceiptImageBtn', 'uploadReceiptBtn',
+        'receiptListCountText', 'receiptList', 'toast'
     ];
 
     ids.forEach(id => { elements[id] = document.getElementById(id); });
@@ -62,12 +72,29 @@ function bindEvents() {
     elements.exportWeeklyPdfBtn.addEventListener('click', exportSelectedWeekPdf);
     elements.submitDailyReportBtn.addEventListener('click', submitTodayReport);
     elements.addExpenseForm.addEventListener('submit', addExpenseName);
+    elements.receiptUploadForm.addEventListener('submit', uploadReceipt);
 
     elements.weekPicker.addEventListener('change', async () => {
         state.selectedWeekStart = getPHWeekStartKey(elements.weekPicker.value || getPHDateKey());
         elements.weekPicker.value = state.selectedWeekStart;
         updateWeekRangeText();
-        await loadWeekRows();
+        setBusy(true, 'Loading week...');
+        try {
+            await Promise.all([loadWeekRows(), loadWeekReceipts()]);
+            renderTopSummary();
+            renderWeeklySummary();
+            renderReceipts();
+        } catch (error) {
+            console.error('Selected week load failed:', error);
+            showToast(getFriendlyDataError(error), 'error');
+        } finally {
+            setBusy(false);
+        }
+    });
+
+    elements.expenseSearchInput.addEventListener('input', event => {
+        state.expenseSearch = event.target.value.trim().toLowerCase();
+        applyExpenseSearch();
         renderWeeklySummary();
     });
 
@@ -90,6 +117,13 @@ function bindEvents() {
         const button = event.target.closest('[data-remove-expense-id]');
         if (!button) return;
         removeExpenseName(button.dataset.removeExpenseId);
+    });
+
+    elements.receiptImageInput.addEventListener('change', handleReceiptFileChange);
+    elements.clearReceiptImageBtn.addEventListener('click', clearReceiptSelection);
+    elements.receiptList.addEventListener('click', event => {
+        const deleteButton = event.target.closest('[data-delete-receipt-id]');
+        if (deleteButton) deleteReceipt(deleteButton.dataset.deleteReceiptId);
     });
 }
 
@@ -128,10 +162,16 @@ async function loadAllExpenseData() {
     try {
         state.currentDate = getPHDateKey();
         if (!state.selectedWeekStart) state.selectedWeekStart = getPHWeekStartKey(state.currentDate);
-        await Promise.all([loadExpenseNames(), loadTodayRows(), loadWeekRows()]);
+        await Promise.all([
+            loadExpenseNames(),
+            loadTodayRows(),
+            loadWeekRows(),
+            loadWeekReceipts()
+        ]);
         updateStaticHeader();
         renderAll();
         setSaveStatus('Ready');
+        setReceiptStatus('Ready');
     } catch (error) {
         console.error('Expense data load failed:', error);
         showToast(getFriendlyDataError(error), 'error');
@@ -179,10 +219,26 @@ async function loadWeekRows() {
     state.weekRows = (data || []).filter(row => getAmount(row) > 0);
 }
 
+async function loadWeekReceipts() {
+    const endDate = addDaysToDateKey(state.selectedWeekStart, 6);
+    const { data, error } = await supabase
+        .from(EXPENSE_RECEIPTS_TABLE)
+        .select('*')
+        .eq('branch_key', getBranchKey())
+        .gte('expense_date', state.selectedWeekStart)
+        .lte('expense_date', endDate)
+        .order('expense_date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    state.receipts = data || [];
+}
+
 function renderAll() {
     renderExpenseInputs();
     renderTopSummary();
     renderWeeklySummary();
+    renderReceipts();
     updateWeekRangeText();
     updateLiveTodayTotal();
 }
@@ -190,6 +246,7 @@ function renderAll() {
 function renderExpenseInputs() {
     if (!state.expenseNames.length) {
         elements.expenseList.innerHTML = '<div class="empty-state">No saved expense names yet. Add your first expense above.</div>';
+        elements.expenseSearchCountText.textContent = '0 saved expense names';
         return;
     }
 
@@ -200,7 +257,7 @@ function renderExpenseInputs() {
         const amount = amountByExpenseId.get(item.id) || '';
         const lastUpdated = updatedByExpenseId.get(item.id);
         return `
-            <div class="expense-row" data-expense-id="${escapeHTML(item.id)}">
+            <div class="expense-row" data-expense-id="${escapeHTML(item.id)}" data-expense-search="${escapeHTML(item.expense_name.toLowerCase())}">
                 <div class="expense-name">
                     <strong>${escapeHTML(item.expense_name)}</strong>
                     <span>${lastUpdated ? `Last submitted ${escapeHTML(formatPHDateTime(lastUpdated))}` : 'No value submitted today'}</span>
@@ -222,6 +279,23 @@ function renderExpenseInputs() {
             </div>
         `;
     }).join('');
+
+    applyExpenseSearch();
+}
+
+function applyExpenseSearch() {
+    const query = state.expenseSearch;
+    let visible = 0;
+    elements.expenseList.querySelectorAll('.expense-row[data-expense-search]').forEach(row => {
+        const match = !query || row.dataset.expenseSearch.includes(query);
+        row.classList.toggle('search-hidden', !match);
+        if (match) visible += 1;
+    });
+
+    const total = state.expenseNames.length;
+    elements.expenseSearchCountText.textContent = query
+        ? `${visible} of ${total} expense names shown`
+        : `${total} saved expense name${total === 1 ? '' : 's'}`;
 }
 
 function renderTopSummary() {
@@ -233,7 +307,7 @@ function renderTopSummary() {
     elements.weekTotalText.textContent = formatPeso(weekTotal);
     elements.weekEntriesText.textContent = `${state.weekRows.length} entr${state.weekRows.length === 1 ? 'y' : 'ies'}`;
     elements.todayEntriesText.textContent = String(state.todayRows.length);
-    elements.expenseNamesCountText.textContent = String(state.expenseNames.length);
+    elements.receiptCountText.textContent = String(state.receipts.length);
     elements.dailyReportTitle.textContent = `Enter expenses for ${formatDateLong(state.currentDate)}`;
 }
 
@@ -267,24 +341,29 @@ function renderWeeklySummary() {
         </div>
     `).join('');
 
-    const expenseItems = [...expenseMap.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+    const expenseItems = [...expenseMap.values()]
+        .filter(item => !state.expenseSearch || item.name.toLowerCase().includes(state.expenseSearch))
+        .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+
     elements.expenseSummaryList.innerHTML = expenseItems.length
         ? expenseItems.map(item => `
             <div class="summary-list-row">
-                <div><strong>${escapeHTML(item.name)}</strong><br><span>${item.count} day entr${item.count === 1 ? 'y' : 'ies'}</span></div>
+                <div><strong>${escapeHTML(item.name)}</strong><br><span>${item.count} daily entr${item.count === 1 ? 'y' : 'ies'}</span></div>
                 <strong>${escapeHTML(formatPeso(item.total))}</strong>
             </div>
         `).join('')
-        : '<div class="empty-state">No positive expense values for this week.</div>';
+        : '<div class="empty-state">No matching positive expense values for this week.</div>';
 
-    const sortedRows = [...state.weekRows].sort((a, b) => {
-        const dateCompare = String(b.expense_date).localeCompare(String(a.expense_date));
-        if (dateCompare !== 0) return dateCompare;
-        return String(a.expense_name || '').localeCompare(String(b.expense_name || ''));
-    });
+    const rows = [...state.weekRows]
+        .filter(row => !state.expenseSearch || String(row.expense_name || '').toLowerCase().includes(state.expenseSearch))
+        .sort((a, b) => {
+            const dateCompare = String(b.expense_date).localeCompare(String(a.expense_date));
+            if (dateCompare !== 0) return dateCompare;
+            return String(a.expense_name || '').localeCompare(String(b.expense_name || ''));
+        });
 
-    elements.weeklyDetailsBody.innerHTML = sortedRows.length
-        ? sortedRows.map(row => `
+    elements.weeklyDetailsBody.innerHTML = rows.length
+        ? rows.map(row => `
             <tr>
                 <td>${escapeHTML(formatDateWithWeekday(row.expense_date))}</td>
                 <td><strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong></td>
@@ -293,34 +372,53 @@ function renderWeeklySummary() {
                 <td>${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</td>
             </tr>
         `).join('')
-        : '<tr><td colspan="5" class="table-empty">No submitted expenses greater than zero for this week.</td></tr>';
+        : '<tr><td colspan="5" class="table-empty">No matching submitted expenses greater than zero for this week.</td></tr>';
 
-    if (elements.weeklyDetailsCards) {
-        elements.weeklyDetailsCards.innerHTML = sortedRows.length
-            ? sortedRows.map(row => `
-                <article class="mobile-record-card">
-                    <div class="mobile-record-head">
-                        <div><strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong></div>
-                        <div class="mobile-record-amount">${escapeHTML(formatPeso(getAmount(row)))}</div>
-                    </div>
-                    <div class="mobile-record-meta">
-                        <span>${escapeHTML(formatDateWithWeekday(row.expense_date))}</span>
-                        <span>Submitted by ${escapeHTML(row.team_leader_name || 'Team Leader')}</span>
-                        <span>Updated ${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</span>
-                    </div>
-                </article>
-            `).join('')
-            : '<div class="empty-state">No submitted expenses greater than zero for this week.</div>';
-    }
+    elements.weeklyDetailsCards.innerHTML = rows.length
+        ? rows.map(row => `
+            <article class="mobile-record-card">
+                <div class="mobile-record-head">
+                    <div><strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong></div>
+                    <div class="mobile-record-amount">${escapeHTML(formatPeso(getAmount(row)))}</div>
+                </div>
+                <div class="mobile-record-meta">
+                    <span>${escapeHTML(formatDateWithWeekday(row.expense_date))}</span>
+                    <span>Submitted by ${escapeHTML(row.team_leader_name || 'Team Leader')}</span>
+                    <span>Updated ${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</span>
+                </div>
+            </article>
+        `).join('')
+        : '<div class="empty-state">No matching submitted expenses greater than zero for this week.</div>';
+}
 
-    renderTopSummary();
+function renderReceipts() {
+    elements.receiptCountText.textContent = String(state.receipts.length);
+    elements.receiptListCountText.textContent = `${state.receipts.length} receipt${state.receipts.length === 1 ? '' : 's'}`;
+
+    elements.receiptList.innerHTML = state.receipts.length
+        ? state.receipts.map(receipt => `
+            <article class="receipt-item">
+                <a class="receipt-thumb-link" href="${escapeHTML(receipt.receipt_url)}" target="_blank" rel="noopener" aria-label="Open ${escapeHTML(receipt.receipt_name)} receipt image">
+                    <img src="${escapeHTML(receipt.receipt_url)}" alt="${escapeHTML(receipt.receipt_name)} receipt" loading="lazy">
+                </a>
+                <div class="receipt-item-body">
+                    <strong>${escapeHTML(receipt.receipt_name || 'Receipt')}</strong>
+                    <span>${escapeHTML(formatDateWithWeekday(receipt.expense_date))}<br>Uploaded ${escapeHTML(formatPHDateTime(receipt.created_at))}</span>
+                    <div class="receipt-item-actions">
+                        <a class="btn outline-btn" href="${escapeHTML(receipt.receipt_url)}" target="_blank" rel="noopener">View</a>
+                        <button type="button" class="btn danger-btn" data-delete-receipt-id="${escapeHTML(receipt.id)}">Delete</button>
+                    </div>
+                </div>
+            </article>
+        `).join('')
+        : '<div class="empty-state">No receipt images uploaded for this week.</div>';
 }
 
 async function addExpenseName(event) {
     event.preventDefault();
-    const name = elements.newExpenseNameInput.value.trim().replace(/\s+/g, ' ');
-    if (!name) return;
+    if (state.busy) return;
 
+    const name = elements.newExpenseNameInput.value.trim();
     const expenseKey = slugify(name);
     if (!expenseKey) {
         showToast('Please enter a valid expense name.', 'error');
@@ -334,15 +432,14 @@ async function addExpenseName(event) {
             .select('*')
             .eq('branch_key', getBranchKey())
             .eq('expense_key', expenseKey)
-            .limit(1);
-
+            .maybeSingle();
         if (findError) throw findError;
 
-        if (existing?.length) {
+        if (existing) {
             const { error } = await supabase
                 .from(EXPENSE_NAMES_TABLE)
                 .update({ expense_name: name, is_active: true })
-                .eq('id', existing[0].id);
+                .eq('id', existing.id);
             if (error) throw error;
         } else {
             const { error } = await supabase
@@ -353,7 +450,7 @@ async function addExpenseName(event) {
                     expense_name: name,
                     expense_key: expenseKey,
                     created_by: state.currentUser.id,
-                    created_by_name: state.currentUser.full_name
+                    created_by_name: state.currentUser.full_name || state.currentUser.username || 'Team Leader'
                 });
             if (error) throw error;
         }
@@ -362,19 +459,19 @@ async function addExpenseName(event) {
         await loadExpenseNames();
         renderExpenseInputs();
         renderTopSummary();
-        updateLiveTodayTotal();
-        showToast('Expense name saved. It will remain available on future dates.');
+        showToast(`"${name}" is now available in the daily expense form.`);
     } catch (error) {
         console.error('Add expense name failed:', error);
         showToast(getFriendlyDataError(error), 'error');
     } finally {
         setBusy(false);
+        setSaveStatus('Ready');
     }
 }
 
 async function removeExpenseName(expenseId) {
     const item = state.expenseNames.find(expense => expense.id === expenseId);
-    if (!item) return;
+    if (!item || state.busy) return;
 
     const confirmed = window.confirm(`Remove "${item.expense_name}" from future expense forms? Historical daily records will be kept.`);
     if (!confirmed) return;
@@ -384,29 +481,33 @@ async function removeExpenseName(expenseId) {
         const { error } = await supabase
             .from(EXPENSE_NAMES_TABLE)
             .update({ is_active: false })
-            .eq('id', expenseId)
-            .eq('branch_key', getBranchKey());
+            .eq('id', expenseId);
         if (error) throw error;
 
         await loadExpenseNames();
         renderExpenseInputs();
         renderTopSummary();
         updateLiveTodayTotal();
-        showToast('Expense name removed from future forms. Historical records were preserved.');
+        showToast('Expense name removed. Historical records remain available.');
     } catch (error) {
         console.error('Remove expense name failed:', error);
         showToast(getFriendlyDataError(error), 'error');
     } finally {
         setBusy(false);
+        setSaveStatus('Ready');
     }
 }
 
 async function submitTodayReport() {
+    if (state.busy) return;
+
     const latestDate = getPHDateKey();
     if (latestDate !== state.currentDate) {
         state.currentDate = latestDate;
-        showToast('A new Philippine date has started. The form was refreshed before saving.', 'error');
+        state.selectedWeekStart = getPHWeekStartKey(latestDate);
+        elements.weekPicker.value = state.selectedWeekStart;
         await loadAllExpenseData();
+        showToast('A new Philippine day started. Enter today’s amounts before submitting.', 'error');
         return;
     }
 
@@ -416,9 +517,7 @@ async function submitTodayReport() {
         return;
     }
 
-    setBusy(true, 'Submitting today’s report...');
-    setSaveStatus('Saving...');
-
+    setBusy(true, 'Submitting...');
     try {
         for (const input of inputs) {
             const expenseId = input.dataset.expenseId;
@@ -436,9 +535,8 @@ async function submitTodayReport() {
                     expense_name: template.expense_name,
                     amount,
                     team_leader_id: state.currentUser.id,
-                    team_leader_name: state.currentUser.full_name
+                    team_leader_name: state.currentUser.full_name || state.currentUser.username || 'Team Leader'
                 };
-
                 const { error } = await supabase
                     .from(DAILY_EXPENSES_TABLE)
                     .upsert(payload, { onConflict: 'expense_date,branch_key,expense_id' });
@@ -456,23 +554,194 @@ async function submitTodayReport() {
 
         await Promise.all([loadTodayRows(), loadWeekRows()]);
         renderAll();
-        setSaveStatus(`Submitted ${getPHTimeText()}`);
-        showToast('Today’s expense report was submitted. Submitting again today will update these same records.');
+        setSaveStatus('Submitted');
+        showToast('Today’s expense report was submitted. Submitting again today updates the same records.');
     } catch (error) {
         console.error('Daily expense submit failed:', error);
-        setSaveStatus('Save failed');
+        showToast(getFriendlyDataError(error), 'error');
+        setSaveStatus('Submit failed');
+    } finally {
+        setBusy(false);
+    }
+}
+
+function handleReceiptFileChange() {
+    const file = elements.receiptImageInput.files?.[0] || null;
+    if (!file) {
+        clearReceiptSelection();
+        return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+        showToast('Please choose an image file for the receipt.', 'error');
+        clearReceiptSelection();
+        return;
+    }
+    if (file.size > MAX_RECEIPT_BYTES) {
+        showToast('Receipt image is too large. Choose an image smaller than 12 MB.', 'error');
+        clearReceiptSelection();
+        return;
+    }
+
+    state.selectedReceiptFile = file;
+    if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+    state.previewUrl = URL.createObjectURL(file);
+    elements.receiptPreviewImage.src = state.previewUrl;
+    elements.receiptPreviewWrap.classList.remove('hidden');
+    setReceiptStatus('Image selected');
+}
+
+function clearReceiptSelection() {
+    if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+    state.previewUrl = '';
+    state.selectedReceiptFile = null;
+    elements.receiptImageInput.value = '';
+    elements.receiptPreviewImage.removeAttribute('src');
+    elements.receiptPreviewWrap.classList.add('hidden');
+    setReceiptStatus('Ready');
+}
+
+async function uploadReceipt(event) {
+    event.preventDefault();
+    if (state.busy) return;
+
+    const receiptName = elements.receiptNameInput.value.trim();
+    const file = state.selectedReceiptFile || elements.receiptImageInput.files?.[0];
+    if (!receiptName) {
+        showToast('Enter a name for the receipt.', 'error');
+        return;
+    }
+    if (!file) {
+        showToast('Choose or take a receipt image first.', 'error');
+        return;
+    }
+
+    setBusy(true, 'Uploading receipt...');
+    setReceiptStatus('Compressing image...');
+    let storagePath = '';
+    try {
+        const imageBlob = await compressReceiptImage(file);
+        storagePath = `${getBranchKey()}/${state.currentDate}/${Date.now()}-${slugify(receiptName) || 'receipt'}.jpg`;
+
+        setReceiptStatus('Uploading image...');
+        const { error: uploadError } = await supabase.storage
+            .from(RECEIPT_BUCKET)
+            .upload(storagePath, imageBlob, { contentType: 'image/jpeg', cacheControl: '3600', upsert: false });
+        if (uploadError) throw uploadError;
+
+        const { data: publicData } = supabase.storage.from(RECEIPT_BUCKET).getPublicUrl(storagePath);
+        const receiptUrl = publicData?.publicUrl;
+        if (!receiptUrl) throw new Error('Could not create the receipt image URL.');
+
+        const { error: insertError } = await supabase
+            .from(EXPENSE_RECEIPTS_TABLE)
+            .insert({
+                expense_date: state.currentDate,
+                branch_key: getBranchKey(),
+                branch_id: state.currentUser.branch_id || null,
+                branch_name: getBranchName(),
+                receipt_name: receiptName,
+                receipt_url: receiptUrl,
+                storage_path: storagePath,
+                team_leader_id: state.currentUser.id,
+                team_leader_name: state.currentUser.full_name || state.currentUser.username || 'Team Leader'
+            });
+        if (insertError) throw insertError;
+
+        elements.receiptNameInput.value = '';
+        clearReceiptSelection();
+        await loadWeekReceipts();
+        renderTopSummary();
+        renderReceipts();
+        setReceiptStatus('Uploaded');
+        showToast('Receipt image uploaded successfully.');
+    } catch (error) {
+        console.error('Receipt upload failed:', error);
+        if (storagePath) {
+            await supabase.storage.from(RECEIPT_BUCKET).remove([storagePath]).catch(() => {});
+        }
+        setReceiptStatus('Upload failed');
         showToast(getFriendlyDataError(error), 'error');
     } finally {
         setBusy(false);
     }
 }
 
-async function exportSelectedWeekPdf() {
-    if (!state.weekRows.length) {
-        showToast('There are no positive expense values to export for the selected week.', 'error');
+async function deleteReceipt(receiptId) {
+    if (state.busy) return;
+    const receipt = state.receipts.find(item => item.id === receiptId);
+    if (!receipt) return;
+
+    const confirmed = window.confirm(`Delete receipt "${receipt.receipt_name}"? This removes the image and receipt record.`);
+    if (!confirmed) return;
+
+    setBusy(true, 'Deleting receipt...');
+    try {
+        if (receipt.storage_path) {
+            const { error: storageError } = await supabase.storage.from(RECEIPT_BUCKET).remove([receipt.storage_path]);
+            if (storageError) console.warn('Receipt image removal warning:', storageError);
+        }
+        const { error } = await supabase.from(EXPENSE_RECEIPTS_TABLE).delete().eq('id', receiptId);
+        if (error) throw error;
+
+        await loadWeekReceipts();
+        renderTopSummary();
+        renderReceipts();
+        showToast('Receipt deleted.');
+    } catch (error) {
+        console.error('Receipt delete failed:', error);
+        showToast(getFriendlyDataError(error), 'error');
+    } finally {
+        setBusy(false);
+        setReceiptStatus('Ready');
+    }
+}
+
+async function compressReceiptImage(file) {
+    const bitmap = await loadImageBitmap(file);
+    const maxDimension = 1600;
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d', { alpha: false });
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, width, height);
+    context.drawImage(bitmap, 0, 0, width, height);
+    if (typeof bitmap.close === 'function') bitmap.close();
+
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+            if (blob) resolve(blob);
+            else reject(new Error('Could not prepare the receipt image.'));
+        }, 'image/jpeg', 0.82);
+    });
+}
+
+async function loadImageBitmap(file) {
+    if ('createImageBitmap' in window) return window.createImageBitmap(file);
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        const url = URL.createObjectURL(file);
+        image.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(image);
+        };
+        image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Could not read the receipt image.'));
+        };
+        image.src = url;
+    });
+}
+
+function exportSelectedWeekPdf() {
+    if (!state.weekRows.length && !state.receipts.length) {
+        showToast('There are no expenses or receipts to export for the selected week.', 'error');
         return;
     }
-
     if (!window.jspdf?.jsPDF) {
         showToast('The PDF library is not ready. Check your internet connection and reload.', 'error');
         return;
@@ -481,7 +750,7 @@ async function exportSelectedWeekPdf() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     if (typeof doc.autoTable !== 'function') {
-        showToast('The PDF table library is not ready. Reload the page and try again.', 'error');
+        showToast('The PDF table library is not ready. Reload and try again.', 'error');
         return;
     }
 
@@ -507,6 +776,7 @@ async function exportSelectedWeekPdf() {
             ['Week', `${formatDateLong(state.selectedWeekStart)} to ${formatDateLong(weekEnd)}`],
             ['Branch', getBranchName()],
             ['Expense Entries', String(state.weekRows.length)],
+            ['Receipt Attachments', String(state.receipts.length)],
             ['Weekly Total', formatPesoForPdf(total)]
         ],
         theme: 'grid',
@@ -527,27 +797,49 @@ async function exportSelectedWeekPdf() {
         headStyles: { fillColor: [118, 81, 54] }
     });
 
-    y = doc.lastAutoTable.finalY + 7;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Detailed Expenses', 14, y);
-    doc.autoTable({
-        startY: y + 3,
-        head: [['Date', 'Expense', 'Amount', 'Submitted By', 'Updated']],
-        body: [...state.weekRows]
-            .sort((a, b) => String(a.expense_date).localeCompare(String(b.expense_date)) || String(a.expense_name).localeCompare(String(b.expense_name)))
-            .map(row => [
-                formatDateWithWeekday(row.expense_date),
-                row.expense_name || 'Unnamed Expense',
-                formatPesoForPdf(getAmount(row)),
-                row.team_leader_name || 'Team Leader',
-                formatPHDateTime(row.updated_at || row.created_at)
+    if (state.weekRows.length) {
+        y = doc.lastAutoTable.finalY + 7;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('Detailed Expenses', 14, y);
+        doc.autoTable({
+            startY: y + 3,
+            head: [['Date', 'Expense', 'Amount', 'Submitted By', 'Updated']],
+            body: [...state.weekRows]
+                .sort((a, b) => String(a.expense_date).localeCompare(String(b.expense_date)) || String(a.expense_name).localeCompare(String(b.expense_name)))
+                .map(row => [
+                    formatDateWithWeekday(row.expense_date),
+                    row.expense_name || 'Unnamed Expense',
+                    formatPesoForPdf(getAmount(row)),
+                    row.team_leader_name || 'Team Leader',
+                    formatPHDateTime(row.updated_at || row.created_at)
+                ]),
+            theme: 'grid',
+            styles: { fontSize: 7.4, cellPadding: 2 },
+            headStyles: { fillColor: [76, 52, 37] },
+            columnStyles: { 2: { halign: 'right' } }
+        });
+    }
+
+    if (state.receipts.length) {
+        y = doc.lastAutoTable.finalY + 7;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('Receipt Attachments', 14, y);
+        doc.autoTable({
+            startY: y + 3,
+            head: [['Date', 'Receipt Name', 'Uploaded By', 'Uploaded']],
+            body: state.receipts.map(receipt => [
+                formatDateWithWeekday(receipt.expense_date),
+                receipt.receipt_name || 'Receipt',
+                receipt.team_leader_name || 'Team Leader',
+                formatPHDateTime(receipt.created_at)
             ]),
-        theme: 'grid',
-        styles: { fontSize: 7.4, cellPadding: 2 },
-        headStyles: { fillColor: [76, 52, 37] },
-        columnStyles: { 2: { halign: 'right' } }
-    });
+            theme: 'grid',
+            styles: { fontSize: 7.4, cellPadding: 2 },
+            headStyles: { fillColor: [118, 81, 54] }
+        });
+    }
 
     addPdfPageNumbers(doc);
     doc.save(`Adrianos_Expenses_${getSafeFileName(getBranchName())}_${state.selectedWeekStart}_to_${weekEnd}.pdf`);
@@ -607,13 +899,13 @@ function startDateChangeWatcher() {
         state.selectedWeekStart = getPHWeekStartKey(latestDate);
         elements.weekPicker.value = state.selectedWeekStart;
         await loadAllExpenseData();
-        showToast('A new Philippine day has started. Today’s values are now blank; saved expense names remain available.');
+        showToast('A new Philippine day started. Today’s amounts are blank; saved names and old receipts remain available.');
     }, 60_000);
 }
 
 function setBusy(isBusy, label = '') {
     state.busy = isBusy;
-    [elements.refreshBtn, elements.exportWeeklyPdfBtn, elements.submitDailyReportBtn]
+    [elements.refreshBtn, elements.exportWeeklyPdfBtn, elements.submitDailyReportBtn, elements.uploadReceiptBtn]
         .filter(Boolean)
         .forEach(button => { button.disabled = isBusy; });
     if (label) setSaveStatus(label);
@@ -623,14 +915,21 @@ function setSaveStatus(text) {
     elements.saveStatusText.textContent = text;
 }
 
+function setReceiptStatus(text) {
+    elements.receiptStatusText.textContent = text;
+}
+
 function getFriendlyDataError(error) {
     const code = String(error?.code || '');
     const message = String(error?.message || '').toLowerCase();
-    if (code === '42P01' || code === 'PGRST205' || message.includes('daily_expenses')) {
-        return 'The daily expense tables are not installed yet. Run supabase-daily-expenses.sql in Supabase.';
+    if (code === '42P01' || code === 'PGRST205' || message.includes('daily_expenses') || message.includes('expense_receipts')) {
+        return 'The new expense tables are not installed yet. Run supabase-receipts-cash-advances.sql in Supabase.';
+    }
+    if (message.includes('bucket') || message.includes('storage')) {
+        return 'Receipt storage is not ready. Run the included Supabase SQL migration, then reload the page.';
     }
     if (message.includes('row-level security') || code === '42501') {
-        return 'Supabase permissions blocked the expense request. Run the included SQL migration and reload the schema.';
+        return 'Supabase permissions blocked the request. Run the included SQL migration and reload the schema.';
     }
     return error?.message || 'The expense request failed. Please try again.';
 }
@@ -706,10 +1005,6 @@ function formatPHDateTime(value) {
     } catch {
         return String(value);
     }
-}
-
-function getPHTimeText() {
-    return new Intl.DateTimeFormat('en-PH', { timeZone: PH_TIMEZONE, hour: '2-digit', minute: '2-digit' }).format(new Date());
 }
 
 function formatPeso(value) {

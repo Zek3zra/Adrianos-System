@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin Dashboard - Adrianos System</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-dashboard.css?v=mobile-expenses-20260723-2">
+    <link rel="stylesheet" href="admin-dashboard.css?v=receipts-cash-advance-20260728">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
@@ -55,6 +55,11 @@
                     <strong>Expense Report</strong>
                     <small>Daily logs and weekly exports</small>
                 </a>
+                <a href="admin-cash-advances.html" class="hero-action-card cash-advance-card">
+                    <span>05</span>
+                    <strong>Cash Advances</strong>
+                    <small>Weekly employee advances by branch</small>
+                </a>
             </div>
         </section>
 
@@ -76,6 +81,26 @@
                 <div class="admin-expense-summary-card"><span>Today's Total</span><strong id="adminExpenseTodayTotal">₱0</strong></div>
                 <div class="admin-expense-summary-card"><span>Entries</span><strong id="adminExpenseEntryCount">0</strong></div>
                 <div class="admin-expense-summary-card"><span>Branches</span><strong id="adminExpenseBranchCount">0</strong></div>
+            </div>
+        </section>
+
+        <section id="adminCashAdvanceSummaryPanel" class="dashboard-card expense-summary-dashboard-card cash-advance-summary-dashboard-card">
+            <div class="admin-expense-summary-head">
+                <div class="header-text">
+                    <span class="section-kicker">Current Week</span>
+                    <h3>Cash advance summary</h3>
+                    <p id="adminCashAdvanceWeekLabel">Monday to Sunday • all branches</p>
+                </div>
+                <div class="admin-expense-summary-actions">
+                    <button type="button" class="btn outline-btn small-btn" id="adminOpenCashAdvancesBtn">Open Reports</button>
+                    <button type="button" class="btn secondary-btn small-btn" id="adminExportCashAdvancesBtn">Export Week PDF</button>
+                </div>
+            </div>
+            <div class="admin-expense-summary-grid">
+                <div class="admin-expense-summary-card"><span>Weekly Total</span><strong id="adminCashAdvanceWeekTotal">₱0</strong></div>
+                <div class="admin-expense-summary-card"><span>Employees</span><strong id="adminCashAdvanceEmployeeCount">0</strong></div>
+                <div class="admin-expense-summary-card"><span>Entries</span><strong id="adminCashAdvanceEntryCount">0</strong></div>
+                <div class="admin-expense-summary-card"><span>Branches</span><strong id="adminCashAdvanceBranchCount">0</strong></div>
             </div>
         </section>
 
@@ -233,6 +258,6 @@
         </div>
     </div>
 
-    <script type="module" src="admin-dashboard.js?v=mobile-expenses-20260723"></script>
+    <script type="module" src="admin-dashboard.js?v=receipts-cash-advance-20260728"></script>
 </body>
 </html>

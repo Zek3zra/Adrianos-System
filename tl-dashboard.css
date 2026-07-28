@@ -707,3 +707,24 @@ body {
         padding-inline: 8px;
     }
 }
+
+
+/* Weekly cash advance shortcut */
+.nav-cash-advance-btn {
+    min-height: 40px;
+    border: 1px solid var(--coffee-medium);
+    background: var(--coffee-medium);
+    color: var(--white);
+    text-decoration: none;
+}
+.nav-cash-advance-btn:active { transform: scale(0.98); }
+@media (max-width: 430px) {
+    .tl-nav { align-items: center; }
+    .nav-actions { gap: 4px; }
+    .nav-actions .btn { padding: 7px 7px; font-size: 10px; }
+}
+@media (max-width: 370px) {
+    .nav-logo { width: 29px; }
+    .nav-brand h1 { font-size: 13px; }
+    .nav-actions .btn { padding-inline: 6px; font-size: 9px; }
+}

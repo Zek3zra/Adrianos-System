@@ -1403,3 +1403,33 @@ body.modal-open {
         align-items: start;
     }
 }
+
+
+/* Admin receipt gallery */
+.admin-receipt-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+}
+.admin-receipt-card {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--white);
+    box-shadow: 0 5px 14px rgba(44, 30, 22, 0.04);
+}
+.admin-receipt-card a {
+    display: block;
+    aspect-ratio: 4 / 3;
+    background: #eee9e3;
+}
+.admin-receipt-card img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.admin-receipt-body { display: grid; gap: 5px; padding: 10px; }
+.admin-receipt-body strong { color: var(--coffee-dark); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+.admin-receipt-body span { color: var(--text-muted); font-size: 9px; line-height: 1.45; }
+.admin-receipt-body .btn { width: 100%; min-height: 38px; font-size: 10px; }
+@media (max-width: 370px) { .admin-receipt-gallery { grid-template-columns: 1fr; } }
+@media (min-width: 700px) { .admin-receipt-gallery { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+@media (max-width: 699px) { .summary-grid > .summary-card:last-child { grid-column: 1 / -1; } }

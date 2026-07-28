@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Daily Expenses - Adrianos</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="tl-expenses.css?v=mobile-20260723">
+    <link rel="stylesheet" href="tl-expenses.css?v=receipt-search-20260728">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -51,7 +51,7 @@
             <article class="summary-card"><span>Today's Total</span><strong id="todayTotalText">₱0</strong><small id="todayDateText">Today</small></article>
             <article class="summary-card"><span>Week Total</span><strong id="weekTotalText">₱0</strong><small id="weekEntriesText">0 entries</small></article>
             <article class="summary-card"><span>Today's Entries</span><strong id="todayEntriesText">0</strong><small>Positive amounts</small></article>
-            <article class="summary-card"><span>Saved Names</span><strong id="expenseNamesCountText">0</strong><small>Available tomorrow</small></article>
+            <article class="summary-card"><span>Receipts</span><strong id="receiptCountText">0</strong><small>Selected week</small></article>
         </section>
 
         <section class="dashboard-card entry-card">
@@ -62,6 +62,14 @@
                     <p>Blank or zero values are excluded from reports.</p>
                 </div>
                 <span class="status-pill" id="saveStatusText">Ready</span>
+            </div>
+
+            <div class="expense-search-panel">
+                <div class="input-group">
+                    <label for="expenseSearchInput">Search saved expenses</label>
+                    <input id="expenseSearchInput" type="search" autocomplete="off" placeholder="Search LPG, supplies, transportation...">
+                    <small id="expenseSearchCountText">0 saved expense names</small>
+                </div>
             </div>
 
             <form id="addExpenseForm" class="add-expense-form">
@@ -78,6 +86,39 @@
                 <div><strong id="liveTodayTotalText">Today's running total: ₱0</strong><span>Submit to save or update today's report.</span></div>
                 <button type="button" class="btn secondary-btn submit-btn" id="submitDailyReportBtn">Submit Today's Report</button>
             </div>
+        </section>
+
+        <section class="dashboard-card receipt-card">
+            <div class="card-header flex-header">
+                <div>
+                    <span class="section-kicker">Receipt Attachments</span>
+                    <h3>Upload a receipt</h3>
+                    <p>Add one receipt name and one image. It is separate from the expense categories.</p>
+                </div>
+                <span class="status-pill" id="receiptStatusText">Ready</span>
+            </div>
+
+            <form id="receiptUploadForm" class="receipt-upload-form">
+                <div class="input-group">
+                    <label for="receiptNameInput">Receipt name</label>
+                    <input id="receiptNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: Grocery receipt" required>
+                </div>
+                <div class="input-group">
+                    <label for="receiptImageInput">Receipt image</label>
+                    <input id="receiptImageInput" type="file" accept="image/*" capture="environment" required>
+                    <small>Take a photo or choose an image. Maximum original file size: 12 MB.</small>
+                </div>
+                <div id="receiptPreviewWrap" class="receipt-preview-wrap hidden">
+                    <img id="receiptPreviewImage" alt="Selected receipt preview">
+                    <button type="button" class="btn outline-btn small-btn" id="clearReceiptImageBtn">Remove Image</button>
+                </div>
+                <button type="submit" class="btn secondary-btn" id="uploadReceiptBtn">Upload Receipt</button>
+            </form>
+
+            <div class="receipt-list-head">
+                <div><strong>Receipts for selected week</strong><span id="receiptListCountText">0 receipts</span></div>
+            </div>
+            <div id="receiptList" class="receipt-list"><div class="empty-state">No receipt images uploaded for this week.</div></div>
         </section>
 
         <section class="summary-panels">
@@ -104,6 +145,6 @@
     </main>
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="tl-expenses.js?v=mobile-20260723"></script>
+    <script type="module" src="tl-expenses.js?v=receipt-search-20260728"></script>
 </body>
 </html>
