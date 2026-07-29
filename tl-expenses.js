@@ -223,7 +223,7 @@ function handleExpenseAmountInput(event) {
     if (amountInput) {
         amountInput.value = sanitizeMoneyInput(amountInput.value);
         const item = findDraftItem(amountInput.dataset.draftId);
-        if (item) item.amount = Math.max(0, Number(amountInput.value) || 0);
+        if (item) item.amount = normalizeCurrencyAmount(amountInput.value);
         updateLiveCashFlow();
         setSaveStatus('Unsaved changes');
         return;
@@ -242,7 +242,7 @@ function handleExpenseAmountBlur(event) {
     if (amountInput && amountInput.value) {
         amountInput.value = Number(amountInput.value).toFixed(2).replace(/\.00$/, '');
         const item = findDraftItem(amountInput.dataset.draftId);
-        if (item) item.amount = Math.max(0, Number(amountInput.value) || 0);
+        if (item) item.amount = normalizeCurrencyAmount(amountInput.value);
         updateLiveCashFlow();
         return;
     }
@@ -560,7 +560,7 @@ function renderExpenseRow(item) {
                     inputmode="decimal"
                     autocomplete="off"
                     data-draft-id="${escapeHTML(item.localId)}"
-                    value="${item.amount ? escapeHTML(String(item.amount)) : ''}"
+                    value="${item.amount ? escapeHTML(formatPlainDecimal(item.amount)) : ''}"
                     placeholder="0.00"
                     aria-label="Amount for ${escapeHTML(item.name || categoryLabel)} on ${escapeHTML(formatDateLong(state.entryDate))}"
                 >
@@ -1068,7 +1068,7 @@ async function submitSelectedDateReport() {
         ...item,
         name: String(item.name || '').trim(),
         category: normalizeExpenseCategory(item.category),
-        amount: getFinancialAmount(item.amount)
+        amount: normalizeCurrencyAmount(item.amount)
     }));
 
     const invalidItem = normalizedItems.find(item => item.amount > 0 && !slugify(item.name));
@@ -1819,6 +1819,11 @@ function formatInputAmount(value) {
 function parseMoneyInput(value) {
     const clean = sanitizeMoneyInput(value);
     return Math.max(0, Number(clean) || 0);
+}
+
+function normalizeCurrencyAmount(value) {
+    const amount = parseMoneyInput(value);
+    return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
 function formatEditableMoney(value) {
