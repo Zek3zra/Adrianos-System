@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Expense Reports - Adrianos Admin</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-expenses.css?v=paninda-financials-20260729-1">
+    <link rel="stylesheet" href="admin-expenses.css?v=others-foodlog-20260729-1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -83,13 +83,29 @@
             </article>
             <article class="summary-card"><span>General Expenses</span><strong id="generalTotalText">₱0</strong><small>Used in money-left formula</small></article>
             <article class="summary-card"><span>Paninda Purchases</span><strong id="panindaTotalText">₱0</strong><small>Logged but excluded from deduction</small></article>
-            <article class="summary-card"><span>Sales + Bilin</span><strong id="fundsTotalText">₱0</strong><small>Selected week</small></article>
-            <article class="summary-card money-left-admin-card"><span>Total Money Left</span><strong id="moneyLeftTotalText">₱0</strong><small>(Sales + Bilin) − General Expenses</small></article>
+            <article class="summary-card"><span>Sales + Bilin</span><strong id="fundsTotalText">₱0</strong><small>Before Other Funds</small></article>
+            <article class="summary-card"><span>Other Funds</span><strong id="otherFundsTotalText">₱0</strong><small>Additional named cash sources</small></article>
+            <article class="summary-card money-left-admin-card"><span>Total Money Left</span><strong id="moneyLeftTotalText">₱0</strong><small>(Sales + Bilin + Others) − General Expenses</small></article>
+            <article class="summary-card"><span>Taken Food Logs</span><strong id="takenFoodCountText">0</strong><small>Non-cash, no inventory effect</small></article>
             <article class="summary-card"><span>Receipts</span><strong id="receiptCountText">0</strong><small>Uploaded this week</small></article>
             <article class="summary-card"><span>Branches</span><strong id="branchCountText">0</strong><small>Reporting this week</small></article>
             <article class="summary-card summary-card-wide"><span>Top Expense</span><strong id="topExpenseText">None</strong><small id="topExpenseAmountText">₱0</small></article>
             <span id="todayTotalText" class="hidden">₱0</span>
             <span id="todayDateText" class="hidden">Today</span>
+        </section>
+
+        <section class="dashboard-card admin-review-guide">
+            <div>
+                <span class="section-kicker">Review Guide</span>
+                <h3>How the daily balance is calculated</h3>
+                <p><strong>Total Money Left = (Sales + Bilin sa Paninda + Other Funds) − General Expenses.</strong> Paninda purchases remain logged in expenses but are excluded from this deduction. Taken-food logs are informational only and do not affect cash or inventory.</p>
+            </div>
+            <div class="review-legend">
+                <span class="legend-income">Added cash</span>
+                <span class="legend-expense">Cash deduction</span>
+                <span class="legend-excluded">Logged, excluded</span>
+                <span class="legend-noncash">Non-cash record</span>
+            </div>
         </section>
 
         <section class="summary-panels three-panels">
@@ -128,6 +144,40 @@
         </section>
 
 
+        <section class="dashboard-card admin-supporting-records">
+            <div class="card-header records-header">
+                <div>
+                    <span class="section-kicker">Additional Cash</span>
+                    <h3>Other funds</h3>
+                    <p id="adminOtherFundsCountText">0 records shown</p>
+                </div>
+            </div>
+            <div id="adminOtherFundsCards" class="mobile-record-list"></div>
+            <div class="table-wrap desktop-table-wrap">
+                <table>
+                    <thead><tr><th>Date</th><th>Branch</th><th>Name</th><th>Value</th><th>Logged By</th><th>Updated</th></tr></thead>
+                    <tbody id="adminOtherFundsBody"><tr><td colspan="6" class="table-empty">No Other funds loaded.</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="dashboard-card admin-taken-food-section">
+            <div class="card-header records-header">
+                <div>
+                    <span class="section-kicker">Non-Cash Food Review</span>
+                    <h3>Food taken without cash payment</h3>
+                    <p id="adminTakenFoodCountText">0 records shown</p>
+                </div>
+            </div>
+            <div id="adminTakenFoodCards" class="admin-taken-food-list"></div>
+            <div class="table-wrap desktop-table-wrap">
+                <table>
+                    <thead><tr><th>Date</th><th>Branch</th><th>Person / Group</th><th>Menu Items</th><th>Logged By</th><th>Updated</th></tr></thead>
+                    <tbody id="adminTakenFoodBody"><tr><td colspan="6" class="table-empty">No taken-food records loaded.</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
         <section class="dashboard-card admin-receipts-section">
             <div class="card-header records-header">
                 <div>
@@ -152,7 +202,7 @@
                     <label for="searchInput">Search records</label>
                     <div class="search-input-wrap">
                         <span aria-hidden="true">⌕</span>
-                        <input type="search" id="searchInput" placeholder="Expense, branch, team leader..." autocomplete="off">
+                        <input type="search" id="searchInput" placeholder="Expense, Other fund, person/group, menu, branch..." autocomplete="off">
                     </div>
                 </div>
             </div>
@@ -182,6 +232,6 @@
 
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="admin-expenses.js?v=paninda-financials-20260729-1"></script>
+    <script type="module" src="admin-expenses.js?v=others-foodlog-20260729-1"></script>
 </body>
 </html>

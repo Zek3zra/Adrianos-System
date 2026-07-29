@@ -3,6 +3,8 @@ import { supabase } from './supabaseClient.js';
 const PH_TIMEZONE = 'Asia/Manila';
 const DAILY_EXPENSES_TABLE = 'daily_expenses';
 const DAILY_FINANCIALS_TABLE = 'daily_branch_financials';
+const DAILY_OTHER_FUNDS_TABLE = 'daily_other_funds';
+const TAKEN_FOOD_LOGS_TABLE = 'taken_food_logs';
 const EXPENSE_RECEIPTS_TABLE = 'expense_receipts';
 const ADMIN_SESSION_MAX_AGE = 8 * 60 * 60 * 1000;
 
@@ -10,6 +12,8 @@ const state = {
     branches: [],
     rows: [],
     financials: [],
+    otherFunds: [],
+    takenFoods: [],
     receipts: [],
     selectedWeekStart: '',
     selectedBranchKey: 'all',
@@ -46,11 +50,13 @@ function bindElements() {
     const ids = [
         'pageLoader', 'backBtn', 'logoutBtn', 'weekPicker', 'weekRangeText', 'branchSelect',
         'refreshBtn', 'exportPdfBtn', 'weeklyTotalText', 'weeklyEntriesText', 'generalTotalText',
-        'panindaTotalText', 'fundsTotalText', 'moneyLeftTotalText', 'todayTotalText', 'todayDateText',
-        'branchCountText', 'topExpenseText', 'topExpenseAmountText', 'receiptCountText',
-        'dailyBreakdownList', 'expenseBreakdownList', 'branchBreakdownList', 'searchInput',
-        'recordsBody', 'recordsCards', 'recordsCountText', 'reportScopeText', 'heroWeekText',
-        'adminReceiptCountText', 'adminReceiptGallery', 'toast'
+        'panindaTotalText', 'fundsTotalText', 'otherFundsTotalText', 'moneyLeftTotalText',
+        'todayTotalText', 'todayDateText', 'takenFoodCountText', 'branchCountText', 'topExpenseText',
+        'topExpenseAmountText', 'receiptCountText', 'dailyBreakdownList', 'expenseBreakdownList',
+        'branchBreakdownList', 'searchInput', 'recordsBody', 'recordsCards', 'recordsCountText',
+        'adminOtherFundsCountText', 'adminOtherFundsCards', 'adminOtherFundsBody',
+        'adminTakenFoodCountText', 'adminTakenFoodCards', 'adminTakenFoodBody',
+        'reportScopeText', 'heroWeekText', 'adminReceiptCountText', 'adminReceiptGallery', 'toast'
     ];
 
     ids.forEach(id => {
@@ -88,6 +94,8 @@ function bindEvents() {
     elements.searchInput.addEventListener('input', event => {
         state.search = event.target.value.trim().toLowerCase();
         renderRecordsTable();
+        renderOtherFundsReview();
+        renderTakenFoodReview();
     });
 }
 
@@ -141,6 +149,23 @@ async function loadExpenseReport() {
             .order('financial_date', { ascending: true })
             .order('branch_name', { ascending: true });
 
+        let otherQuery = supabase
+            .from(DAILY_OTHER_FUNDS_TABLE)
+            .select('*')
+            .gte('fund_date', state.selectedWeekStart)
+            .lte('fund_date', endDate)
+            .order('fund_date', { ascending: true })
+            .order('branch_name', { ascending: true })
+            .order('fund_name', { ascending: true });
+
+        let foodQuery = supabase
+            .from(TAKEN_FOOD_LOGS_TABLE)
+            .select('*')
+            .gte('log_date', state.selectedWeekStart)
+            .lte('log_date', endDate)
+            .order('log_date', { ascending: false })
+            .order('branch_name', { ascending: true });
+
         let receiptQuery = supabase
             .from(EXPENSE_RECEIPTS_TABLE)
             .select('*')
@@ -152,27 +177,31 @@ async function loadExpenseReport() {
         if (state.selectedBranchKey !== 'all') {
             expenseQuery = expenseQuery.eq('branch_key', state.selectedBranchKey);
             financialQuery = financialQuery.eq('branch_key', state.selectedBranchKey);
+            otherQuery = otherQuery.eq('branch_key', state.selectedBranchKey);
+            foodQuery = foodQuery.eq('branch_key', state.selectedBranchKey);
             receiptQuery = receiptQuery.eq('branch_key', state.selectedBranchKey);
         }
 
-        const [expenseResult, financialResult, receiptResult] = await Promise.all([
+        const [expenseResult, financialResult, otherResult, foodResult, receiptResult] = await Promise.all([
             expenseQuery,
             financialQuery,
+            otherQuery,
+            foodQuery,
             receiptQuery
         ]);
 
         if (expenseResult.error) throw expenseResult.error;
         if (financialResult.error) throw financialResult.error;
+        if (otherResult.error) throw otherResult.error;
+        if (foodResult.error) throw foodResult.error;
         if (receiptResult.error) throw receiptResult.error;
 
         state.rows = (expenseResult.data || [])
             .filter(row => getAmount(row) > 0)
-            .map(row => ({
-                ...row,
-                expense_category: normalizeExpenseCategory(row.expense_category)
-            }));
-
+            .map(row => ({ ...row, expense_category: normalizeExpenseCategory(row.expense_category) }));
         state.financials = financialResult.data || [];
+        state.otherFunds = (otherResult.data || []).filter(row => getFinancialAmount(row.amount) > 0);
+        state.takenFoods = foodResult.data || [];
         state.receipts = receiptResult.data || [];
 
         renderAll();
@@ -180,6 +209,8 @@ async function loadExpenseReport() {
         console.error('Admin expense report load failed:', error);
         state.rows = [];
         state.financials = [];
+        state.otherFunds = [];
+        state.takenFoods = [];
         state.receipts = [];
         renderAll();
         showToast(getFriendlyDataError(error), 'error');
@@ -192,6 +223,8 @@ function renderAll() {
     renderSummaryCards();
     renderBreakdowns();
     renderRecordsTable();
+    renderOtherFundsReview();
+    renderTakenFoodReview();
     renderReceipts();
     updateWeekRangeText();
 }
@@ -202,12 +235,15 @@ function renderSummaryCards() {
     const panindaTotal = sumRowsByCategory(state.rows, 'paninda');
     const salesTotal = state.financials.reduce((sum, row) => sum + getFinancialAmount(row.sales), 0);
     const bilinTotal = state.financials.reduce((sum, row) => sum + getFinancialAmount(row.bilin_sa_paninda), 0);
+    const othersTotal = state.otherFunds.reduce((sum, row) => sum + getFinancialAmount(row.amount), 0);
     const fundsTotal = salesTotal + bilinTotal;
-    const moneyLeft = fundsTotal - generalTotal;
+    const moneyLeft = fundsTotal + othersTotal - generalTotal;
     const branchCount = new Set([
         ...state.rows.map(row => row.branch_key || row.branch_name),
-        ...state.financials.map(row => row.branch_key || row.branch_name)
-    ]).size;
+        ...state.financials.map(row => row.branch_key || row.branch_name),
+        ...state.otherFunds.map(row => row.branch_key || row.branch_name),
+        ...state.takenFoods.map(row => row.branch_key || row.branch_name)
+    ].filter(Boolean)).size;
 
     const expenseTotals = buildGroupedTotals(
         state.rows,
@@ -221,8 +257,10 @@ function renderSummaryCards() {
     elements.generalTotalText.textContent = formatPeso(generalTotal);
     elements.panindaTotalText.textContent = formatPeso(panindaTotal);
     elements.fundsTotalText.textContent = formatPeso(fundsTotal);
+    elements.otherFundsTotalText.textContent = formatPeso(othersTotal);
     elements.moneyLeftTotalText.textContent = formatPeso(moneyLeft);
     elements.moneyLeftTotalText.classList.toggle('negative-money', moneyLeft < 0);
+    elements.takenFoodCountText.textContent = String(state.takenFoods.length);
     elements.branchCountText.textContent = String(branchCount);
     elements.topExpenseText.textContent = topExpense?.label || 'None';
     elements.topExpenseAmountText.textContent = formatPeso(topExpense?.total || 0);
@@ -236,11 +274,14 @@ function renderBreakdowns() {
         const date = addDaysToDateKey(state.selectedWeekStart, i);
         const rows = state.rows.filter(row => row.expense_date === date);
         const financials = state.financials.filter(row => row.financial_date === date);
+        const others = state.otherFunds.filter(row => row.fund_date === date);
+        const foodLogs = state.takenFoods.filter(row => row.log_date === date);
 
         const general = sumRowsByCategory(rows, 'general');
         const paninda = sumRowsByCategory(rows, 'paninda');
         const sales = financials.reduce((sum, row) => sum + getFinancialAmount(row.sales), 0);
         const bilin = financials.reduce((sum, row) => sum + getFinancialAmount(row.bilin_sa_paninda), 0);
+        const otherTotal = others.reduce((sum, row) => sum + getFinancialAmount(row.amount), 0);
 
         dailyItems.push({
             date,
@@ -250,8 +291,10 @@ function renderBreakdowns() {
             paninda,
             sales,
             bilin,
-            moneyLeft: sales + bilin - general,
-            count: rows.length
+            others: otherTotal,
+            moneyLeft: sales + bilin + otherTotal - general,
+            count: rows.length,
+            foodCount: foodLogs.length
         });
     }
 
@@ -327,7 +370,7 @@ function renderDailyRankItems(items) {
                 >
                     <div>
                         <strong>${escapeHTML(item.label)}</strong><br>
-                        <span>${item.count} entries • Money left ${escapeHTML(formatPeso(item.moneyLeft))}</span>
+                        <span>${item.count} expense entries • ${item.foodCount} food logs • Money left ${escapeHTML(formatPeso(item.moneyLeft))}</span>
                     </div>
                     <div class="daily-rank-value">
                         <strong>${escapeHTML(formatPeso(item.total))}</strong>
@@ -371,13 +414,15 @@ function renderInlineDailyBreakdown(dateKey) {
         );
 
     const financials = state.financials.filter(row => row.financial_date === dateKey);
-    const branchGroups = buildDailyBranchGroups(rows, financials);
+    const otherFunds = state.otherFunds.filter(row => row.fund_date === dateKey);
+    const takenFoods = state.takenFoods.filter(row => row.log_date === dateKey);
+    const branchGroups = buildDailyBranchGroups(rows, financials, otherFunds, takenFoods);
 
     if (!branchGroups.length) {
         return `
             <div class="daily-inline-empty">
                 <strong>No report logged.</strong>
-                <span>This date has no expense or daily financial values for the selected branch filter.</span>
+                <span>This date has no expense, cash-flow, Other fund, or taken-food records for the selected branch filter.</span>
             </div>
         `;
     }
@@ -386,11 +431,13 @@ function renderInlineDailyBreakdown(dateKey) {
     const totalPaninda = branchGroups.reduce((sum, group) => sum + group.paninda, 0);
     const totalSales = branchGroups.reduce((sum, group) => sum + group.sales, 0);
     const totalBilin = branchGroups.reduce((sum, group) => sum + group.bilin, 0);
-    const totalMoneyLeft = totalSales + totalBilin - totalGeneral;
+    const totalOthers = branchGroups.reduce((sum, group) => sum + group.others, 0);
+    const totalMoneyLeft = totalSales + totalBilin + totalOthers - totalGeneral;
 
     return `
         <div class="daily-inline-summary daily-cash-flow-summary">
             <div><span>Sales + Bilin</span><strong>${escapeHTML(formatPeso(totalSales + totalBilin))}</strong></div>
+            <div><span>Others</span><strong>${escapeHTML(formatPeso(totalOthers))}</strong></div>
             <div><span>General</span><strong>${escapeHTML(formatPeso(totalGeneral))}</strong></div>
             <div><span>Paninda</span><strong>${escapeHTML(formatPeso(totalPaninda))}</strong></div>
             <div class="daily-money-left"><span>Money Left</span><strong>${escapeHTML(formatPeso(totalMoneyLeft))}</strong></div>
@@ -407,9 +454,10 @@ function renderInlineDailyBreakdown(dateKey) {
                     <div class="branch-cash-flow-strip">
                         <span>Sales <strong>${escapeHTML(formatPeso(group.sales))}</strong></span>
                         <span>Bilin <strong>${escapeHTML(formatPeso(group.bilin))}</strong></span>
+                        <span>Others <strong>${escapeHTML(formatPeso(group.others))}</strong></span>
                         <span>General <strong>${escapeHTML(formatPeso(group.general))}</strong></span>
                         <span>Paninda <strong>${escapeHTML(formatPeso(group.paninda))}</strong></span>
-                        <span class="branch-money-left">Money left <strong>${escapeHTML(formatPeso(group.sales + group.bilin - group.general))}</strong></span>
+                        <span class="branch-money-left">Money left <strong>${escapeHTML(formatPeso(group.sales + group.bilin + group.others - group.general))}</strong></span>
                     </div>
 
                     <div class="daily-inline-expense-list">
@@ -425,46 +473,67 @@ function renderInlineDailyBreakdown(dateKey) {
                             </article>
                         `).join('') : '<div class="daily-inline-empty compact-empty"><span>No expense items logged for this branch.</span></div>'}
                     </div>
+
+                    <div class="daily-support-section-title">Other Funds</div>
+                    <div class="daily-other-funds-list">
+                        ${group.otherFunds.length ? group.otherFunds.map(row => `
+                            <div class="daily-support-row">
+                                <div><strong>${escapeHTML(row.fund_name || 'Other fund')}</strong><br><small>${escapeHTML(row.team_leader_name || 'Team Leader')}</small></div>
+                                <strong>${escapeHTML(formatPeso(getFinancialAmount(row.amount)))}</strong>
+                            </div>
+                        `).join('') : '<div class="daily-inline-empty compact-empty"><span>No Other funds for this branch.</span></div>'}
+                    </div>
+
+                    <div class="daily-support-section-title">Taken Food Logs</div>
+                    <div class="daily-taken-food-list">
+                        ${group.takenFoods.length ? group.takenFoods.map(row => `
+                            <div class="daily-support-row">
+                                <div><strong>${escapeHTML(row.person_group_name || 'Unnamed person/group')}</strong><br><span>${escapeHTML(row.menu_items || '')}</span></div>
+                                <small>Non-cash</small>
+                            </div>
+                        `).join('') : '<div class="daily-inline-empty compact-empty"><span>No taken-food logs for this branch.</span></div>'}
+                    </div>
                 </section>
             `).join('')}
         </div>
     `;
 }
 
-function buildDailyBranchGroups(rows, financials) {
+function buildDailyBranchGroups(rows, financials, otherFunds = [], takenFoods = []) {
     const map = new Map();
 
     rows.forEach(row => {
         const key = row.branch_key || row.branch_name || 'unassigned';
-
-        if (!map.has(key)) {
-            map.set(key, createBranchGroup(key, row.branch_name));
-        }
-
+        if (!map.has(key)) map.set(key, createBranchGroup(key, row.branch_name));
         const group = map.get(key);
         group.rows.push(row);
-
-        if (normalizeExpenseCategory(row.expense_category) === 'paninda') {
-            group.paninda += getAmount(row);
-        } else {
-            group.general += getAmount(row);
-        }
+        if (normalizeExpenseCategory(row.expense_category) === 'paninda') group.paninda += getAmount(row);
+        else group.general += getAmount(row);
     });
 
     financials.forEach(row => {
         const key = row.branch_key || row.branch_name || 'unassigned';
-
-        if (!map.has(key)) {
-            map.set(key, createBranchGroup(key, row.branch_name));
-        }
-
+        if (!map.has(key)) map.set(key, createBranchGroup(key, row.branch_name));
         const group = map.get(key);
         group.sales += getFinancialAmount(row.sales);
         group.bilin += getFinancialAmount(row.bilin_sa_paninda);
     });
 
-    return [...map.values()]
-        .sort((a, b) => a.branchName.localeCompare(b.branchName));
+    otherFunds.forEach(row => {
+        const key = row.branch_key || row.branch_name || 'unassigned';
+        if (!map.has(key)) map.set(key, createBranchGroup(key, row.branch_name));
+        const group = map.get(key);
+        group.others += getFinancialAmount(row.amount);
+        group.otherFunds.push(row);
+    });
+
+    takenFoods.forEach(row => {
+        const key = row.branch_key || row.branch_name || 'unassigned';
+        if (!map.has(key)) map.set(key, createBranchGroup(key, row.branch_name));
+        map.get(key).takenFoods.push(row);
+    });
+
+    return [...map.values()].sort((a, b) => a.branchName.localeCompare(b.branchName));
 }
 
 function createBranchGroup(key, branchName) {
@@ -475,7 +544,10 @@ function createBranchGroup(key, branchName) {
         paninda: 0,
         sales: 0,
         bilin: 0,
-        rows: []
+        others: 0,
+        rows: [],
+        otherFunds: [],
+        takenFoods: []
     };
 }
 
@@ -545,6 +617,116 @@ function renderRecordsTable() {
         : '<div class="empty-state">No matching positive-value expense records.</div>';
 }
 
+
+function renderOtherFundsReview() {
+    const rows = [...state.otherFunds]
+        .filter(row => {
+            if (!state.search) return true;
+            return [
+                row.fund_date,
+                row.branch_name,
+                row.fund_name,
+                row.team_leader_name,
+                row.amount
+            ].join(' ').toLowerCase().includes(state.search);
+        })
+        .sort((a, b) =>
+            String(b.fund_date).localeCompare(String(a.fund_date)) ||
+            String(a.branch_name).localeCompare(String(b.branch_name)) ||
+            String(a.fund_name).localeCompare(String(b.fund_name))
+        );
+
+    elements.adminOtherFundsCountText.textContent =
+        `${rows.length} record${rows.length === 1 ? '' : 's'} shown` +
+        (state.search ? ` for “${elements.searchInput.value.trim()}”` : '');
+
+    elements.adminOtherFundsBody.innerHTML = rows.length
+        ? rows.map(row => `
+            <tr>
+                <td>${escapeHTML(formatDateWithWeekday(row.fund_date))}</td>
+                <td>${escapeHTML(row.branch_name || 'Unassigned Branch')}</td>
+                <td><strong>${escapeHTML(row.fund_name || 'Other fund')}</strong></td>
+                <td>${escapeHTML(formatPeso(getFinancialAmount(row.amount)))}</td>
+                <td>${escapeHTML(row.team_leader_name || 'Team Leader')}</td>
+                <td>${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</td>
+            </tr>
+        `).join('')
+        : '<tr><td colspan="6" class="table-empty">No matching Other fund records.</td></tr>';
+
+    elements.adminOtherFundsCards.innerHTML = rows.length
+        ? rows.map(row => `
+            <article class="mobile-record-card admin-other-fund-card">
+                <span class="record-branch">${escapeHTML(row.branch_name || 'Unassigned Branch')}</span>
+                <div class="mobile-record-head">
+                    <div><strong>${escapeHTML(row.fund_name || 'Other fund')}</strong></div>
+                    <div class="mobile-record-amount">${escapeHTML(formatPeso(getFinancialAmount(row.amount)))}</div>
+                </div>
+                <div class="mobile-record-meta">
+                    <span>${escapeHTML(formatDateWithWeekday(row.fund_date))}</span>
+                    <span>Logged by ${escapeHTML(row.team_leader_name || 'Team Leader')}</span>
+                    <span>Updated ${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</span>
+                </div>
+            </article>
+        `).join('')
+        : '<div class="empty-state">No matching Other fund records.</div>';
+}
+
+function renderTakenFoodReview() {
+    const rows = [...state.takenFoods]
+        .filter(row => {
+            if (!state.search) return true;
+            return [
+                row.log_date,
+                row.branch_name,
+                row.person_group_name,
+                row.menu_items,
+                row.team_leader_name
+            ].join(' ').toLowerCase().includes(state.search);
+        })
+        .sort((a, b) =>
+            String(b.log_date).localeCompare(String(a.log_date)) ||
+            String(a.branch_name).localeCompare(String(b.branch_name)) ||
+            String(a.person_group_name).localeCompare(String(b.person_group_name))
+        );
+
+    elements.adminTakenFoodCountText.textContent =
+        `${rows.length} record${rows.length === 1 ? '' : 's'} shown` +
+        (state.search ? ` for “${elements.searchInput.value.trim()}”` : '');
+
+    elements.adminTakenFoodBody.innerHTML = rows.length
+        ? rows.map(row => `
+            <tr>
+                <td>${escapeHTML(formatDateWithWeekday(row.log_date))}</td>
+                <td>${escapeHTML(row.branch_name || 'Unassigned Branch')}</td>
+                <td><strong>${escapeHTML(row.person_group_name || 'Unnamed person/group')}</strong></td>
+                <td>${escapeHTML(row.menu_items || '')}</td>
+                <td>${escapeHTML(row.team_leader_name || 'Team Leader')}</td>
+                <td>${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</td>
+            </tr>
+        `).join('')
+        : '<tr><td colspan="6" class="table-empty">No matching taken-food records.</td></tr>';
+
+    elements.adminTakenFoodCards.innerHTML = rows.length
+        ? rows.map(row => `
+            <article class="admin-taken-food-card">
+                <div class="admin-taken-food-card-head">
+                    <div>
+                        <strong>${escapeHTML(row.person_group_name || 'Unnamed person/group')}</strong>
+                        <span>${escapeHTML(row.branch_name || 'Unassigned Branch')}</span>
+                    </div>
+                    <span>${escapeHTML(formatDateWithWeekday(row.log_date))}</span>
+                </div>
+                <div class="admin-taken-food-menu">${escapeHTML(row.menu_items || 'No menu items recorded')}</div>
+                <div class="admin-taken-food-meta">
+                    <span>Logged by ${escapeHTML(row.team_leader_name || 'Team Leader')}</span>
+                    <span>Updated ${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</span>
+                    <span>No cash or inventory effect</span>
+                </div>
+            </article>
+        `).join('')
+        : '<div class="empty-state">No matching taken-food records.</div>';
+}
+
 function renderReceipts() {
     elements.adminReceiptCountText.textContent =
         `${state.receipts.length} receipt${state.receipts.length === 1 ? '' : 's'} shown`;
@@ -567,8 +749,8 @@ function renderReceipts() {
 }
 
 function exportWeeklyPdf() {
-    if (!state.rows.length && !state.financials.length && !state.receipts.length) {
-        showToast('There are no expenses, cash-flow values, or receipts to export for this week.', 'error');
+    if (!state.rows.length && !state.financials.length && !state.otherFunds.length && !state.takenFoods.length && !state.receipts.length) {
+        showToast('There are no weekly records to export.', 'error');
         return;
     }
     if (!window.jspdf?.jsPDF) {
@@ -577,27 +759,20 @@ function exportWeeklyPdf() {
     }
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4'
-    });
-
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     if (typeof doc.autoTable !== 'function') {
         showToast('The PDF table library is not ready. Reload the page and try again.', 'error');
         return;
     }
 
     const endDate = addDaysToDateKey(state.selectedWeekStart, 6);
-    const branchLabel =
-        elements.branchSelect.options[elements.branchSelect.selectedIndex]?.textContent ||
-        'All Branches';
-
+    const branchLabel = elements.branchSelect.options[elements.branchSelect.selectedIndex]?.textContent || 'All Branches';
     const generalTotal = sumRowsByCategory(state.rows, 'general');
     const panindaTotal = sumRowsByCategory(state.rows, 'paninda');
     const salesTotal = state.financials.reduce((sum, row) => sum + getFinancialAmount(row.sales), 0);
     const bilinTotal = state.financials.reduce((sum, row) => sum + getFinancialAmount(row.bilin_sa_paninda), 0);
-    const moneyLeft = salesTotal + bilinTotal - generalTotal;
+    const othersTotal = state.otherFunds.reduce((sum, row) => sum + getFinancialAmount(row.amount), 0);
+    const moneyLeft = salesTotal + bilinTotal + othersTotal - generalTotal;
     const dailyItems = buildAdminDailyItems();
 
     doc.setFillColor(253, 251, 247);
@@ -616,9 +791,9 @@ function exportWeeklyPdf() {
         head: [['Summary', 'Value', 'Summary', 'Value']],
         body: [
             ['Sales', formatPesoForPdf(salesTotal), 'Bilin sa Paninda', formatPesoForPdf(bilinTotal)],
-            ['General Expenses', formatPesoForPdf(generalTotal), 'Paninda Purchases', formatPesoForPdf(panindaTotal)],
-            ['All Expenses', formatPesoForPdf(generalTotal + panindaTotal), 'Total Money Left', formatPesoForPdf(moneyLeft)],
-            ['Expense Entries', String(state.rows.length), 'Receipt Attachments', String(state.receipts.length)]
+            ['Other Funds', formatPesoForPdf(othersTotal), 'General Expenses', formatPesoForPdf(generalTotal)],
+            ['Paninda Purchases', formatPesoForPdf(panindaTotal), 'All Expenses', formatPesoForPdf(generalTotal + panindaTotal)],
+            ['Total Money Left', formatPesoForPdf(moneyLeft), 'Taken Food Logs', String(state.takenFoods.length)]
         ],
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2.4 },
@@ -626,22 +801,21 @@ function exportWeeklyPdf() {
     });
 
     let y = doc.lastAutoTable.finalY + 6;
-
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('Daily Cash Flow', 14, y);
 
     doc.autoTable({
         startY: y + 3,
-        head: [['Date', 'Sales', 'Bilin', 'General', 'Paninda', 'All Expenses', 'Money Left']],
+        head: [['Date', 'Sales', 'Bilin', 'Others', 'General', 'Paninda', 'Money Left']],
         body: dailyItems.map(item => [
             formatDateWithWeekday(item.date),
             formatPesoForPdf(item.sales),
             formatPesoForPdf(item.bilin),
+            formatPesoForPdf(item.others),
             formatPesoForPdf(item.general),
             formatPesoForPdf(item.paninda),
-            formatPesoForPdf(item.general + item.paninda),
-            formatPesoForPdf(item.sales + item.bilin - item.general)
+            formatPesoForPdf(item.sales + item.bilin + item.others - item.general)
         ]),
         theme: 'striped',
         styles: { fontSize: 7.2, cellPadding: 1.9 },
@@ -651,41 +825,69 @@ function exportWeeklyPdf() {
     if (state.rows.length) {
         y = doc.lastAutoTable.finalY + 6;
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
         doc.text('Detailed Daily Expenses', 14, y);
-
         doc.autoTable({
             startY: y + 3,
-            head: [['Date', 'Branch', 'Category', 'Expense', 'Amount', 'Submitted By', 'Updated']],
-            body: [...state.rows]
-                .sort((a, b) =>
-                    String(a.expense_date).localeCompare(String(b.expense_date)) ||
-                    String(a.branch_name).localeCompare(String(b.branch_name)) ||
-                    String(a.expense_category).localeCompare(String(b.expense_category)) ||
-                    String(a.expense_name).localeCompare(String(b.expense_name))
-                )
-                .map(row => [
-                    formatDateWithWeekday(row.expense_date),
-                    row.branch_name || 'Unassigned Branch',
-                    getCategoryLabel(row.expense_category),
-                    row.expense_name || 'Unnamed Expense',
-                    formatPesoForPdf(getAmount(row)),
-                    row.team_leader_name || 'Team Leader',
-                    formatPHDateTime(row.updated_at || row.created_at)
-                ]),
+            head: [['Date', 'Branch', 'Category', 'Expense', 'Amount', 'Submitted By']],
+            body: state.rows.map(row => [
+                formatDateWithWeekday(row.expense_date),
+                row.branch_name || 'Unassigned Branch',
+                getCategoryLabel(row.expense_category),
+                row.expense_name || 'Unnamed Expense',
+                formatPesoForPdf(getAmount(row)),
+                row.team_leader_name || 'Team Leader'
+            ]),
             theme: 'grid',
             styles: { fontSize: 6.9, cellPadding: 1.7 },
-            headStyles: { fillColor: [76, 52, 37] },
-            columnStyles: { 4: { halign: 'right' } }
+            headStyles: { fillColor: [76, 52, 37] }
+        });
+    }
+
+    if (state.otherFunds.length) {
+        y = doc.lastAutoTable.finalY + 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Other Funds', 14, y);
+        doc.autoTable({
+            startY: y + 3,
+            head: [['Date', 'Branch', 'Name', 'Value', 'Logged By']],
+            body: state.otherFunds.map(row => [
+                formatDateWithWeekday(row.fund_date),
+                row.branch_name || 'Unassigned Branch',
+                row.fund_name || 'Other fund',
+                formatPesoForPdf(row.amount),
+                row.team_leader_name || 'Team Leader'
+            ]),
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1.8 },
+            headStyles: { fillColor: [54, 95, 61] }
+        });
+    }
+
+    if (state.takenFoods.length) {
+        y = doc.lastAutoTable.finalY + 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Taken Food Logs (Non-Cash / No Inventory Effect)', 14, y);
+        doc.autoTable({
+            startY: y + 3,
+            head: [['Date', 'Branch', 'Person / Group', 'Menu Items', 'Logged By']],
+            body: state.takenFoods.map(row => [
+                formatDateWithWeekday(row.log_date),
+                row.branch_name || 'Unassigned Branch',
+                row.person_group_name || 'Unnamed',
+                row.menu_items || '',
+                row.team_leader_name || 'Team Leader'
+            ]),
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1.8, overflow: 'linebreak' },
+            headStyles: { fillColor: [81, 69, 111] },
+            columnStyles: { 3: { cellWidth: 105 } }
         });
     }
 
     if (state.receipts.length) {
         y = doc.lastAutoTable.finalY + 6;
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
         doc.text('Receipt Attachments', 14, y);
-
         doc.autoTable({
             startY: y + 3,
             head: [['Date', 'Branch', 'Receipt Name', 'Uploaded By', 'Uploaded']],
@@ -713,13 +915,17 @@ function buildAdminDailyItems() {
         const date = addDaysToDateKey(state.selectedWeekStart, i);
         const rows = state.rows.filter(row => row.expense_date === date);
         const financials = state.financials.filter(row => row.financial_date === date);
+        const others = state.otherFunds
+            .filter(row => row.fund_date === date)
+            .reduce((sum, row) => sum + getFinancialAmount(row.amount), 0);
 
         result.push({
             date,
             general: sumRowsByCategory(rows, 'general'),
             paninda: sumRowsByCategory(rows, 'paninda'),
             sales: financials.reduce((sum, row) => sum + getFinancialAmount(row.sales), 0),
-            bilin: financials.reduce((sum, row) => sum + getFinancialAmount(row.bilin_sa_paninda), 0)
+            bilin: financials.reduce((sum, row) => sum + getFinancialAmount(row.bilin_sa_paninda), 0),
+            others
         });
     }
 
@@ -768,9 +974,11 @@ function getFriendlyDataError(error) {
         code === '42P01' ||
         code === 'PGRST205' ||
         message.includes('daily_branch_financials') ||
+        message.includes('daily_other_funds') ||
+        message.includes('taken_food_logs') ||
         message.includes('expense_category')
     ) {
-        return 'The Paninda and daily financial migration is not installed. Run supabase-paninda-daily-financials.sql in Supabase.';
+        return 'The updated expense migration is not installed. Run supabase-others-taken-food.sql in Supabase, then reload the schema.';
     }
     if (code === '42501' || message.includes('row-level security')) {
         return 'Supabase permissions blocked the expense report. Run the included SQL migration and reload the schema.';

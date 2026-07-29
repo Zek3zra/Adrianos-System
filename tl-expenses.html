@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Daily Expenses - Adrianos</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="tl-expenses.css?v=daily-specific-items-20260729-2">
+    <link rel="stylesheet" href="tl-expenses.css?v=others-foodlog-20260729-1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -51,23 +51,53 @@
                 <div class="input-group">
                     <label for="salesInput">Sales</label>
                     <div class="money-input-wrap">
-                        <input id="salesInput" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+                        <input id="salesInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="Sales amount">
                     </div>
                     <small>Sales recorded for the selected date.</small>
                 </div>
                 <div class="input-group">
                     <label for="bilinInput">Bilin sa Paninda</label>
                     <div class="money-input-wrap">
-                        <input id="bilinInput" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+                        <input id="bilinInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="Bilin sa Paninda amount">
                     </div>
                     <small>Additional money intended for Paninda.</small>
                 </div>
             </div>
 
+            <section class="other-funds-block" aria-labelledby="otherFundsTitle">
+                <div class="expense-category-head">
+                    <div>
+                        <span class="section-kicker">Additional Cash</span>
+                        <h4 id="otherFundsTitle">Others</h4>
+                        <p>Add each additional source of money by name and value. Decimal amounts such as 109.23 are accepted.</p>
+                    </div>
+                    <span id="otherFundsCountText" class="category-count-badge">0 items this date</span>
+                </div>
+
+                <form id="addOtherFundForm" class="other-fund-form">
+                    <div class="input-group">
+                        <label for="newOtherFundNameInput">Name of other fund</label>
+                        <input id="newOtherFundNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: Delivery collection">
+                    </div>
+                    <div class="input-group">
+                        <label for="newOtherFundAmountInput">Value</label>
+                        <div class="money-input-wrap">
+                            <input id="newOtherFundAmountInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn other-fund-add-btn">Add Other Fund</button>
+                </form>
+
+                <div id="otherFundsList" class="other-funds-list">
+                    <div class="empty-state">No Other funds entered for this date.</div>
+                </div>
+            </section>
+
             <div class="cash-flow-preview" aria-label="Selected date cash flow">
                 <article><span>General Expenses</span><strong id="generalExpensesText">₱0</strong><small>Deducted from cash</small></article>
                 <article><span>Paninda Purchases</span><strong id="panindaExpensesText">₱0</strong><small>Logged but not deducted</small></article>
-                <article class="money-left-card"><span>Total Money Left</span><strong id="moneyLeftText">₱0</strong><small>(Sales + Bilin sa Paninda) − General Expenses</small></article>
+                <article><span>Other Funds</span><strong id="otherFundsTotalText">₱0</strong><small>Added to available cash</small></article>
+                <article class="money-left-card"><span>Total Money Left</span><strong id="moneyLeftText">₱0</strong><small>(Sales + Bilin sa Paninda + Others) − General Expenses</small></article>
             </div>
         </section>
 
@@ -85,8 +115,10 @@
 
         <section class="summary-grid" aria-label="Expense summary">
             <article class="summary-card"><span>Selected Date Total</span><strong id="todayTotalText">₱0</strong><small id="todayDateText">Selected date</small></article>
+            <article class="summary-card"><span>Other Funds</span><strong id="selectedOtherFundsText">₱0</strong><small>Selected date</small></article>
             <article class="summary-card"><span>Week Total Expenses</span><strong id="weekTotalText">₱0</strong><small id="weekEntriesText">0 entries</small></article>
             <article class="summary-card"><span>Selected Date Entries</span><strong id="todayEntriesText">0</strong><small>General and Paninda</small></article>
+            <article class="summary-card"><span>Taken Food Logs</span><strong id="takenFoodCountText">0</strong><small>Selected date, non-cash</small></article>
             <article class="summary-card"><span>Receipts</span><strong id="receiptCountText">0</strong><small>Selected week</small></article>
         </section>
 
@@ -159,6 +191,34 @@
             </div>
         </section>
 
+        <section class="dashboard-card taken-food-card">
+            <div class="card-header flex-header">
+                <div>
+                    <span class="section-kicker">Non-Cash Food Record</span>
+                    <h3>Food taken without payment from cash on hand</h3>
+                    <p>This log is for identification only. It does not affect sales, expenses, money left, or inventory.</p>
+                </div>
+                <span id="takenFoodStatusText" class="status-pill">0 logs this date</span>
+            </div>
+
+            <form id="addTakenFoodForm" class="taken-food-form">
+                <div class="input-group">
+                    <label for="personGroupNameInput">Person or group name</label>
+                    <input id="personGroupNameInput" type="text" maxlength="160" autocomplete="off" placeholder="Example: Staff meal or Juan Dela Cruz">
+                </div>
+                <div class="input-group">
+                    <label for="menuItemsInput">Food or menu items taken</label>
+                    <textarea id="menuItemsInput" maxlength="1200" rows="3" placeholder="Example: 2 Chicken Burgers, 1 Spanish Latte"></textarea>
+                    <small>Enter menu names as text. Do not enter a cash value.</small>
+                </div>
+                <button type="submit" class="btn taken-food-add-btn">Add Food Log</button>
+            </form>
+
+            <div id="takenFoodList" class="taken-food-list">
+                <div class="empty-state">No taken-food records entered for this date.</div>
+            </div>
+        </section>
+
         <section class="dashboard-card receipt-card">
             <div class="card-header flex-header receipt-section-header">
                 <div>
@@ -222,6 +282,17 @@
             </article>
         </section>
 
+        <section class="summary-panels supporting-review-panels">
+            <article class="dashboard-card">
+                <div class="card-header"><span class="section-kicker">Additional Cash</span><h3>Other funds this week</h3><p>Included in the money-left formula.</p></div>
+                <div id="weeklyOtherFundsList" class="rank-list"></div>
+            </article>
+            <article class="dashboard-card">
+                <div class="card-header"><span class="section-kicker">Non-Cash Review</span><h3>Taken food logs this week</h3><p>For marking only; no cash or inventory effect.</p></div>
+                <div id="weeklyTakenFoodList" class="taken-food-week-list"></div>
+            </article>
+        </section>
+
         <section class="dashboard-card records-section">
             <div class="card-header"><span class="section-kicker">Details</span><h3>Selected week records</h3><p>Daily records included in the weekly export.</p></div>
             <div id="weeklyDetailsCards" class="mobile-record-list"></div>
@@ -235,6 +306,6 @@
     </main>
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="tl-expenses.js?v=daily-specific-items-20260729-2"></script>
+    <script type="module" src="tl-expenses.js?v=others-foodlog-20260729-1"></script>
 </body>
 </html>

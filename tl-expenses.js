@@ -4,6 +4,8 @@ const PH_TIMEZONE = 'Asia/Manila';
 const EXPENSE_NAMES_TABLE = 'expense_names';
 const DAILY_EXPENSES_TABLE = 'daily_expenses';
 const DAILY_FINANCIALS_TABLE = 'daily_branch_financials';
+const DAILY_OTHER_FUNDS_TABLE = 'daily_other_funds';
+const TAKEN_FOOD_LOGS_TABLE = 'taken_food_logs';
 const EXPENSE_RECEIPTS_TABLE = 'expense_receipts';
 const RECEIPT_BUCKET = 'expense-receipts';
 const MAX_RECEIPT_BYTES = 12 * 1024 * 1024;
@@ -19,6 +21,12 @@ const state = {
     weekRows: [],
     dateFinancial: null,
     weekFinancials: [],
+    draftOtherFunds: [],
+    dateOtherFunds: [],
+    weekOtherFunds: [],
+    draftTakenFoods: [],
+    dateTakenFoods: [],
+    weekTakenFoods: [],
     receipts: [],
     expenseSearch: '',
     selectedReceiptFile: null,
@@ -61,14 +69,18 @@ async function init() {
 function bindElements() {
     const ids = [
         'pageLoader', 'headerMeta', 'backBtn', 'logoutBtn', 'reportDatePicker', 'reportDateHelp',
-        'salesInput', 'bilinInput', 'generalExpensesText', 'panindaExpensesText', 'moneyLeftText',
-        'weekPicker', 'weekRangeText', 'refreshBtn', 'exportWeeklyPdfBtn', 'todayTotalText',
-        'todayDateText', 'weekTotalText', 'weekEntriesText', 'todayEntriesText', 'receiptCountText',
+        'salesInput', 'bilinInput', 'generalExpensesText', 'panindaExpensesText', 'otherFundsTotalText',
+        'moneyLeftText', 'addOtherFundForm', 'newOtherFundNameInput', 'newOtherFundAmountInput',
+        'otherFundsList', 'otherFundsCountText', 'selectedOtherFundsText', 'weekPicker', 'weekRangeText',
+        'refreshBtn', 'exportWeeklyPdfBtn', 'todayTotalText', 'todayDateText', 'weekTotalText',
+        'weekEntriesText', 'todayEntriesText', 'takenFoodCountText', 'receiptCountText',
         'dailyReportTitle', 'saveStatusText', 'expenseSearchInput', 'expenseSearchCountText',
         'generalNamesCountText', 'panindaNamesCountText', 'addExpenseForm', 'newExpenseNameInput',
         'addPanindaForm', 'newPanindaNameInput', 'generalExpenseList', 'panindaExpenseList',
-        'liveTodayTotalText', 'submitHintText', 'submitDailyReportBtn', 'dailySummaryList',
-        'expenseSummaryList', 'weeklyDetailsBody', 'weeklyDetailsCards', 'receiptStatusText',
+        'addTakenFoodForm', 'personGroupNameInput', 'menuItemsInput', 'takenFoodList',
+        'takenFoodStatusText', 'weeklyOtherFundsList', 'weeklyTakenFoodList', 'liveTodayTotalText',
+        'submitHintText', 'submitDailyReportBtn', 'dailySummaryList', 'expenseSummaryList',
+        'weeklyDetailsBody', 'weeklyDetailsCards', 'receiptStatusText',
         'receiptUploadForm', 'receiptNameInput', 'receiptImageInput', 'receiptPreviewWrap',
         'receiptPreviewImage', 'clearReceiptImageBtn', 'uploadReceiptBtn', 'receiptListCountText',
         'receiptList', 'toast'
@@ -87,6 +99,8 @@ function bindEvents() {
     elements.submitDailyReportBtn.addEventListener('click', submitSelectedDateReport);
     elements.addExpenseForm.addEventListener('submit', event => addDailyDraftItem(event, 'general'));
     elements.addPanindaForm.addEventListener('submit', event => addDailyDraftItem(event, 'paninda'));
+    elements.addOtherFundForm.addEventListener('submit', addOtherFundDraft);
+    elements.addTakenFoodForm.addEventListener('submit', addTakenFoodDraft);
     elements.receiptUploadForm.addEventListener('submit', uploadReceipt);
 
     elements.reportDatePicker.addEventListener('change', handleEntryDateChange);
@@ -104,6 +118,19 @@ function bindEvents() {
         list.addEventListener('click', handleExpenseListClick);
     });
 
+    elements.otherFundsList.addEventListener('input', handleOtherFundInput);
+    elements.otherFundsList.addEventListener('blur', handleOtherFundBlur, true);
+    elements.otherFundsList.addEventListener('click', event => {
+        const button = event.target.closest('[data-remove-other-fund-id]');
+        if (button) removeOtherFundDraft(button.dataset.removeOtherFundId);
+    });
+
+    elements.takenFoodList.addEventListener('input', handleTakenFoodInput);
+    elements.takenFoodList.addEventListener('click', event => {
+        const button = event.target.closest('[data-remove-taken-food-id]');
+        if (button) removeTakenFoodDraft(button.dataset.removeTakenFoodId);
+    });
+
     [elements.salesInput, elements.bilinInput].forEach(input => {
         input.addEventListener('input', () => {
             input.value = sanitizeMoneyInput(input.value);
@@ -111,9 +138,13 @@ function bindEvents() {
             setSaveStatus('Unsaved changes');
         });
         input.addEventListener('blur', () => {
-            if (input.value) input.value = Number(input.value).toFixed(2).replace(/\.00$/, '');
+            input.value = formatEditableMoney(input.value);
             updateLiveCashFlow();
         });
+    });
+
+    elements.newOtherFundAmountInput.addEventListener('input', event => {
+        event.target.value = sanitizeMoneyInput(event.target.value);
     });
 
     elements.receiptImageInput.addEventListener('change', handleReceiptFileChange);
@@ -145,8 +176,12 @@ async function handleEntryDateChange() {
         await Promise.all([
             loadDateRows(),
             loadDateFinancial(),
+            loadDateOtherFunds(),
+            loadDateTakenFoods(),
             loadWeekRows(),
             loadWeekFinancials(),
+            loadWeekOtherFunds(),
+            loadWeekTakenFoods(),
             loadWeekReceipts()
         ]);
         renderAll();
@@ -164,7 +199,13 @@ async function handleWeekChange() {
 
     setBusy(true, 'Loading selected week...');
     try {
-        await Promise.all([loadWeekRows(), loadWeekFinancials(), loadWeekReceipts()]);
+        await Promise.all([
+            loadWeekRows(),
+            loadWeekFinancials(),
+            loadWeekOtherFunds(),
+            loadWeekTakenFoods(),
+            loadWeekReceipts()
+        ]);
         renderTopSummary();
         renderWeeklySummary();
         renderReceipts();
@@ -270,8 +311,12 @@ async function loadAllExpenseData() {
         await Promise.all([
             loadDateRows(),
             loadDateFinancial(),
+            loadDateOtherFunds(),
+            loadDateTakenFoods(),
             loadWeekRows(),
             loadWeekFinancials(),
+            loadWeekOtherFunds(),
+            loadWeekTakenFoods(),
             loadWeekReceipts()
         ]);
 
@@ -356,6 +401,75 @@ async function loadWeekFinancials() {
     state.weekFinancials = data || [];
 }
 
+
+async function loadDateOtherFunds() {
+    const { data, error } = await supabase
+        .from(DAILY_OTHER_FUNDS_TABLE)
+        .select('*')
+        .eq('branch_key', getBranchKey())
+        .eq('fund_date', state.entryDate)
+        .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    state.dateOtherFunds = (data || []).filter(row => getFinancialAmount(row.amount) > 0);
+    state.draftOtherFunds = state.dateOtherFunds.map(row => ({
+        localId: `saved-other-${row.id}`,
+        rowId: row.id,
+        name: row.fund_name || '',
+        amount: getFinancialAmount(row.amount)
+    }));
+}
+
+async function loadWeekOtherFunds() {
+    const endDate = addDaysToDateKey(state.selectedWeekStart, 6);
+    const { data, error } = await supabase
+        .from(DAILY_OTHER_FUNDS_TABLE)
+        .select('*')
+        .eq('branch_key', getBranchKey())
+        .gte('fund_date', state.selectedWeekStart)
+        .lte('fund_date', endDate)
+        .order('fund_date', { ascending: true })
+        .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    state.weekOtherFunds = (data || []).filter(row => getFinancialAmount(row.amount) > 0);
+}
+
+async function loadDateTakenFoods() {
+    const { data, error } = await supabase
+        .from(TAKEN_FOOD_LOGS_TABLE)
+        .select('*')
+        .eq('branch_key', getBranchKey())
+        .eq('log_date', state.entryDate)
+        .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    state.dateTakenFoods = data || [];
+    state.draftTakenFoods = state.dateTakenFoods.map(row => ({
+        localId: `saved-food-${row.id}`,
+        rowId: row.id,
+        personGroupName: row.person_group_name || '',
+        menuItems: row.menu_items || ''
+    }));
+}
+
+async function loadWeekTakenFoods() {
+    const endDate = addDaysToDateKey(state.selectedWeekStart, 6);
+    const { data, error } = await supabase
+        .from(TAKEN_FOOD_LOGS_TABLE)
+        .select('*')
+        .eq('branch_key', getBranchKey())
+        .gte('log_date', state.selectedWeekStart)
+        .lte('log_date', endDate)
+        .order('log_date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    state.weekTakenFoods = data || [];
+}
+
 async function loadWeekReceipts() {
     const endDate = addDaysToDateKey(state.selectedWeekStart, 6);
     const { data, error } = await supabase
@@ -375,6 +489,8 @@ async function loadWeekReceipts() {
 function renderAll() {
     renderExpenseInputs();
     renderFinancialInputs();
+    renderOtherFunds();
+    renderTakenFoods();
     renderTopSummary();
     renderWeeklySummary();
     renderReceipts();
@@ -440,10 +556,9 @@ function renderExpenseRow(item) {
             <div class="amount-wrap">
                 <input
                     class="expense-amount-input"
-                    type="number"
+                    type="text"
                     inputmode="decimal"
-                    min="0"
-                    step="0.01"
+                    autocomplete="off"
                     data-draft-id="${escapeHTML(item.localId)}"
                     value="${item.amount ? escapeHTML(String(item.amount)) : ''}"
                     placeholder="0.00"
@@ -457,13 +572,16 @@ function renderExpenseRow(item) {
 
 function renderTopSummary() {
     const selectedTotal = state.dateRows.reduce((sum, row) => sum + getAmount(row), 0);
+    const selectedOtherFunds = state.dateOtherFunds.reduce((sum, row) => sum + getFinancialAmount(row.amount), 0);
     const weekTotal = state.weekRows.reduce((sum, row) => sum + getAmount(row), 0);
 
     elements.todayTotalText.textContent = formatPeso(selectedTotal);
     elements.todayDateText.textContent = formatDateLong(state.entryDate);
+    elements.selectedOtherFundsText.textContent = formatPeso(selectedOtherFunds);
     elements.weekTotalText.textContent = formatPeso(weekTotal);
     elements.weekEntriesText.textContent = `${state.weekRows.length} entr${state.weekRows.length === 1 ? 'y' : 'ies'}`;
     elements.todayEntriesText.textContent = String(state.dateRows.length);
+    elements.takenFoodCountText.textContent = String(state.dateTakenFoods.length);
     elements.receiptCountText.textContent = String(state.receipts.length);
 }
 
@@ -478,17 +596,17 @@ function renderWeeklySummary() {
             paninda: 0,
             count: 0,
             sales: 0,
-            bilin: 0
+            bilin: 0,
+            others: 0,
+            foodLogs: 0
         });
     }
 
     state.weekRows.forEach(row => {
         const day = dailyMap.get(row.expense_date);
         if (!day) return;
-
         if (normalizeExpenseCategory(row.expense_category) === 'paninda') day.paninda += getAmount(row);
         else day.general += getAmount(row);
-
         day.count += 1;
     });
 
@@ -499,18 +617,30 @@ function renderWeeklySummary() {
         day.bilin += getFinancialAmount(row.bilin_sa_paninda);
     });
 
+    state.weekOtherFunds.forEach(row => {
+        const day = dailyMap.get(row.fund_date);
+        if (day) day.others += getFinancialAmount(row.amount);
+    });
+
+    state.weekTakenFoods.forEach(row => {
+        const day = dailyMap.get(row.log_date);
+        if (day) day.foodLogs += 1;
+    });
+
     elements.dailySummaryList.innerHTML = [...dailyMap.values()].map(item => {
         const allExpenses = item.general + item.paninda;
-        const moneyLeft = item.sales + item.bilin - item.general;
+        const availableFunds = item.sales + item.bilin + item.others;
+        const moneyLeft = availableFunds - item.general;
 
         return `
             <div class="daily-financial-summary-row">
                 <div class="daily-financial-date">
                     <strong>${escapeHTML(formatDateWithWeekday(item.dateKey))}</strong>
-                    <span>${item.count} expense entr${item.count === 1 ? 'y' : 'ies'}</span>
+                    <span>${item.count} expense entr${item.count === 1 ? 'y' : 'ies'} • ${item.foodLogs} food log${item.foodLogs === 1 ? '' : 's'}</span>
                 </div>
                 <div class="daily-financial-values">
-                    <span>Sales + Bilin <strong>${escapeHTML(formatPeso(item.sales + item.bilin))}</strong></span>
+                    <span>Sales + Bilin + Others <strong>${escapeHTML(formatPeso(availableFunds))}</strong></span>
+                    <span>Others <strong>${escapeHTML(formatPeso(item.others))}</strong></span>
                     <span>General <strong>${escapeHTML(formatPeso(item.general))}</strong></span>
                     <span>Paninda <strong>${escapeHTML(formatPeso(item.paninda))}</strong></span>
                     <span>All expenses <strong>${escapeHTML(formatPeso(allExpenses))}</strong></span>
@@ -544,21 +674,21 @@ function renderWeeklySummary() {
         ? expenseItems.map(item => `
             <div class="summary-list-row">
                 <div>
-                    <span class="category-mini-badge ${item.category === 'paninda' ? 'paninda-mini-badge' : ''}">${escapeHTML(getCategoryLabel(item.category))}</span>
+                    <span class="expense-type-label">${escapeHTML(getCategoryLabel(item.category))}</span>
                     <strong>${escapeHTML(item.name)}</strong><br>
                     <span>${item.count} daily entr${item.count === 1 ? 'y' : 'ies'}</span>
                 </div>
                 <strong>${escapeHTML(formatPeso(item.total))}</strong>
             </div>
         `).join('')
-        : `<div class="empty-state">${state.expenseSearch ? `No weekly expense matches “${escapeHTML(elements.expenseSearchInput.value.trim())}”.` : 'No positive expense values for this week.'}</div>`;
+        : '<div class="empty-state">No matching positive expense values for this week.</div>';
 
     const rows = [...state.weekRows]
         .filter(row => !state.expenseSearch || String(row.expense_name || '').toLowerCase().includes(state.expenseSearch))
         .sort((a, b) =>
             String(b.expense_date).localeCompare(String(a.expense_date)) ||
             String(a.expense_category).localeCompare(String(b.expense_category)) ||
-            String(a.expense_name || '').localeCompare(String(b.expense_name || ''))
+            String(a.expense_name).localeCompare(String(b.expense_name))
         );
 
     elements.weeklyDetailsBody.innerHTML = rows.length
@@ -577,9 +707,11 @@ function renderWeeklySummary() {
     elements.weeklyDetailsCards.innerHTML = rows.length
         ? rows.map(row => `
             <article class="mobile-record-card">
-                <span class="category-mini-badge ${normalizeExpenseCategory(row.expense_category) === 'paninda' ? 'paninda-mini-badge' : ''}">${escapeHTML(getCategoryLabel(row.expense_category))}</span>
                 <div class="mobile-record-head">
-                    <div><strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong></div>
+                    <div>
+                        <span class="expense-type-label">${escapeHTML(getCategoryLabel(row.expense_category))}</span>
+                        <strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong>
+                    </div>
                     <div class="mobile-record-amount">${escapeHTML(formatPeso(getAmount(row)))}</div>
                 </div>
                 <div class="mobile-record-meta">
@@ -590,6 +722,29 @@ function renderWeeklySummary() {
             </article>
         `).join('')
         : '<div class="empty-state">No matching submitted expenses greater than zero for this week.</div>';
+
+    elements.weeklyOtherFundsList.innerHTML = state.weekOtherFunds.length
+        ? [...state.weekOtherFunds]
+            .sort((a, b) => String(b.fund_date).localeCompare(String(a.fund_date)) || String(a.fund_name).localeCompare(String(b.fund_name)))
+            .map(row => `
+                <div class="summary-list-row">
+                    <div><strong>${escapeHTML(row.fund_name || 'Other fund')}</strong><br><span>${escapeHTML(formatDateWithWeekday(row.fund_date))}</span></div>
+                    <strong>${escapeHTML(formatPeso(getFinancialAmount(row.amount)))}</strong>
+                </div>
+            `).join('')
+        : '<div class="empty-state">No Other funds logged for this week.</div>';
+
+    elements.weeklyTakenFoodList.innerHTML = state.weekTakenFoods.length
+        ? state.weekTakenFoods.map(row => `
+            <article class="taken-food-week-card">
+                <div class="taken-food-week-head">
+                    <div><strong>${escapeHTML(row.person_group_name || 'Unnamed person/group')}</strong><small>${escapeHTML(formatDateWithWeekday(row.log_date))}</small></div>
+                </div>
+                <div class="taken-food-menu-text">${escapeHTML(row.menu_items || 'No menu items recorded')}</div>
+                <small>Logged by ${escapeHTML(row.team_leader_name || 'Team Leader')} • No cash or inventory effect</small>
+            </article>
+        `).join('')
+        : '<div class="empty-state">No taken-food records for this week.</div>';
 }
 
 function renderReceipts() {
@@ -613,6 +768,182 @@ function renderReceipts() {
             </article>
         `).join('')
         : '<div class="empty-state">No receipt images uploaded for this week.</div>';
+}
+
+
+function renderOtherFunds() {
+    const total = state.draftOtherFunds.reduce((sum, item) => sum + getFinancialAmount(item.amount), 0);
+    elements.otherFundsCountText.textContent = `${state.draftOtherFunds.length} item${state.draftOtherFunds.length === 1 ? '' : 's'} this date`;
+    elements.otherFundsTotalText.textContent = formatPeso(total);
+    elements.selectedOtherFundsText.textContent = formatPeso(total);
+
+    elements.otherFundsList.innerHTML = state.draftOtherFunds.length
+        ? state.draftOtherFunds.map(item => `
+            <article class="other-fund-row" data-other-fund-id="${escapeHTML(item.localId)}">
+                <div class="input-group">
+                    <label>Other fund name</label>
+                    <input class="other-fund-name-input" type="text" maxlength="120" autocomplete="off"
+                        data-other-fund-id="${escapeHTML(item.localId)}" value="${escapeHTML(item.name)}"
+                        placeholder="Name of additional money">
+                    <span class="other-fund-meta">${item.rowId ? `Previously logged for ${escapeHTML(formatDateLong(state.entryDate))}.` : 'New item for selected date.'}</span>
+                </div>
+                <div class="input-group">
+                    <label>Value</label>
+                    <div class="money-input-wrap">
+                        <input class="other-fund-amount-input" type="text" inputmode="decimal" autocomplete="off"
+                            data-other-fund-id="${escapeHTML(item.localId)}"
+                            value="${item.amount ? escapeHTML(formatPlainDecimal(item.amount)) : ''}" placeholder="0.00">
+                    </div>
+                </div>
+                <button type="button" class="btn other-fund-remove-btn" data-remove-other-fund-id="${escapeHTML(item.localId)}">Remove</button>
+            </article>
+        `).join('')
+        : '<div class="empty-state">No Other funds entered for this date.</div>';
+}
+
+function addOtherFundDraft(event) {
+    event.preventDefault();
+    if (state.busy) return;
+
+    const name = elements.newOtherFundNameInput.value.trim();
+    const amount = parseMoneyInput(elements.newOtherFundAmountInput.value);
+
+    if (!slugify(name)) {
+        showToast('Enter a specific name for the Other fund.', 'error');
+        return;
+    }
+    if (amount <= 0) {
+        showToast('Enter an Other fund value greater than zero. Decimals such as 109.23 are accepted.', 'error');
+        return;
+    }
+    if (state.draftOtherFunds.some(item => String(item.name).trim().toLowerCase() === name.toLowerCase())) {
+        showToast(`“${name}” is already entered under Others for this date.`, 'error');
+        return;
+    }
+
+    state.draftOtherFunds.push({
+        localId: `other-${makeDraftId()}`,
+        rowId: null,
+        name,
+        amount
+    });
+    elements.newOtherFundNameInput.value = '';
+    elements.newOtherFundAmountInput.value = '';
+    renderOtherFunds();
+    updateLiveCashFlow();
+    setSaveStatus('Unsaved changes');
+}
+
+function handleOtherFundInput(event) {
+    const id = event.target.dataset.otherFundId;
+    if (!id) return;
+    const item = state.draftOtherFunds.find(entry => entry.localId === id);
+    if (!item) return;
+
+    if (event.target.classList.contains('other-fund-name-input')) {
+        item.name = event.target.value;
+    } else if (event.target.classList.contains('other-fund-amount-input')) {
+        event.target.value = sanitizeMoneyInput(event.target.value);
+        item.amount = parseMoneyInput(event.target.value);
+        renderOtherFundTotalsOnly();
+    }
+    setSaveStatus('Unsaved changes');
+}
+
+function handleOtherFundBlur(event) {
+    if (!event.target.classList.contains('other-fund-amount-input')) return;
+    event.target.value = formatEditableMoney(event.target.value);
+    const item = state.draftOtherFunds.find(entry => entry.localId === event.target.dataset.otherFundId);
+    if (item) item.amount = parseMoneyInput(event.target.value);
+    renderOtherFundTotalsOnly();
+}
+
+function renderOtherFundTotalsOnly() {
+    const total = state.draftOtherFunds.reduce((sum, item) => sum + getFinancialAmount(item.amount), 0);
+    elements.otherFundsTotalText.textContent = formatPeso(total);
+    elements.selectedOtherFundsText.textContent = formatPeso(total);
+    updateLiveCashFlow();
+}
+
+function removeOtherFundDraft(localId) {
+    const item = state.draftOtherFunds.find(entry => entry.localId === localId);
+    if (!item || state.busy) return;
+    if (!window.confirm(`Remove “${item.name || 'Other fund'}” from ${formatDateLong(state.entryDate)}?`)) return;
+    state.draftOtherFunds = state.draftOtherFunds.filter(entry => entry.localId !== localId);
+    renderOtherFunds();
+    updateLiveCashFlow();
+    setSaveStatus('Unsaved changes');
+}
+
+function renderTakenFoods() {
+    elements.takenFoodStatusText.textContent = `${state.draftTakenFoods.length} log${state.draftTakenFoods.length === 1 ? '' : 's'} this date`;
+    elements.takenFoodCountText.textContent = String(state.draftTakenFoods.length);
+
+    elements.takenFoodList.innerHTML = state.draftTakenFoods.length
+        ? state.draftTakenFoods.map(item => `
+            <article class="taken-food-item" data-taken-food-id="${escapeHTML(item.localId)}">
+                <div class="input-group">
+                    <label>Person or group</label>
+                    <input class="taken-food-person-input" type="text" maxlength="160" autocomplete="off"
+                        data-taken-food-id="${escapeHTML(item.localId)}"
+                        value="${escapeHTML(item.personGroupName)}" placeholder="Person or group name">
+                    <small>${item.rowId ? 'Previously logged for this date.' : 'New selected-date record.'}</small>
+                </div>
+                <div class="input-group">
+                    <label>Menu items taken</label>
+                    <textarea class="taken-food-menu-input" maxlength="1200" rows="3"
+                        data-taken-food-id="${escapeHTML(item.localId)}"
+                        placeholder="Enter menu names only">${escapeHTML(item.menuItems)}</textarea>
+                </div>
+                <button type="button" class="btn taken-food-remove-btn" data-remove-taken-food-id="${escapeHTML(item.localId)}">Remove Log</button>
+            </article>
+        `).join('')
+        : '<div class="empty-state">No taken-food records entered for this date.</div>';
+}
+
+function addTakenFoodDraft(event) {
+    event.preventDefault();
+    if (state.busy) return;
+
+    const personGroupName = elements.personGroupNameInput.value.trim();
+    const menuItems = elements.menuItemsInput.value.trim();
+
+    if (!personGroupName || !menuItems) {
+        showToast('Enter both the person/group name and the menu items taken.', 'error');
+        return;
+    }
+
+    state.draftTakenFoods.push({
+        localId: `food-${makeDraftId()}`,
+        rowId: null,
+        personGroupName,
+        menuItems
+    });
+
+    elements.personGroupNameInput.value = '';
+    elements.menuItemsInput.value = '';
+    renderTakenFoods();
+    setSaveStatus('Unsaved changes');
+}
+
+function handleTakenFoodInput(event) {
+    const id = event.target.dataset.takenFoodId;
+    if (!id) return;
+    const item = state.draftTakenFoods.find(entry => entry.localId === id);
+    if (!item) return;
+
+    if (event.target.classList.contains('taken-food-person-input')) item.personGroupName = event.target.value;
+    if (event.target.classList.contains('taken-food-menu-input')) item.menuItems = event.target.value;
+    setSaveStatus('Unsaved changes');
+}
+
+function removeTakenFoodDraft(localId) {
+    const item = state.draftTakenFoods.find(entry => entry.localId === localId);
+    if (!item || state.busy) return;
+    if (!window.confirm(`Remove the food log for “${item.personGroupName || 'this person/group'}” from ${formatDateLong(state.entryDate)}?`)) return;
+    state.draftTakenFoods = state.draftTakenFoods.filter(entry => entry.localId !== localId);
+    renderTakenFoods();
+    setSaveStatus('Unsaved changes');
 }
 
 function addDailyDraftItem(event, category) {
@@ -737,7 +1068,7 @@ async function submitSelectedDateReport() {
         ...item,
         name: String(item.name || '').trim(),
         category: normalizeExpenseCategory(item.category),
-        amount: Math.max(0, Number(item.amount) || 0)
+        amount: getFinancialAmount(item.amount)
     }));
 
     const invalidItem = normalizedItems.find(item => item.amount > 0 && !slugify(item.name));
@@ -756,74 +1087,154 @@ async function submitSelectedDateReport() {
         seen.add(key);
     }
 
+    const normalizedOthers = state.draftOtherFunds
+        .map(item => ({
+            ...item,
+            name: String(item.name || '').trim(),
+            amount: getFinancialAmount(item.amount)
+        }))
+        .filter(item => item.name || item.amount > 0);
+
+    if (normalizedOthers.some(item => !slugify(item.name) || item.amount <= 0)) {
+        showToast('Each Other fund must have a name and a value greater than zero.', 'error');
+        return;
+    }
+
+    const otherNames = new Set();
+    for (const item of normalizedOthers) {
+        const key = item.name.toLowerCase();
+        if (otherNames.has(key)) {
+            showToast(`Duplicate Other fund found: “${item.name}”.`, 'error');
+            return;
+        }
+        otherNames.add(key);
+    }
+
+    const normalizedTakenFoods = state.draftTakenFoods
+        .map(item => ({
+            ...item,
+            personGroupName: String(item.personGroupName || '').trim(),
+            menuItems: String(item.menuItems || '').trim()
+        }))
+        .filter(item => item.personGroupName || item.menuItems);
+
+    if (normalizedTakenFoods.some(item => !item.personGroupName || !item.menuItems)) {
+        showToast('Each taken-food log must include both a person/group and the menu items taken.', 'error');
+        return;
+    }
+
     setBusy(true, 'Submitting selected date...');
 
     try {
         const nowIso = new Date().toISOString();
+        const leaderName = state.currentUser.full_name || state.currentUser.username || 'Team Leader';
+        const baseBranch = {
+            branch_key: getBranchKey(),
+            branch_id: state.currentUser.branch_id || null,
+            branch_name: getBranchName(),
+            team_leader_id: state.currentUser.id,
+            team_leader_name: leaderName,
+            updated_at: nowIso
+        };
+
         const keptExpenseIds = new Set();
 
         for (const item of normalizedItems.filter(item => item.amount > 0)) {
             const expenseId = await resolveExpenseTemplate(item.name, item.category);
             keptExpenseIds.add(expenseId);
 
-            const payload = {
-                expense_date: state.entryDate,
-                branch_key: getBranchKey(),
-                branch_id: state.currentUser.branch_id || null,
-                branch_name: getBranchName(),
-                expense_id: expenseId,
-                expense_name: item.name,
-                expense_category: item.category,
-                amount: item.amount,
-                team_leader_id: state.currentUser.id,
-                team_leader_name: state.currentUser.full_name || state.currentUser.username || 'Team Leader',
-                updated_at: nowIso
-            };
-
             const { error } = await supabase
                 .from(DAILY_EXPENSES_TABLE)
-                .upsert(payload, { onConflict: 'expense_date,branch_key,expense_id' });
+                .upsert({
+                    expense_date: state.entryDate,
+                    ...baseBranch,
+                    expense_id: expenseId,
+                    expense_name: item.name,
+                    expense_category: item.category,
+                    amount: item.amount
+                }, { onConflict: 'expense_date,branch_key,expense_id' });
 
             if (error) throw error;
         }
 
-        const staleRows = state.dateRows.filter(row => !keptExpenseIds.has(row.expense_id));
-        for (const staleRow of staleRows) {
-            const { error } = await supabase
-                .from(DAILY_EXPENSES_TABLE)
-                .delete()
-                .eq('id', staleRow.id);
+        for (const staleRow of state.dateRows.filter(row => !keptExpenseIds.has(row.expense_id))) {
+            const { error } = await supabase.from(DAILY_EXPENSES_TABLE).delete().eq('id', staleRow.id);
             if (error) throw error;
         }
-
-        const financialPayload = {
-            financial_date: state.entryDate,
-            branch_key: getBranchKey(),
-            branch_id: state.currentUser.branch_id || null,
-            branch_name: getBranchName(),
-            sales: Math.max(0, Number(elements.salesInput.value) || 0),
-            bilin_sa_paninda: Math.max(0, Number(elements.bilinInput.value) || 0),
-            team_leader_id: state.currentUser.id,
-            team_leader_name: state.currentUser.full_name || state.currentUser.username || 'Team Leader',
-            updated_at: nowIso
-        };
 
         const { error: financialError } = await supabase
             .from(DAILY_FINANCIALS_TABLE)
-            .upsert(financialPayload, { onConflict: 'financial_date,branch_key' });
+            .upsert({
+                financial_date: state.entryDate,
+                ...baseBranch,
+                sales: parseMoneyInput(elements.salesInput.value),
+                bilin_sa_paninda: parseMoneyInput(elements.bilinInput.value)
+            }, { onConflict: 'financial_date,branch_key' });
 
         if (financialError) throw financialError;
+
+        const keptOtherIds = new Set();
+        for (const item of normalizedOthers) {
+            const payload = {
+                fund_date: state.entryDate,
+                ...baseBranch,
+                fund_name: item.name,
+                amount: item.amount
+            };
+
+            if (item.rowId) {
+                keptOtherIds.add(item.rowId);
+                const { error } = await supabase.from(DAILY_OTHER_FUNDS_TABLE).update(payload).eq('id', item.rowId);
+                if (error) throw error;
+            } else {
+                const { data, error } = await supabase.from(DAILY_OTHER_FUNDS_TABLE).insert(payload).select('id').single();
+                if (error) throw error;
+                keptOtherIds.add(data.id);
+            }
+        }
+        for (const staleRow of state.dateOtherFunds.filter(row => !keptOtherIds.has(row.id))) {
+            const { error } = await supabase.from(DAILY_OTHER_FUNDS_TABLE).delete().eq('id', staleRow.id);
+            if (error) throw error;
+        }
+
+        const keptFoodIds = new Set();
+        for (const item of normalizedTakenFoods) {
+            const payload = {
+                log_date: state.entryDate,
+                ...baseBranch,
+                person_group_name: item.personGroupName,
+                menu_items: item.menuItems
+            };
+
+            if (item.rowId) {
+                keptFoodIds.add(item.rowId);
+                const { error } = await supabase.from(TAKEN_FOOD_LOGS_TABLE).update(payload).eq('id', item.rowId);
+                if (error) throw error;
+            } else {
+                const { data, error } = await supabase.from(TAKEN_FOOD_LOGS_TABLE).insert(payload).select('id').single();
+                if (error) throw error;
+                keptFoodIds.add(data.id);
+            }
+        }
+        for (const staleRow of state.dateTakenFoods.filter(row => !keptFoodIds.has(row.id))) {
+            const { error } = await supabase.from(TAKEN_FOOD_LOGS_TABLE).delete().eq('id', staleRow.id);
+            if (error) throw error;
+        }
 
         await Promise.all([
             loadDateRows(),
             loadDateFinancial(),
+            loadDateOtherFunds(),
+            loadDateTakenFoods(),
             loadWeekRows(),
-            loadWeekFinancials()
+            loadWeekFinancials(),
+            loadWeekOtherFunds(),
+            loadWeekTakenFoods()
         ]);
 
         renderAll();
         setSaveStatus('Submitted');
-        showToast(`Expense report saved for ${formatDateWithWeekday(state.entryDate)}.`);
+        showToast(`Daily report saved for ${formatDateWithWeekday(state.entryDate)}.`);
     } catch (error) {
         console.error('Expense submit failed:', error);
         setSaveStatus('Submit failed');
@@ -838,21 +1249,24 @@ function updateLiveCashFlow() {
     let panindaExpenses = 0;
 
     state.draftItems.forEach(item => {
-        const amount = Math.max(0, Number(item.amount) || 0);
+        const amount = getFinancialAmount(item.amount);
         if (normalizeExpenseCategory(item.category) === 'paninda') panindaExpenses += amount;
         else generalExpenses += amount;
     });
 
-    const sales = Math.max(0, Number(elements.salesInput.value) || 0);
-    const bilin = Math.max(0, Number(elements.bilinInput.value) || 0);
+    const sales = parseMoneyInput(elements.salesInput.value);
+    const bilin = parseMoneyInput(elements.bilinInput.value);
+    const others = state.draftOtherFunds.reduce((sum, item) => sum + getFinancialAmount(item.amount), 0);
     const allExpenses = generalExpenses + panindaExpenses;
-    const moneyLeft = sales + bilin - generalExpenses;
+    const moneyLeft = sales + bilin + others - generalExpenses;
 
     elements.generalExpensesText.textContent = formatPeso(generalExpenses);
     elements.panindaExpensesText.textContent = formatPeso(panindaExpenses);
+    elements.otherFundsTotalText.textContent = formatPeso(others);
+    elements.selectedOtherFundsText.textContent = formatPeso(others);
     elements.moneyLeftText.textContent = formatPeso(moneyLeft);
     elements.moneyLeftText.classList.toggle('negative-money', moneyLeft < 0);
-    elements.liveTodayTotalText.textContent = `Selected date total: ${formatPeso(allExpenses)}`;
+    elements.liveTodayTotalText.textContent = `Selected date total expenses: ${formatPeso(allExpenses)}`;
 }
 
 function findDraftItem(localId) {
@@ -1081,8 +1495,8 @@ async function loadImageBitmap(file) {
 }
 
 function exportSelectedWeekPdf() {
-    if (!state.weekRows.length && !state.weekFinancials.length && !state.receipts.length) {
-        showToast('There are no expenses, cash-flow values, or receipts to export for this week.', 'error');
+    if (!state.weekRows.length && !state.weekFinancials.length && !state.weekOtherFunds.length && !state.weekTakenFoods.length && !state.receipts.length) {
+        showToast('There are no weekly records to export.', 'error');
         return;
     }
     if (!window.jspdf?.jsPDF) {
@@ -1092,7 +1506,6 @@ function exportSelectedWeekPdf() {
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
     if (typeof doc.autoTable !== 'function') {
         showToast('The PDF table library is not ready. Reload and try again.', 'error');
         return;
@@ -1104,7 +1517,8 @@ function exportSelectedWeekPdf() {
     const allExpenses = generalTotal + panindaTotal;
     const salesTotal = state.weekFinancials.reduce((sum, row) => sum + getFinancialAmount(row.sales), 0);
     const bilinTotal = state.weekFinancials.reduce((sum, row) => sum + getFinancialAmount(row.bilin_sa_paninda), 0);
-    const moneyLeft = salesTotal + bilinTotal - generalTotal;
+    const othersTotal = state.weekOtherFunds.reduce((sum, row) => sum + getFinancialAmount(row.amount), 0);
+    const moneyLeft = salesTotal + bilinTotal + othersTotal - generalTotal;
     const dailySummary = buildWeeklyCashFlowSummary();
 
     doc.setFillColor(253, 251, 247);
@@ -1123,9 +1537,9 @@ function exportSelectedWeekPdf() {
         head: [['Summary', 'Value', 'Summary', 'Value']],
         body: [
             ['Sales', formatPesoForPdf(salesTotal), 'Bilin sa Paninda', formatPesoForPdf(bilinTotal)],
-            ['General Expenses', formatPesoForPdf(generalTotal), 'Paninda Purchases', formatPesoForPdf(panindaTotal)],
-            ['All Expenses', formatPesoForPdf(allExpenses), 'Total Money Left', formatPesoForPdf(moneyLeft)],
-            ['Expense Entries', String(state.weekRows.length), 'Receipt Attachments', String(state.receipts.length)]
+            ['Other Funds', formatPesoForPdf(othersTotal), 'General Expenses', formatPesoForPdf(generalTotal)],
+            ['Paninda Purchases', formatPesoForPdf(panindaTotal), 'All Expenses', formatPesoForPdf(allExpenses)],
+            ['Total Money Left', formatPesoForPdf(moneyLeft), 'Taken Food Logs', String(state.weekTakenFoods.length)]
         ],
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2.4 },
@@ -1133,22 +1547,21 @@ function exportSelectedWeekPdf() {
     });
 
     let y = doc.lastAutoTable.finalY + 6;
-
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('Daily Cash Flow', 14, y);
 
     doc.autoTable({
         startY: y + 3,
-        head: [['Date', 'Sales', 'Bilin', 'General', 'Paninda', 'All Expenses', 'Money Left']],
+        head: [['Date', 'Sales', 'Bilin', 'Others', 'General', 'Paninda', 'Money Left']],
         body: dailySummary.map(item => [
             formatDateWithWeekday(item.date),
             formatPesoForPdf(item.sales),
             formatPesoForPdf(item.bilin),
+            formatPesoForPdf(item.others),
             formatPesoForPdf(item.general),
             formatPesoForPdf(item.paninda),
-            formatPesoForPdf(item.general + item.paninda),
-            formatPesoForPdf(item.sales + item.bilin - item.general)
+            formatPesoForPdf(item.sales + item.bilin + item.others - item.general)
         ]),
         theme: 'striped',
         styles: { fontSize: 7.2, cellPadding: 1.9 },
@@ -1159,45 +1572,73 @@ function exportSelectedWeekPdf() {
         y = doc.lastAutoTable.finalY + 6;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text('Detailed Expenses', 14, y);
-
+        doc.text('Detailed Daily Expenses', 14, y);
         doc.autoTable({
             startY: y + 3,
-            head: [['Date', 'Category', 'Expense', 'Amount', 'Submitted By', 'Updated']],
-            body: [...state.weekRows]
-                .sort((a, b) =>
-                    String(a.expense_date).localeCompare(String(b.expense_date)) ||
-                    String(a.expense_category).localeCompare(String(b.expense_category)) ||
-                    String(a.expense_name).localeCompare(String(b.expense_name))
-                )
-                .map(row => [
-                    formatDateWithWeekday(row.expense_date),
-                    getCategoryLabel(row.expense_category),
-                    row.expense_name || 'Unnamed Expense',
-                    formatPesoForPdf(getAmount(row)),
-                    row.team_leader_name || 'Team Leader',
-                    formatPHDateTime(row.updated_at || row.created_at)
-                ]),
+            head: [['Date', 'Category', 'Expense', 'Amount', 'Updated']],
+            body: [...state.weekRows].map(row => [
+                formatDateWithWeekday(row.expense_date),
+                getCategoryLabel(row.expense_category),
+                row.expense_name || 'Unnamed Expense',
+                formatPesoForPdf(getAmount(row)),
+                formatPHDateTime(row.updated_at || row.created_at)
+            ]),
             theme: 'grid',
-            styles: { fontSize: 7.1, cellPadding: 1.9 },
+            styles: { fontSize: 7, cellPadding: 1.8 },
             headStyles: { fillColor: [76, 52, 37] },
             columnStyles: { 3: { halign: 'right' } }
+        });
+    }
+
+    if (state.weekOtherFunds.length) {
+        y = doc.lastAutoTable.finalY + 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Other Funds', 14, y);
+        doc.autoTable({
+            startY: y + 3,
+            head: [['Date', 'Name', 'Value', 'Updated']],
+            body: state.weekOtherFunds.map(row => [
+                formatDateWithWeekday(row.fund_date),
+                row.fund_name || 'Other fund',
+                formatPesoForPdf(row.amount),
+                formatPHDateTime(row.updated_at || row.created_at)
+            ]),
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1.8 },
+            headStyles: { fillColor: [54, 95, 61] }
+        });
+    }
+
+    if (state.weekTakenFoods.length) {
+        y = doc.lastAutoTable.finalY + 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Taken Food Logs (Non-Cash / No Inventory Effect)', 14, y);
+        doc.autoTable({
+            startY: y + 3,
+            head: [['Date', 'Person or Group', 'Menu Items', 'Logged By']],
+            body: state.weekTakenFoods.map(row => [
+                formatDateWithWeekday(row.log_date),
+                row.person_group_name || 'Unnamed',
+                row.menu_items || '',
+                row.team_leader_name || 'Team Leader'
+            ]),
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1.8, overflow: 'linebreak' },
+            headStyles: { fillColor: [81, 69, 111] },
+            columnStyles: { 2: { cellWidth: 120 } }
         });
     }
 
     if (state.receipts.length) {
         y = doc.lastAutoTable.finalY + 6;
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
         doc.text('Receipt Attachments', 14, y);
-
         doc.autoTable({
             startY: y + 3,
-            head: [['Date', 'Receipt Name', 'Uploaded By', 'Uploaded']],
+            head: [['Date', 'Receipt Name', 'Uploaded']],
             body: state.receipts.map(receipt => [
                 formatDateWithWeekday(receipt.expense_date),
                 receipt.receipt_name || 'Receipt',
-                receipt.team_leader_name || 'Team Leader',
                 formatPHDateTime(receipt.created_at)
             ]),
             theme: 'grid',
@@ -1207,7 +1648,7 @@ function exportSelectedWeekPdf() {
     }
 
     addPdfPageNumbers(doc);
-    doc.save(`Adrianos_Expenses_${getSafeFileName(getBranchName())}_${state.selectedWeekStart}_to_${weekEnd}.pdf`);
+    doc.save(`Adrianos_Expenses_${state.selectedWeekStart}_to_${weekEnd}.pdf`);
 }
 
 function buildWeeklyCashFlowSummary() {
@@ -1217,13 +1658,17 @@ function buildWeeklyCashFlowSummary() {
         const date = addDaysToDateKey(state.selectedWeekStart, i);
         const rows = state.weekRows.filter(row => row.expense_date === date);
         const financial = state.weekFinancials.find(row => row.financial_date === date);
+        const others = state.weekOtherFunds
+            .filter(row => row.fund_date === date)
+            .reduce((sum, row) => sum + getFinancialAmount(row.amount), 0);
 
         result.push({
             date,
             general: sumRowsByCategory(rows, 'general'),
             paninda: sumRowsByCategory(rows, 'paninda'),
             sales: getFinancialAmount(financial?.sales),
-            bilin: getFinancialAmount(financial?.bilin_sa_paninda)
+            bilin: getFinancialAmount(financial?.bilin_sa_paninda),
+            others
         });
     }
 
@@ -1319,9 +1764,11 @@ function getFriendlyDataError(error) {
         code === '42P01' ||
         code === 'PGRST205' ||
         message.includes('daily_branch_financials') ||
+        message.includes('daily_other_funds') ||
+        message.includes('taken_food_logs') ||
         message.includes('expense_category')
     ) {
-        return 'The Paninda and daily financial migration is not installed. Run supabase-paninda-daily-financials.sql in Supabase.';
+        return 'The updated expense migration is not installed. Run supabase-others-taken-food.sql in Supabase, then reload the schema.';
     }
     if (message.includes('bucket') || message.includes('storage')) {
         return 'Receipt storage is not ready. Run the receipt storage migration and reload the page.';
@@ -1366,6 +1813,23 @@ function getFinancialAmount(value) {
 function formatInputAmount(value) {
     const amount = getFinancialAmount(value);
     return amount ? String(amount) : '';
+}
+
+
+function parseMoneyInput(value) {
+    const clean = sanitizeMoneyInput(value);
+    return Math.max(0, Number(clean) || 0);
+}
+
+function formatEditableMoney(value) {
+    const amount = parseMoneyInput(value);
+    if (!String(value || '').trim()) return '';
+    return amount.toFixed(2).replace(/\.00$/, '');
+}
+
+function formatPlainDecimal(value) {
+    const amount = getFinancialAmount(value);
+    return amount.toFixed(2).replace(/\.00$/, '');
 }
 
 function sanitizeMoneyInput(value) {

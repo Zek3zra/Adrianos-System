@@ -765,3 +765,173 @@ th { color: var(--coffee-medium); font-size: 10px; text-transform: uppercase; }
         grid-template-columns: minmax(250px, 1fr) minmax(170px, 220px) 150px;
     }
 }
+
+
+/* Others income and non-cash food log */
+.other-funds-block {
+    margin-top: 16px;
+    padding: 14px;
+    border: 1px solid #cfdccf;
+    border-radius: 14px;
+    background: #f7fbf7;
+}
+.other-fund-form {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid #d7e5d8;
+    border-radius: 12px;
+    background: #fff;
+}
+.other-fund-add-btn {
+    background: #365f3d;
+    color: #fff;
+}
+.other-funds-list {
+    display: grid;
+    gap: 9px;
+    margin-top: 12px;
+}
+.other-fund-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+    padding: 12px;
+    border: 1px solid #d8e3d8;
+    border-radius: 12px;
+    background: #fff;
+}
+.other-fund-row .money-input-wrap input {
+    text-align: right;
+    font-weight: 800;
+}
+.other-fund-meta {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+.other-fund-remove-btn {
+    background: #fff5f4;
+    color: var(--danger);
+    border: 1px solid rgba(217,83,79,.28);
+}
+.cash-flow-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.money-left-card {
+    grid-column: 1 / -1;
+}
+.input-group textarea,
+.taken-food-item textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 12px;
+    background: var(--white);
+    color: var(--text-main);
+    font-size: 15px;
+    line-height: 1.45;
+    resize: vertical;
+    outline: none;
+}
+.input-group textarea:focus,
+.taken-food-item textarea:focus {
+    border-color: var(--coffee-medium);
+    box-shadow: 0 0 0 3px rgba(139,94,52,.12);
+}
+.taken-food-card {
+    border-color: #d9d4e7;
+    background: #fdfcff;
+}
+.taken-food-form {
+    display: grid;
+    gap: 11px;
+    padding: 13px;
+    border: 1px solid #ded9eb;
+    border-radius: 13px;
+    background: #fff;
+}
+.taken-food-add-btn {
+    background: #51456f;
+    color: #fff;
+}
+.taken-food-list,
+.taken-food-week-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 13px;
+}
+.taken-food-item,
+.taken-food-week-card {
+    display: grid;
+    gap: 9px;
+    padding: 13px;
+    border: 1px solid #ddd7e8;
+    border-radius: 13px;
+    background: #fff;
+}
+.taken-food-item-head,
+.taken-food-week-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+}
+.taken-food-item-head strong,
+.taken-food-week-head strong {
+    color: var(--coffee-dark);
+    font-size: 13px;
+}
+.taken-food-item small,
+.taken-food-week-card small {
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 1.4;
+}
+.taken-food-menu-text {
+    padding: 10px;
+    border-radius: 9px;
+    background: #f6f3fa;
+    color: #433b53;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.taken-food-remove-btn {
+    background: #fff5f4;
+    color: var(--danger);
+    border: 1px solid rgba(217,83,79,.28);
+}
+.supporting-review-panels {
+    align-items: start;
+}
+.money-input-wrap input[type="text"],
+.expense-amount-input[type="text"] {
+    font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 700px) {
+    .other-fund-form {
+        grid-template-columns: 1.3fr .8fr auto;
+        align-items: end;
+    }
+    .other-fund-add-btn {
+        min-height: 46px;
+    }
+    .other-fund-row {
+        grid-template-columns: minmax(220px, 1fr) 180px auto;
+        align-items: end;
+    }
+    .taken-food-form {
+        grid-template-columns: .9fr 1.4fr auto;
+        align-items: end;
+    }
+    .taken-food-add-btn {
+        min-height: 46px;
+    }
+    .taken-food-item {
+        grid-template-columns: .8fr 1.5fr auto;
+        align-items: start;
+    }
+}

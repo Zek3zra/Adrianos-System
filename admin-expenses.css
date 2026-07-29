@@ -1557,3 +1557,150 @@ body.modal-open {
         grid-column: auto;
     }
 }
+
+
+/* Enhanced Admin review for Other Funds and non-cash food logs */
+.admin-review-guide {
+    display: grid;
+    gap: 13px;
+    border-color: #d9d3c8;
+    background: linear-gradient(135deg, #fff 0%, #fbf8f2 100%);
+}
+.admin-review-guide h3 {
+    margin-top: 3px;
+    color: var(--coffee-dark);
+    font-size: 17px;
+}
+.admin-review-guide p {
+    margin-top: 7px;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.65;
+}
+.review-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+.review-legend span {
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 800;
+}
+.legend-income { background: #edf7ee; color: #2e6b38; }
+.legend-expense { background: #fff0ee; color: #a84038; }
+.legend-excluded { background: #fff8e7; color: #765b1d; }
+.legend-noncash { background: #f3effa; color: #5b4777; }
+
+.admin-supporting-records,
+.admin-taken-food-section {
+    overflow: hidden;
+}
+.admin-other-fund-card {
+    border-color: #cfe0d1;
+    background: #f8fcf8;
+}
+.admin-other-fund-card .mobile-record-amount {
+    color: #2e6b38;
+}
+.admin-taken-food-list {
+    display: grid;
+    gap: 10px;
+}
+.admin-taken-food-card {
+    display: grid;
+    gap: 10px;
+    padding: 13px;
+    border: 1px solid #ddd7e8;
+    border-radius: 13px;
+    background: #fdfcff;
+}
+.admin-taken-food-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+.admin-taken-food-card-head strong {
+    color: var(--coffee-dark);
+    font-size: 14px;
+}
+.admin-taken-food-card-head span {
+    color: var(--coffee-medium);
+    font-size: 9px;
+    font-weight: 800;
+}
+.admin-taken-food-menu {
+    padding: 11px;
+    border-radius: 10px;
+    background: #f4f0f8;
+    color: #443b54;
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.admin-taken-food-meta {
+    display: grid;
+    gap: 3px;
+    color: var(--text-muted);
+    font-size: 9px;
+}
+.daily-other-funds-list,
+.daily-taken-food-list {
+    display: grid;
+    gap: 7px;
+    margin-top: 9px;
+}
+.daily-support-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid #e3ddd4;
+    border-radius: 9px;
+    background: #fff;
+}
+.daily-support-row strong {
+    color: var(--coffee-dark);
+    font-size: 11px;
+}
+.daily-support-row span,
+.daily-support-row small {
+    color: var(--text-muted);
+    font-size: 9px;
+}
+.daily-support-section-title {
+    margin-top: 11px;
+    color: var(--coffee-medium);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.daily-cash-flow-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.daily-money-left {
+    grid-column: 1 / -1;
+}
+.branch-cash-flow-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 760px) {
+    .admin-review-guide {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+    }
+    .daily-cash-flow-summary {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .daily-money-left {
+        grid-column: auto;
+    }
+    .branch-cash-flow-strip {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
