@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Daily Expenses - Adrianos</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="tl-expenses.css?v=paninda-backdate-20260729-1">
+    <link rel="stylesheet" href="tl-expenses.css?v=daily-specific-items-20260729-2">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -32,7 +32,7 @@
     <main class="dashboard-container expense-page">
         <section class="info-banner">
             <strong>Daily logging with backdated entry</strong>
-            <span>Select a date, enter Sales, Bilin sa Paninda, general expenses, and Paninda purchases, then submit the report.</span>
+            <span>Select a date and enter only the specific expenses for that day. Past dates reload their previously logged items for editing.</span>
         </section>
 
         <section class="dashboard-card daily-control-card">
@@ -95,16 +95,16 @@
                 <div>
                     <span class="section-kicker">Expense Entry</span>
                     <h3 id="dailyReportTitle">Enter expenses</h3>
-                    <p>Search filters both General Expenses and Paninda items.</p>
+                    <p>Each date has its own item list. Expense names are not carried into another day.</p>
                 </div>
                 <span class="status-pill" id="saveStatusText">Ready</span>
             </div>
 
             <div class="expense-search-panel">
                 <div class="input-group">
-                    <label for="expenseSearchInput">Search expense names</label>
+                    <label for="expenseSearchInput">Search items on selected date</label>
                     <input id="expenseSearchInput" type="search" autocomplete="off" placeholder="Type the exact or partial expense name...">
-                    <small id="expenseSearchCountText">0 expense names</small>
+                    <small id="expenseSearchCountText">0 items for selected date</small>
                 </div>
             </div>
 
@@ -115,39 +115,39 @@
                         <h4>General Expenses</h4>
                         <p>These amounts are deducted in the money-left formula.</p>
                     </div>
-                    <span id="generalNamesCountText" class="category-count-badge">0 names</span>
+                    <span id="generalNamesCountText" class="category-count-badge">0 items this date</span>
                 </div>
 
                 <form id="addExpenseForm" class="add-expense-form">
                     <div class="input-group">
-                        <label for="newExpenseNameInput">Add general expense</label>
-                        <input id="newExpenseNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: LPG, transportation, repairs" required>
+                        <label for="newExpenseNameInput">Add general expense for selected date</label>
+                        <input id="newExpenseNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Specific item, such as LPG or transportation" required>
                     </div>
-                    <button class="btn secondary-btn" type="submit">Add General Expense</button>
+                    <button class="btn secondary-btn" type="submit">Add to Selected Date</button>
                 </form>
 
-                <div id="generalExpenseList" class="expense-list"><div class="empty-state">No general expense names yet.</div></div>
+                <div id="generalExpenseList" class="expense-list"><div class="empty-state">No general expenses entered for this date.</div></div>
             </section>
 
             <section class="expense-category-block paninda-expense-block">
                 <div class="expense-category-head permanent-category-head">
                     <div>
-                        <span class="section-kicker">Permanent Expense Category</span>
+                        <span class="section-kicker">Fixed Expense Category</span>
                         <h4>Paninda</h4>
-                        <p>Add the individual items bought for Paninda. These remain in expense totals but are excluded from the money-left deduction.</p>
+                        <p>Paninda is always available as a category, but its purchased items are entered separately for each selected date.</p>
                     </div>
-                    <span id="panindaNamesCountText" class="category-count-badge permanent-badge">Permanent</span>
+                    <span id="panindaNamesCountText" class="category-count-badge permanent-badge">0 items this date</span>
                 </div>
 
                 <form id="addPanindaForm" class="add-expense-form paninda-add-form">
                     <div class="input-group">
-                        <label for="newPanindaNameInput">Add Paninda item</label>
+                        <label for="newPanindaNameInput">Add Paninda item for selected date</label>
                         <input id="newPanindaNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: chicken, cups, vegetables" required>
                     </div>
-                    <button class="btn paninda-btn" type="submit">Add Paninda Item</button>
+                    <button class="btn paninda-btn" type="submit">Add to Selected Date</button>
                 </form>
 
-                <div id="panindaExpenseList" class="expense-list"><div class="empty-state">No Paninda items yet.</div></div>
+                <div id="panindaExpenseList" class="expense-list"><div class="empty-state">No Paninda items entered for this date.</div></div>
             </section>
 
             <div class="submit-row">
@@ -235,6 +235,6 @@
     </main>
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="tl-expenses.js?v=paninda-backdate-20260729-1"></script>
+    <script type="module" src="tl-expenses.js?v=daily-specific-items-20260729-2"></script>
 </body>
 </html>

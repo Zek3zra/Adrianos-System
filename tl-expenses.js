@@ -14,14 +14,13 @@ const state = {
     currentDate: '',
     entryDate: '',
     selectedWeekStart: '',
-    expenseNames: [],
+    draftItems: [],
     dateRows: [],
     weekRows: [],
     dateFinancial: null,
     weekFinancials: [],
     receipts: [],
     expenseSearch: '',
-    draftAmounts: new Map(),
     selectedReceiptFile: null,
     previewUrl: '',
     busy: false
@@ -86,8 +85,8 @@ function bindEvents() {
     elements.refreshBtn.addEventListener('click', loadAllExpenseData);
     elements.exportWeeklyPdfBtn.addEventListener('click', exportSelectedWeekPdf);
     elements.submitDailyReportBtn.addEventListener('click', submitSelectedDateReport);
-    elements.addExpenseForm.addEventListener('submit', event => addExpenseName(event, 'general'));
-    elements.addPanindaForm.addEventListener('submit', event => addExpenseName(event, 'paninda'));
+    elements.addExpenseForm.addEventListener('submit', event => addDailyDraftItem(event, 'general'));
+    elements.addPanindaForm.addEventListener('submit', event => addDailyDraftItem(event, 'paninda'));
     elements.receiptUploadForm.addEventListener('submit', uploadReceipt);
 
     elements.reportDatePicker.addEventListener('change', handleEntryDateChange);
@@ -136,6 +135,8 @@ async function handleEntryDateChange() {
     }
 
     state.entryDate = selectedDate;
+    state.expenseSearch = '';
+    elements.expenseSearchInput.value = '';
     state.selectedWeekStart = getPHWeekStartKey(selectedDate);
     elements.weekPicker.value = state.selectedWeekStart;
 
@@ -177,28 +178,47 @@ async function handleWeekChange() {
 }
 
 function handleExpenseAmountInput(event) {
-    const input = event.target.closest('.expense-amount-input[data-expense-id]');
-    if (!input) return;
+    const amountInput = event.target.closest('.expense-amount-input[data-draft-id]');
+    if (amountInput) {
+        amountInput.value = sanitizeMoneyInput(amountInput.value);
+        const item = findDraftItem(amountInput.dataset.draftId);
+        if (item) item.amount = Math.max(0, Number(amountInput.value) || 0);
+        updateLiveCashFlow();
+        setSaveStatus('Unsaved changes');
+        return;
+    }
 
-    input.value = sanitizeMoneyInput(input.value);
-    state.draftAmounts.set(input.dataset.expenseId, Math.max(0, Number(input.value) || 0));
-    updateLiveCashFlow();
+    const nameInput = event.target.closest('.expense-item-name-input[data-draft-id]');
+    if (!nameInput) return;
+
+    const item = findDraftItem(nameInput.dataset.draftId);
+    if (item) item.name = nameInput.value;
     setSaveStatus('Unsaved changes');
 }
 
 function handleExpenseAmountBlur(event) {
-    const input = event.target.closest('.expense-amount-input[data-expense-id]');
-    if (!input || !input.value) return;
+    const amountInput = event.target.closest('.expense-amount-input[data-draft-id]');
+    if (amountInput && amountInput.value) {
+        amountInput.value = Number(amountInput.value).toFixed(2).replace(/\.00$/, '');
+        const item = findDraftItem(amountInput.dataset.draftId);
+        if (item) item.amount = Math.max(0, Number(amountInput.value) || 0);
+        updateLiveCashFlow();
+        return;
+    }
 
-    input.value = Number(input.value).toFixed(2).replace(/\.00$/, '');
-    state.draftAmounts.set(input.dataset.expenseId, Math.max(0, Number(input.value) || 0));
-    updateLiveCashFlow();
+    const nameInput = event.target.closest('.expense-item-name-input[data-draft-id]');
+    if (!nameInput) return;
+
+    const item = findDraftItem(nameInput.dataset.draftId);
+    if (item) item.name = nameInput.value.trim();
+    nameInput.value = item?.name || '';
+    renderExpenseInputs();
 }
 
 function handleExpenseListClick(event) {
-    const button = event.target.closest('[data-remove-expense-id]');
+    const button = event.target.closest('[data-remove-draft-id]');
     if (!button) return;
-    removeExpenseName(button.dataset.removeExpenseId);
+    removeDailyDraftItem(button.dataset.removeDraftId);
 }
 
 async function loadCurrentUser() {
@@ -248,7 +268,6 @@ async function loadAllExpenseData() {
         }
 
         await Promise.all([
-            loadExpenseNames(),
             loadDateRows(),
             loadDateFinancial(),
             loadWeekRows(),
@@ -267,23 +286,6 @@ async function loadAllExpenseData() {
     }
 }
 
-async function loadExpenseNames() {
-    const { data, error } = await supabase
-        .from(EXPENSE_NAMES_TABLE)
-        .select('*')
-        .eq('branch_key', getBranchKey())
-        .eq('is_active', true)
-        .order('expense_category', { ascending: true })
-        .order('expense_name', { ascending: true });
-
-    if (error) throw error;
-
-    state.expenseNames = (data || []).map(item => ({
-        ...item,
-        expense_category: normalizeExpenseCategory(item.expense_category)
-    }));
-}
-
 async function loadDateRows() {
     const { data, error } = await supabase
         .from(DAILY_EXPENSES_TABLE)
@@ -298,7 +300,14 @@ async function loadDateRows() {
         .filter(row => getAmount(row) > 0)
         .map(row => ({ ...row, expense_category: normalizeExpenseCategory(row.expense_category) }));
 
-    state.draftAmounts = new Map(state.dateRows.map(row => [row.expense_id, getAmount(row)]));
+    state.draftItems = state.dateRows.map(row => ({
+        localId: `saved-${row.id}`,
+        rowId: row.id,
+        originalExpenseId: row.expense_id,
+        name: row.expense_name || '',
+        category: normalizeExpenseCategory(row.expense_category),
+        amount: getAmount(row)
+    }));
 }
 
 async function loadWeekRows() {
@@ -381,42 +390,52 @@ function renderFinancialInputs() {
 
 function renderExpenseInputs() {
     const query = state.expenseSearch;
-    const matchingNames = state.expenseNames.filter(item =>
-        !query || String(item.expense_name || '').toLowerCase().includes(query)
+    const matchingItems = state.draftItems.filter(item =>
+        !query || String(item.name || '').toLowerCase().includes(query)
     );
 
-    const generalItems = matchingNames.filter(item => item.expense_category === 'general');
-    const panindaItems = matchingNames.filter(item => item.expense_category === 'paninda');
+    const generalItems = matchingItems.filter(item => item.category === 'general');
+    const panindaItems = matchingItems.filter(item => item.category === 'paninda');
 
     elements.generalExpenseList.innerHTML = generalItems.length
         ? generalItems.map(renderExpenseRow).join('')
-        : `<div class="empty-state">${query ? `No general expense matches “${escapeHTML(elements.expenseSearchInput.value.trim())}”.` : 'No general expense names yet.'}</div>`;
+        : `<div class="empty-state">${query ? `No general expense on ${escapeHTML(formatDateLong(state.entryDate))} matches “${escapeHTML(elements.expenseSearchInput.value.trim())}”.` : `No general expenses entered for ${escapeHTML(formatDateLong(state.entryDate))}.`}</div>`;
 
     elements.panindaExpenseList.innerHTML = panindaItems.length
         ? panindaItems.map(renderExpenseRow).join('')
-        : `<div class="empty-state">${query ? `No Paninda item matches “${escapeHTML(elements.expenseSearchInput.value.trim())}”.` : 'No Paninda items yet. Add the first item above.'}</div>`;
+        : `<div class="empty-state">${query ? `No Paninda item on ${escapeHTML(formatDateLong(state.entryDate))} matches “${escapeHTML(elements.expenseSearchInput.value.trim())}”.` : `No Paninda items entered for ${escapeHTML(formatDateLong(state.entryDate))}.`}</div>`;
 
-    const totalGeneral = state.expenseNames.filter(item => item.expense_category === 'general').length;
-    const totalPaninda = state.expenseNames.filter(item => item.expense_category === 'paninda').length;
+    const totalGeneral = state.draftItems.filter(item => item.category === 'general').length;
+    const totalPaninda = state.draftItems.filter(item => item.category === 'paninda').length;
 
-    elements.generalNamesCountText.textContent = `${totalGeneral} name${totalGeneral === 1 ? '' : 's'}`;
-    elements.panindaNamesCountText.textContent = `${totalPaninda} item${totalPaninda === 1 ? '' : 's'} • Permanent`;
+    elements.generalNamesCountText.textContent = `${totalGeneral} item${totalGeneral === 1 ? '' : 's'} this date`;
+    elements.panindaNamesCountText.textContent = `${totalPaninda} item${totalPaninda === 1 ? '' : 's'} this date`;
     elements.expenseSearchCountText.textContent = query
-        ? `${matchingNames.length} of ${state.expenseNames.length} names shown for “${elements.expenseSearchInput.value.trim()}”`
-        : `${state.expenseNames.length} saved expense name${state.expenseNames.length === 1 ? '' : 's'}`;
+        ? `${matchingItems.length} of ${state.draftItems.length} selected-date items shown for “${elements.expenseSearchInput.value.trim()}”`
+        : `${state.draftItems.length} item${state.draftItems.length === 1 ? '' : 's'} entered for ${formatDateLong(state.entryDate)}`;
 }
 
 function renderExpenseRow(item) {
-    const amount = state.draftAmounts.get(item.id) || '';
-    const existingRow = state.dateRows.find(row => row.expense_id === item.id);
-    const categoryLabel = item.expense_category === 'paninda' ? 'Paninda item' : 'General expense';
+    const categoryLabel = item.category === 'paninda' ? 'Paninda item' : 'General expense';
+    const savedLabel = item.rowId
+        ? `Previously logged for ${formatDateLong(state.entryDate)}. Edit the name or amount, then submit again.`
+        : `New item for ${formatDateLong(state.entryDate)}. It will not appear on other dates.`;
 
     return `
-        <div class="expense-row ${item.expense_category === 'paninda' ? 'paninda-row' : ''}" data-expense-id="${escapeHTML(item.id)}">
-            <div class="expense-name">
+        <div class="expense-row ${item.category === 'paninda' ? 'paninda-row' : ''}" data-draft-id="${escapeHTML(item.localId)}">
+            <div class="expense-name daily-item-name-wrap">
                 <span class="expense-type-label">${escapeHTML(categoryLabel)}</span>
-                <strong>${escapeHTML(item.expense_name)}</strong>
-                <span>${existingRow ? `Last submitted ${escapeHTML(formatPHDateTime(existingRow.updated_at || existingRow.created_at))}` : `No value submitted for ${escapeHTML(formatDateLong(state.entryDate))}`}</span>
+                <input
+                    class="expense-item-name-input"
+                    type="text"
+                    maxlength="120"
+                    autocomplete="off"
+                    data-draft-id="${escapeHTML(item.localId)}"
+                    value="${escapeHTML(item.name)}"
+                    placeholder="Specific item or expense"
+                    aria-label="Expense item name for ${escapeHTML(formatDateLong(state.entryDate))}"
+                >
+                <span>${escapeHTML(savedLabel)}</span>
             </div>
             <div class="amount-wrap">
                 <input
@@ -425,13 +444,13 @@ function renderExpenseRow(item) {
                     inputmode="decimal"
                     min="0"
                     step="0.01"
-                    data-expense-id="${escapeHTML(item.id)}"
-                    value="${amount ? escapeHTML(String(amount)) : ''}"
+                    data-draft-id="${escapeHTML(item.localId)}"
+                    value="${item.amount ? escapeHTML(String(item.amount)) : ''}"
                     placeholder="0.00"
-                    aria-label="Amount for ${escapeHTML(item.expense_name)} on ${escapeHTML(formatDateLong(state.entryDate))}"
+                    aria-label="Amount for ${escapeHTML(item.name || categoryLabel)} on ${escapeHTML(formatDateLong(state.entryDate))}"
                 >
             </div>
-            <button type="button" class="btn btn-link-danger remove-expense-btn" data-remove-expense-id="${escapeHTML(item.id)}">Remove Name</button>
+            <button type="button" class="btn btn-link-danger remove-expense-btn" data-remove-draft-id="${escapeHTML(item.localId)}">Remove from Date</button>
         </div>
     `;
 }
@@ -596,104 +615,113 @@ function renderReceipts() {
         : '<div class="empty-state">No receipt images uploaded for this week.</div>';
 }
 
-async function addExpenseName(event, category) {
+function addDailyDraftItem(event, category) {
     event.preventDefault();
     if (state.busy) return;
 
     const isPaninda = category === 'paninda';
     const input = isPaninda ? elements.newPanindaNameInput : elements.newExpenseNameInput;
     const name = input.value.trim();
-    const baseKey = slugify(name);
-    const expenseKey = isPaninda ? `paninda-${baseKey}` : baseKey;
 
-    if (!baseKey) {
+    if (!slugify(name)) {
         showToast(`Please enter a valid ${isPaninda ? 'Paninda item' : 'expense'} name.`, 'error');
         return;
     }
 
-    setBusy(true, `Adding ${isPaninda ? 'Paninda item' : 'expense'}...`);
+    const duplicate = state.draftItems.some(item =>
+        item.category === category &&
+        String(item.name || '').trim().toLowerCase() === name.toLowerCase()
+    );
 
-    try {
-        const { data: existing, error: findError } = await supabase
-            .from(EXPENSE_NAMES_TABLE)
-            .select('*')
-            .eq('branch_key', getBranchKey())
-            .eq('expense_key', expenseKey)
-            .maybeSingle();
-
-        if (findError) throw findError;
-
-        const payload = {
-            expense_name: name,
-            expense_category: isPaninda ? 'paninda' : 'general',
-            is_active: true,
-            updated_at: new Date().toISOString()
-        };
-
-        if (existing) {
-            const { error } = await supabase
-                .from(EXPENSE_NAMES_TABLE)
-                .update(payload)
-                .eq('id', existing.id);
-            if (error) throw error;
-        } else {
-            const { error } = await supabase
-                .from(EXPENSE_NAMES_TABLE)
-                .insert({
-                    branch_key: getBranchKey(),
-                    branch_id: state.currentUser.branch_id || null,
-                    expense_name: name,
-                    expense_key: expenseKey,
-                    expense_category: isPaninda ? 'paninda' : 'general',
-                    created_by: state.currentUser.id,
-                    created_by_name: state.currentUser.full_name || state.currentUser.username || 'Team Leader',
-                    is_active: true
-                });
-            if (error) throw error;
-        }
-
-        input.value = '';
-        await loadExpenseNames();
-        renderExpenseInputs();
-        showToast(`“${name}” was added under ${isPaninda ? 'Paninda' : 'General Expenses'}.`);
-    } catch (error) {
-        console.error('Add expense name failed:', error);
-        showToast(getFriendlyDataError(error), 'error');
-    } finally {
-        setBusy(false);
-        setSaveStatus('Ready');
+    if (duplicate) {
+        showToast(`“${name}” is already entered under ${isPaninda ? 'Paninda' : 'General Expenses'} for this date.`, 'error');
+        return;
     }
+
+    const localId = makeDraftId();
+    state.draftItems.push({
+        localId,
+        rowId: null,
+        originalExpenseId: null,
+        name,
+        category: isPaninda ? 'paninda' : 'general',
+        amount: 0
+    });
+
+    input.value = '';
+    state.expenseSearch = '';
+    elements.expenseSearchInput.value = '';
+    renderExpenseInputs();
+    updateLiveCashFlow();
+    setSaveStatus('Unsaved changes');
+
+    window.requestAnimationFrame(() => {
+        const amountInput = document.querySelector(`.expense-amount-input[data-draft-id="${CSS.escape(localId)}"]`);
+        amountInput?.focus();
+    });
 }
 
-async function removeExpenseName(expenseId) {
-    const item = state.expenseNames.find(expense => expense.id === expenseId);
+function removeDailyDraftItem(localId) {
+    const item = findDraftItem(localId);
     if (!item || state.busy) return;
 
-    const confirmed = window.confirm(`Remove “${item.expense_name}” from future forms? Historical records will remain.`);
-    if (!confirmed) return;
+    const message = item.rowId
+        ? `Remove “${item.name}” from ${formatDateLong(state.entryDate)}? Submit the report to permanently delete it from that date.`
+        : `Remove “${item.name}” from this date?`;
 
-    setBusy(true, 'Removing name...');
+    if (!window.confirm(message)) return;
 
-    try {
-        const { error } = await supabase
+    state.draftItems = state.draftItems.filter(draft => draft.localId !== localId);
+    renderExpenseInputs();
+    updateLiveCashFlow();
+    setSaveStatus('Unsaved changes');
+}
+
+async function resolveExpenseTemplate(name, category) {
+    const cleanName = String(name || '').trim();
+    const baseKey = slugify(cleanName);
+    const expenseKey = category === 'paninda' ? `paninda-${baseKey}` : baseKey;
+
+    const { data: existing, error: findError } = await supabase
+        .from(EXPENSE_NAMES_TABLE)
+        .select('id')
+        .eq('branch_key', getBranchKey())
+        .eq('expense_key', expenseKey)
+        .maybeSingle();
+
+    if (findError) throw findError;
+
+    if (existing?.id) {
+        const { error: updateError } = await supabase
             .from(EXPENSE_NAMES_TABLE)
-            .update({ is_active: false, updated_at: new Date().toISOString() })
-            .eq('id', expenseId);
-
-        if (error) throw error;
-
-        state.draftAmounts.delete(expenseId);
-        await loadExpenseNames();
-        renderExpenseInputs();
-        updateLiveCashFlow();
-        showToast('Expense name removed. Historical records remain available.');
-    } catch (error) {
-        console.error('Remove expense name failed:', error);
-        showToast(getFriendlyDataError(error), 'error');
-    } finally {
-        setBusy(false);
-        setSaveStatus('Ready');
+            .update({
+                expense_name: cleanName,
+                expense_category: category,
+                is_active: false,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', existing.id);
+        if (updateError) throw updateError;
+        return existing.id;
     }
+
+    const { data: inserted, error: insertError } = await supabase
+        .from(EXPENSE_NAMES_TABLE)
+        .insert({
+            branch_key: getBranchKey(),
+            branch_id: state.currentUser.branch_id || null,
+            expense_name: cleanName,
+            expense_key: expenseKey,
+            expense_category: category,
+            created_by: state.currentUser.id,
+            created_by_name: state.currentUser.full_name || state.currentUser.username || 'Team Leader',
+            is_active: false
+        })
+        .select('id')
+        .single();
+
+    if (insertError) throw insertError;
+    return inserted.id;
 }
 
 async function submitSelectedDateReport() {
@@ -705,44 +733,67 @@ async function submitSelectedDateReport() {
         return;
     }
 
+    const normalizedItems = state.draftItems.map(item => ({
+        ...item,
+        name: String(item.name || '').trim(),
+        category: normalizeExpenseCategory(item.category),
+        amount: Math.max(0, Number(item.amount) || 0)
+    }));
+
+    const invalidItem = normalizedItems.find(item => item.amount > 0 && !slugify(item.name));
+    if (invalidItem) {
+        showToast('Every expense with an amount must have a specific item name.', 'error');
+        return;
+    }
+
+    const seen = new Set();
+    for (const item of normalizedItems.filter(item => item.amount > 0)) {
+        const key = `${item.category}:${item.name.toLowerCase()}`;
+        if (seen.has(key)) {
+            showToast(`Duplicate item found: “${item.name}”. Keep one entry and combine the amount.`, 'error');
+            return;
+        }
+        seen.add(key);
+    }
+
     setBusy(true, 'Submitting selected date...');
 
     try {
         const nowIso = new Date().toISOString();
+        const keptExpenseIds = new Set();
 
-        for (const template of state.expenseNames) {
-            const amount = Math.max(0, Number(state.draftAmounts.get(template.id)) || 0);
+        for (const item of normalizedItems.filter(item => item.amount > 0)) {
+            const expenseId = await resolveExpenseTemplate(item.name, item.category);
+            keptExpenseIds.add(expenseId);
 
-            if (amount > 0) {
-                const payload = {
-                    expense_date: state.entryDate,
-                    branch_key: getBranchKey(),
-                    branch_id: state.currentUser.branch_id || null,
-                    branch_name: getBranchName(),
-                    expense_id: template.id,
-                    expense_name: template.expense_name,
-                    expense_category: normalizeExpenseCategory(template.expense_category),
-                    amount,
-                    team_leader_id: state.currentUser.id,
-                    team_leader_name: state.currentUser.full_name || state.currentUser.username || 'Team Leader',
-                    updated_at: nowIso
-                };
+            const payload = {
+                expense_date: state.entryDate,
+                branch_key: getBranchKey(),
+                branch_id: state.currentUser.branch_id || null,
+                branch_name: getBranchName(),
+                expense_id: expenseId,
+                expense_name: item.name,
+                expense_category: item.category,
+                amount: item.amount,
+                team_leader_id: state.currentUser.id,
+                team_leader_name: state.currentUser.full_name || state.currentUser.username || 'Team Leader',
+                updated_at: nowIso
+            };
 
-                const { error } = await supabase
-                    .from(DAILY_EXPENSES_TABLE)
-                    .upsert(payload, { onConflict: 'expense_date,branch_key,expense_id' });
+            const { error } = await supabase
+                .from(DAILY_EXPENSES_TABLE)
+                .upsert(payload, { onConflict: 'expense_date,branch_key,expense_id' });
 
-                if (error) throw error;
-            } else {
-                const { error } = await supabase
-                    .from(DAILY_EXPENSES_TABLE)
-                    .delete()
-                    .eq('expense_date', state.entryDate)
-                    .eq('branch_key', getBranchKey())
-                    .eq('expense_id', template.id);
+            if (error) throw error;
+        }
 
-                if (error) throw error;
-            }
+        const staleRows = state.dateRows.filter(row => !keptExpenseIds.has(row.expense_id));
+        for (const staleRow of staleRows) {
+            const { error } = await supabase
+                .from(DAILY_EXPENSES_TABLE)
+                .delete()
+                .eq('id', staleRow.id);
+            if (error) throw error;
         }
 
         const financialPayload = {
@@ -786,9 +837,9 @@ function updateLiveCashFlow() {
     let generalExpenses = 0;
     let panindaExpenses = 0;
 
-    state.expenseNames.forEach(item => {
-        const amount = Math.max(0, Number(state.draftAmounts.get(item.id)) || 0);
-        if (normalizeExpenseCategory(item.expense_category) === 'paninda') panindaExpenses += amount;
+    state.draftItems.forEach(item => {
+        const amount = Math.max(0, Number(item.amount) || 0);
+        if (normalizeExpenseCategory(item.category) === 'paninda') panindaExpenses += amount;
         else generalExpenses += amount;
     });
 
@@ -802,6 +853,15 @@ function updateLiveCashFlow() {
     elements.moneyLeftText.textContent = formatPeso(moneyLeft);
     elements.moneyLeftText.classList.toggle('negative-money', moneyLeft < 0);
     elements.liveTodayTotalText.textContent = `Selected date total: ${formatPeso(allExpenses)}`;
+}
+
+function findDraftItem(localId) {
+    return state.draftItems.find(item => item.localId === localId) || null;
+}
+
+function makeDraftId() {
+    if (globalThis.crypto?.randomUUID) return `draft-${globalThis.crypto.randomUUID()}`;
+    return `draft-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function handleReceiptFileChange() {

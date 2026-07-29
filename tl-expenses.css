@@ -728,3 +728,40 @@ th { color: var(--coffee-medium); font-size: 10px; text-transform: uppercase; }
         grid-column: auto;
     }
 }
+
+
+/* ===== Date-specific expense item entry ===== */
+.daily-item-name-wrap {
+    display: grid;
+    gap: 5px;
+}
+
+.expense-item-name-input {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 11px;
+    background: var(--white);
+    color: var(--coffee-dark);
+    font-size: 14px;
+    font-weight: 700;
+    outline: none;
+}
+
+.expense-item-name-input:focus {
+    border-color: var(--coffee-medium);
+    box-shadow: 0 0 0 3px rgba(139, 94, 52, 0.12);
+}
+
+.daily-item-name-wrap > span:last-child {
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+@media (min-width: 760px) {
+    .expense-row {
+        grid-template-columns: minmax(250px, 1fr) minmax(170px, 220px) 150px;
+    }
+}
