@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Daily Expenses - Adrianos</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="tl-expenses.css?v=formal-receipts-20260728">
+    <link rel="stylesheet" href="tl-expenses.css?v=paninda-backdate-20260729-1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -31,8 +31,44 @@
 
     <main class="dashboard-container expense-page">
         <section class="info-banner">
-            <strong>Daily logging, weekly reporting</strong>
-            <span>Submit the running total for each expense today. Submitting again updates today's same record.</span>
+            <strong>Daily logging with backdated entry</strong>
+            <span>Select a date, enter Sales, Bilin sa Paninda, general expenses, and Paninda purchases, then submit the report.</span>
+        </section>
+
+        <section class="dashboard-card daily-control-card">
+            <div class="card-header">
+                <span class="section-kicker">Selected Daily Report</span>
+                <h3>Choose the expense date</h3>
+                <p>You can enter a missed report for an earlier date. Future dates are not allowed.</p>
+            </div>
+
+            <div class="daily-control-grid">
+                <div class="input-group">
+                    <label for="reportDatePicker">Expense date</label>
+                    <input type="date" id="reportDatePicker">
+                    <small id="reportDateHelp">Using Philippine date.</small>
+                </div>
+                <div class="input-group">
+                    <label for="salesInput">Sales</label>
+                    <div class="money-input-wrap">
+                        <input id="salesInput" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <small>Sales recorded for the selected date.</small>
+                </div>
+                <div class="input-group">
+                    <label for="bilinInput">Bilin sa Paninda</label>
+                    <div class="money-input-wrap">
+                        <input id="bilinInput" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <small>Additional money intended for Paninda.</small>
+                </div>
+            </div>
+
+            <div class="cash-flow-preview" aria-label="Selected date cash flow">
+                <article><span>General Expenses</span><strong id="generalExpensesText">₱0</strong><small>Deducted from cash</small></article>
+                <article><span>Paninda Purchases</span><strong id="panindaExpensesText">₱0</strong><small>Logged but not deducted</small></article>
+                <article class="money-left-card"><span>Total Money Left</span><strong id="moneyLeftText">₱0</strong><small>(Sales + Bilin sa Paninda) − General Expenses</small></article>
+            </div>
         </section>
 
         <section class="dashboard-card toolbar-card">
@@ -48,43 +84,78 @@
         </section>
 
         <section class="summary-grid" aria-label="Expense summary">
-            <article class="summary-card"><span>Today's Total</span><strong id="todayTotalText">₱0</strong><small id="todayDateText">Today</small></article>
-            <article class="summary-card"><span>Week Total</span><strong id="weekTotalText">₱0</strong><small id="weekEntriesText">0 entries</small></article>
-            <article class="summary-card"><span>Today's Entries</span><strong id="todayEntriesText">0</strong><small>Positive amounts</small></article>
+            <article class="summary-card"><span>Selected Date Total</span><strong id="todayTotalText">₱0</strong><small id="todayDateText">Selected date</small></article>
+            <article class="summary-card"><span>Week Total Expenses</span><strong id="weekTotalText">₱0</strong><small id="weekEntriesText">0 entries</small></article>
+            <article class="summary-card"><span>Selected Date Entries</span><strong id="todayEntriesText">0</strong><small>General and Paninda</small></article>
             <article class="summary-card"><span>Receipts</span><strong id="receiptCountText">0</strong><small>Selected week</small></article>
         </section>
 
         <section class="dashboard-card entry-card">
             <div class="card-header flex-header">
                 <div>
-                    <span class="section-kicker">Today's Report</span>
-                    <h3 id="dailyReportTitle">Enter today's expenses</h3>
-                    <p>Blank or zero values are excluded from reports.</p>
+                    <span class="section-kicker">Expense Entry</span>
+                    <h3 id="dailyReportTitle">Enter expenses</h3>
+                    <p>Search filters both General Expenses and Paninda items.</p>
                 </div>
                 <span class="status-pill" id="saveStatusText">Ready</span>
             </div>
 
             <div class="expense-search-panel">
                 <div class="input-group">
-                    <label for="expenseSearchInput">Search saved expenses</label>
-                    <input id="expenseSearchInput" type="search" autocomplete="off" placeholder="Search LPG, supplies, transportation...">
-                    <small id="expenseSearchCountText">0 saved expense names</small>
+                    <label for="expenseSearchInput">Search expense names</label>
+                    <input id="expenseSearchInput" type="search" autocomplete="off" placeholder="Type the exact or partial expense name...">
+                    <small id="expenseSearchCountText">0 expense names</small>
                 </div>
             </div>
 
-            <form id="addExpenseForm" class="add-expense-form">
-                <div class="input-group">
-                    <label for="newExpenseNameInput">Add expense name</label>
-                    <input id="newExpenseNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: LPG or supplies" required>
+            <section class="expense-category-block general-expense-block">
+                <div class="expense-category-head">
+                    <div>
+                        <span class="section-kicker">Outside Paninda</span>
+                        <h4>General Expenses</h4>
+                        <p>These amounts are deducted in the money-left formula.</p>
+                    </div>
+                    <span id="generalNamesCountText" class="category-count-badge">0 names</span>
                 </div>
-                <button class="btn secondary-btn" type="submit">Add Name</button>
-            </form>
 
-            <div id="expenseList" class="expense-list"><div class="empty-state">No saved expense names yet.</div></div>
+                <form id="addExpenseForm" class="add-expense-form">
+                    <div class="input-group">
+                        <label for="newExpenseNameInput">Add general expense</label>
+                        <input id="newExpenseNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: LPG, transportation, repairs" required>
+                    </div>
+                    <button class="btn secondary-btn" type="submit">Add General Expense</button>
+                </form>
+
+                <div id="generalExpenseList" class="expense-list"><div class="empty-state">No general expense names yet.</div></div>
+            </section>
+
+            <section class="expense-category-block paninda-expense-block">
+                <div class="expense-category-head permanent-category-head">
+                    <div>
+                        <span class="section-kicker">Permanent Expense Category</span>
+                        <h4>Paninda</h4>
+                        <p>Add the individual items bought for Paninda. These remain in expense totals but are excluded from the money-left deduction.</p>
+                    </div>
+                    <span id="panindaNamesCountText" class="category-count-badge permanent-badge">Permanent</span>
+                </div>
+
+                <form id="addPanindaForm" class="add-expense-form paninda-add-form">
+                    <div class="input-group">
+                        <label for="newPanindaNameInput">Add Paninda item</label>
+                        <input id="newPanindaNameInput" type="text" maxlength="120" autocomplete="off" placeholder="Example: chicken, cups, vegetables" required>
+                    </div>
+                    <button class="btn paninda-btn" type="submit">Add Paninda Item</button>
+                </form>
+
+                <div id="panindaExpenseList" class="expense-list"><div class="empty-state">No Paninda items yet.</div></div>
+            </section>
 
             <div class="submit-row">
-                <div><strong id="liveTodayTotalText">Today's running total: ₱0</strong><span>Submit to save or update today's report.</span></div>
-                <button type="button" class="btn secondary-btn submit-btn" id="submitDailyReportBtn">Submit Today's Report</button>
+                <div>
+                    <strong id="liveTodayTotalText">Selected date total: ₱0</strong>
+                    <span id="submitHintText">Submit to save or update the selected date.</span>
+                </div>
+                <button type="button" class="btn secondary-btn submit-btn" id="submitDailyReportBtn">Submit Selected Date Report</button>
             </div>
         </section>
 
@@ -156,14 +227,14 @@
             <div id="weeklyDetailsCards" class="mobile-record-list"></div>
             <div class="table-wrap desktop-table-wrap">
                 <table>
-                    <thead><tr><th>Date</th><th>Expense</th><th>Amount</th><th>Submitted By</th><th>Last Updated</th></tr></thead>
-                    <tbody id="weeklyDetailsBody"><tr><td colspan="5" class="table-empty">No records loaded.</td></tr></tbody>
+                    <thead><tr><th>Date</th><th>Category</th><th>Expense</th><th>Amount</th><th>Submitted By</th><th>Last Updated</th></tr></thead>
+                    <tbody id="weeklyDetailsBody"><tr><td colspan="6" class="table-empty">No records loaded.</td></tr></tbody>
                 </table>
             </div>
         </section>
     </main>
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="tl-expenses.js?v=receipt-gallery-20260728-3"></script>
+    <script type="module" src="tl-expenses.js?v=paninda-backdate-20260729-1"></script>
 </body>
 </html>

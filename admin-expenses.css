@@ -1433,3 +1433,127 @@ body.modal-open {
 @media (min-width: 700px) { .admin-receipt-gallery { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
 @media (max-width: 699px) { .summary-grid > .summary-card:last-child { grid-column: 1 / -1; } }
+
+
+/* ===== Paninda and daily cash-flow admin update ===== */
+.admin-financial-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.money-left-admin-card {
+    grid-column: 1 / -1;
+    background: #f2f8f1;
+    border-color: #cfe0cc;
+}
+
+.record-label-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 7px;
+}
+
+.record-label-row .record-branch {
+    margin-bottom: 0;
+}
+
+.record-category {
+    display: inline-flex;
+    width: fit-content;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #eeeae5;
+    color: var(--coffee-medium);
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .35px;
+}
+
+.paninda-record-category {
+    background: #f4e2c6;
+    color: #6b4828;
+}
+
+.daily-cash-flow-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.daily-cash-flow-summary .daily-money-left {
+    grid-column: 1 / -1;
+    background: #f2f8f1;
+    border-color: #cfe0cc;
+}
+
+.branch-cash-flow-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    background: #fffdf9;
+}
+
+.branch-cash-flow-strip span {
+    min-width: 0;
+    padding: 7px 8px;
+    display: grid;
+    gap: 2px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--soft-bg);
+    color: var(--text-muted);
+    font-size: 8px;
+}
+
+.branch-cash-flow-strip strong {
+    color: var(--coffee-dark);
+    font-size: 10px;
+    overflow-wrap: anywhere;
+}
+
+.branch-cash-flow-strip .branch-money-left {
+    grid-column: 1 / -1;
+    background: #f2f8f1;
+    border-color: #cfe0cc;
+}
+
+.compact-empty {
+    min-height: 70px;
+    border: 0;
+    border-radius: 0;
+}
+
+.negative-money {
+    color: var(--danger) !important;
+}
+
+@media (min-width: 700px) {
+    .admin-financial-summary {
+        grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
+    }
+
+    .admin-financial-summary .summary-card,
+    .admin-financial-summary .summary-card-primary,
+    .admin-financial-summary .summary-card-wide,
+    .money-left-admin-card {
+        grid-column: auto;
+    }
+
+    .daily-cash-flow-summary {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .daily-cash-flow-summary .daily-money-left {
+        grid-column: auto;
+    }
+
+    .branch-cash-flow-strip {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .branch-cash-flow-strip .branch-money-left {
+        grid-column: auto;
+    }
+}

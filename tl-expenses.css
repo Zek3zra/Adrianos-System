@@ -431,3 +431,300 @@ th { color: var(--coffee-medium); font-size: 10px; text-transform: uppercase; }
     .mobile-record-list { display: none; }
     .desktop-table-wrap { display: block; }
 }
+
+
+/* ===== Paninda, backdated entry, and daily cash-flow update ===== */
+.search-hidden { display: none !important; }
+
+.daily-control-card {
+    display: grid;
+    gap: 14px;
+}
+
+.daily-control-grid {
+    display: grid;
+    gap: 11px;
+}
+
+.money-input-wrap {
+    position: relative;
+}
+
+.money-input-wrap::before {
+    content: '₱';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--coffee-medium);
+    font-weight: 800;
+    pointer-events: none;
+}
+
+.money-input-wrap input {
+    padding-left: 29px !important;
+    font-weight: 800;
+    text-align: right;
+}
+
+.cash-flow-preview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.cash-flow-preview article {
+    min-width: 0;
+    min-height: 94px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--soft-bg);
+}
+
+.cash-flow-preview article span {
+    color: var(--coffee-medium);
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .35px;
+}
+
+.cash-flow-preview article strong {
+    margin: 5px 0;
+    color: var(--coffee-dark);
+    font-size: 20px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.cash-flow-preview article small {
+    color: var(--text-muted);
+    font-size: 9px;
+    line-height: 1.35;
+}
+
+.cash-flow-preview .money-left-card {
+    grid-column: 1 / -1;
+    min-height: 108px;
+    background: #f2f8f1;
+    border-color: #cfe0cc;
+}
+
+.cash-flow-preview .money-left-card strong {
+    font-size: 28px;
+}
+
+.negative-money {
+    color: var(--danger) !important;
+}
+
+.expense-search-panel {
+    margin-bottom: 14px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--soft-bg);
+}
+
+.expense-category-block {
+    display: grid;
+    gap: 12px;
+    margin-top: 13px;
+    padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.paninda-expense-block {
+    border-color: #dfc7a5;
+    background: #fffaf1;
+}
+
+.expense-category-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 11px;
+    border-bottom: 1px solid var(--border);
+}
+
+.expense-category-head > div {
+    min-width: 0;
+}
+
+.expense-category-head h4 {
+    color: var(--coffee-dark);
+    font-size: 16px;
+}
+
+.expense-category-head p {
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.category-count-badge {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--soft-bg);
+    color: var(--coffee-medium);
+    font-size: 9px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.permanent-badge {
+    border-color: #ddc49f;
+    background: #fff2dc;
+    color: #6b4828;
+}
+
+.paninda-add-form {
+    background: #fff7e8;
+    border-color: #e6d1b4;
+}
+
+.paninda-btn {
+    background: #6b4828;
+    color: #fff;
+}
+
+.paninda-row {
+    background: #fffaf2;
+    border-color: #e4d2b8;
+}
+
+.expense-type-label {
+    display: inline-flex !important;
+    width: fit-content;
+    margin-bottom: 4px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: var(--soft-bg);
+    color: var(--coffee-medium) !important;
+    font-size: 8px !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.paninda-row .expense-type-label {
+    background: #f3e1c5;
+    color: #6b4828 !important;
+}
+
+.category-mini-badge {
+    display: inline-flex;
+    width: fit-content;
+    margin-bottom: 5px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #eeeae5;
+    color: var(--coffee-medium) !important;
+    font-size: 8px !important;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.paninda-mini-badge {
+    background: #f5e4ca;
+    color: #6b4828 !important;
+}
+
+.daily-financial-summary-row {
+    display: grid;
+    gap: 9px;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee9e3;
+}
+
+.daily-financial-summary-row:last-child {
+    border-bottom: 0;
+}
+
+.daily-financial-date {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.daily-financial-date strong {
+    color: var(--coffee-dark);
+    font-size: 12px;
+}
+
+.daily-financial-date span {
+    color: var(--text-muted);
+    font-size: 9px;
+    text-align: right;
+}
+
+.daily-financial-values {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.daily-financial-values span {
+    min-width: 0;
+    padding: 8px;
+    display: grid;
+    gap: 3px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--soft-bg);
+    color: var(--text-muted);
+    font-size: 8px;
+}
+
+.daily-financial-values strong {
+    color: var(--coffee-dark);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+.daily-financial-values .money-left-line {
+    grid-column: 1 / -1;
+    background: #f2f8f1;
+    border-color: #cfe0cc;
+}
+
+.mobile-record-card > .category-mini-badge {
+    margin-bottom: 7px;
+}
+
+@media (min-width: 700px) {
+    .daily-control-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .cash-flow-preview {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .cash-flow-preview .money-left-card {
+        grid-column: auto;
+    }
+
+    .expense-category-block {
+        padding: 16px;
+    }
+
+    .daily-financial-values {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .daily-financial-values .money-left-line {
+        grid-column: auto;
+    }
+}

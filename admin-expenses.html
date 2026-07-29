@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Expense Reports - Adrianos Admin</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-expenses.css?v=receipt-gallery-20260728">
+    <link rel="stylesheet" href="admin-expenses.css?v=paninda-financials-20260729-1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -37,7 +37,7 @@
         <section class="report-hero" aria-labelledby="reportHeroTitle">
             <div>
                 <span class="hero-kicker">Weekly Expense Overview</span>
-                <h2 id="reportHeroTitle">Develop by Jerow gwapo.</h2>
+                <h2 id="reportHeroTitle">Expense and daily cash-flow report.</h2>
                 <p id="reportScopeText">Loading selected week and branch...</p>
             </div>
             <div class="hero-week-badge">
@@ -76,35 +76,20 @@
             </div>
         </section>
 
-        <section class="summary-grid" aria-label="Expense summary">
+        <section class="summary-grid admin-financial-summary" aria-label="Expense summary">
             <article class="summary-card summary-card-primary">
                 <div class="summary-icon">₱</div>
-                <div>
-                    <span>Weekly Total</span>
-                    <strong id="weeklyTotalText">₱0</strong>
-                    <small id="weeklyEntriesText">0 entries</small>
-                </div>
+                <div><span>All Expenses</span><strong id="weeklyTotalText">₱0</strong><small id="weeklyEntriesText">0 entries</small></div>
             </article>
-            <article class="summary-card">
-                <span>Today's Total</span>
-                <strong id="todayTotalText">₱0</strong>
-                <small id="todayDateText">Today</small>
-            </article>
-            <article class="summary-card">
-                <span>Branches</span>
-                <strong id="branchCountText">0</strong>
-                <small>Reporting this week</small>
-            </article>
-            <article class="summary-card summary-card-wide">
-                <span>Top Expense</span>
-                <strong id="topExpenseText">None</strong>
-                <small id="topExpenseAmountText">₱0</small>
-            </article>
-            <article class="summary-card">
-                <span>Receipts</span>
-                <strong id="receiptCountText">0</strong>
-                <small>Uploaded this week</small>
-            </article>
+            <article class="summary-card"><span>General Expenses</span><strong id="generalTotalText">₱0</strong><small>Used in money-left formula</small></article>
+            <article class="summary-card"><span>Paninda Purchases</span><strong id="panindaTotalText">₱0</strong><small>Logged but excluded from deduction</small></article>
+            <article class="summary-card"><span>Sales + Bilin</span><strong id="fundsTotalText">₱0</strong><small>Selected week</small></article>
+            <article class="summary-card money-left-admin-card"><span>Total Money Left</span><strong id="moneyLeftTotalText">₱0</strong><small>(Sales + Bilin) − General Expenses</small></article>
+            <article class="summary-card"><span>Receipts</span><strong id="receiptCountText">0</strong><small>Uploaded this week</small></article>
+            <article class="summary-card"><span>Branches</span><strong id="branchCountText">0</strong><small>Reporting this week</small></article>
+            <article class="summary-card summary-card-wide"><span>Top Expense</span><strong id="topExpenseText">None</strong><small id="topExpenseAmountText">₱0</small></article>
+            <span id="todayTotalText" class="hidden">₱0</span>
+            <span id="todayDateText" class="hidden">Today</span>
         </section>
 
         <section class="summary-panels three-panels">
@@ -180,6 +165,7 @@
                         <tr>
                             <th>Date</th>
                             <th>Branch</th>
+                            <th>Category</th>
                             <th>Expense</th>
                             <th>Amount</th>
                             <th>Submitted By</th>
@@ -187,7 +173,7 @@
                         </tr>
                     </thead>
                     <tbody id="recordsBody">
-                        <tr><td colspan="6" class="table-empty">No records loaded.</td></tr>
+                        <tr><td colspan="7" class="table-empty">No records loaded.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -196,6 +182,6 @@
 
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="admin-expenses.js?v=receipt-gallery-20260728"></script>
+    <script type="module" src="admin-expenses.js?v=paninda-financials-20260729-1"></script>
 </body>
 </html>
