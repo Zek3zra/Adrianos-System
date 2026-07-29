@@ -158,6 +158,8 @@ function bindEvents() {
 async function handleEntryDateChange() {
     let selectedDate = elements.reportDatePicker.value || getPHDateKey();
     const today = getPHDateKey();
+    const previousWeekStart = state.selectedWeekStart;
+    const previousScrollY = window.scrollY;
 
     if (selectedDate > today) {
         selectedDate = today;
@@ -165,31 +167,56 @@ async function handleEntryDateChange() {
         showToast('Future expense dates are not allowed.', 'error');
     }
 
+    const nextWeekStart = getPHWeekStartKey(selectedDate);
+    const weekChanged = nextWeekStart !== previousWeekStart;
+
     state.entryDate = selectedDate;
     state.expenseSearch = '';
     elements.expenseSearchInput.value = '';
-    state.selectedWeekStart = getPHWeekStartKey(selectedDate);
+    state.selectedWeekStart = nextWeekStart;
     elements.weekPicker.value = state.selectedWeekStart;
 
+    document.body.classList.add('date-switching');
     setBusy(true, 'Loading selected date...');
+
     try {
-        await Promise.all([
+        const dateRequests = [
             loadDateRows(),
             loadDateFinancial(),
             loadDateOtherFunds(),
-            loadDateTakenFoods(),
-            loadWeekRows(),
-            loadWeekFinancials(),
-            loadWeekOtherFunds(),
-            loadWeekTakenFoods(),
-            loadWeekReceipts()
-        ]);
-        renderAll();
+            loadDateTakenFoods()
+        ];
+
+        const weekRequests = weekChanged
+            ? [
+                loadWeekRows(),
+                loadWeekFinancials(),
+                loadWeekOtherFunds(),
+                loadWeekTakenFoods(),
+                loadWeekReceipts()
+            ]
+            : [];
+
+        await Promise.all([...dateRequests, ...weekRequests]);
+
+        renderSelectedDateSections();
+
+        if (weekChanged) {
+            renderWeeklySummary();
+            renderReceipts();
+        }
+
+        updateWeekRangeText();
     } catch (error) {
         console.error('Selected date load failed:', error);
         showToast(getFriendlyDataError(error), 'error');
     } finally {
         setBusy(false);
+
+        window.requestAnimationFrame(() => {
+            document.body.classList.remove('date-switching');
+            window.scrollTo({ top: previousScrollY, left: 0, behavior: 'auto' });
+        });
     }
 }
 
@@ -487,15 +514,19 @@ async function loadWeekReceipts() {
 }
 
 function renderAll() {
+    renderSelectedDateSections();
+    renderWeeklySummary();
+    renderReceipts();
+    updateWeekRangeText();
+}
+
+function renderSelectedDateSections() {
     renderExpenseInputs();
     renderFinancialInputs();
     renderOtherFunds();
     renderTakenFoods();
     renderTopSummary();
-    renderWeeklySummary();
-    renderReceipts();
     updateStaticHeader();
-    updateWeekRangeText();
     updateLiveCashFlow();
 }
 
