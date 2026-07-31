@@ -286,7 +286,8 @@ function renderBreakdowns() {
         dailyItems.push({
             date,
             label: formatDateWithWeekday(date),
-            total: general + paninda,
+            total: general + otherTotal + bilin,
+            reviewTotal: general + otherTotal + bilin,
             general,
             paninda,
             sales,
@@ -368,12 +369,14 @@ function renderDailyRankItems(items) {
                     aria-expanded="${isOpen ? 'true' : 'false'}"
                     aria-controls="${escapeHTML(detailId)}"
                 >
-                    <div>
-                        <strong>${escapeHTML(item.label)}</strong><br>
-                        <span>${item.count} expense entries • ${item.foodCount} food logs • Money left ${escapeHTML(formatPeso(item.moneyLeft))}</span>
+                    <div class="daily-row-copy">
+                        <strong>${escapeHTML(item.label)}</strong>
+                        <span class="daily-row-components">General ${escapeHTML(formatPeso(item.general))} + Others ${escapeHTML(formatPeso(item.others))} + Bilin ${escapeHTML(formatPeso(item.bilin))}</span>
+                        <span class="daily-row-exclusion">Paninda ${escapeHTML(formatPeso(item.paninda))} excluded • Sales and money left are inside the dropdown</span>
                     </div>
                     <div class="daily-rank-value">
-                        <strong>${escapeHTML(formatPeso(item.total))}</strong>
+                        <span class="daily-value-label">Review Total</span>
+                        <strong>${escapeHTML(formatPeso(item.reviewTotal))}</strong>
                         <span class="daily-chevron" aria-hidden="true">⌄</span>
                     </div>
                 </button>
@@ -432,69 +435,103 @@ function renderInlineDailyBreakdown(dateKey) {
     const totalSales = branchGroups.reduce((sum, group) => sum + group.sales, 0);
     const totalBilin = branchGroups.reduce((sum, group) => sum + group.bilin, 0);
     const totalOthers = branchGroups.reduce((sum, group) => sum + group.others, 0);
+    const totalReview = totalGeneral + totalOthers + totalBilin;
     const totalMoneyLeft = totalSales + totalBilin + totalOthers - totalGeneral;
 
     return `
         <div class="daily-inline-summary daily-cash-flow-summary">
-            <div><span>Sales + Bilin</span><strong>${escapeHTML(formatPeso(totalSales + totalBilin))}</strong></div>
+            <div class="daily-review-total"><span>Review Total</span><strong>${escapeHTML(formatPeso(totalReview))}</strong><small>General + Others + Bilin</small></div>
+            <div><span>Sales</span><strong>${escapeHTML(formatPeso(totalSales))}</strong></div>
+            <div><span>Bilin</span><strong>${escapeHTML(formatPeso(totalBilin))}</strong></div>
             <div><span>Others</span><strong>${escapeHTML(formatPeso(totalOthers))}</strong></div>
             <div><span>General</span><strong>${escapeHTML(formatPeso(totalGeneral))}</strong></div>
-            <div><span>Paninda</span><strong>${escapeHTML(formatPeso(totalPaninda))}</strong></div>
-            <div class="daily-money-left"><span>Money Left</span><strong>${escapeHTML(formatPeso(totalMoneyLeft))}</strong></div>
+            <div class="daily-paninda-excluded"><span>Paninda</span><strong>${escapeHTML(formatPeso(totalPaninda))}</strong><small>Excluded from Review Total</small></div>
+            <div class="daily-money-left"><span>Money Left</span><strong>${escapeHTML(formatPeso(totalMoneyLeft))}</strong><small>Sales + Bilin + Others − General</small></div>
         </div>
 
         <div class="daily-inline-branches">
-            ${branchGroups.map(group => `
-                <section class="daily-inline-branch-card">
-                    <header>
-                        <div><span>Branch</span><strong>${escapeHTML(group.branchName)}</strong></div>
-                        <strong>${escapeHTML(formatPeso(group.general + group.paninda))}</strong>
-                    </header>
+            ${branchGroups.map(group => {
+                const branchReviewTotal = group.general + group.others + group.bilin;
+                return `
+                    <details class="daily-inline-branch-card"${branchGroups.length === 1 ? ' open' : ''}>
+                        <summary class="daily-branch-summary">
+                            <div>
+                                <span>Branch</span>
+                                <strong>${escapeHTML(group.branchName)}</strong>
+                            </div>
+                            <div class="daily-branch-summary-value">
+                                <span>Review Total</span>
+                                <strong>${escapeHTML(formatPeso(branchReviewTotal))}</strong>
+                                <i aria-hidden="true">⌄</i>
+                            </div>
+                        </summary>
 
-                    <div class="branch-cash-flow-strip">
-                        <span>Sales <strong>${escapeHTML(formatPeso(group.sales))}</strong></span>
-                        <span>Bilin <strong>${escapeHTML(formatPeso(group.bilin))}</strong></span>
-                        <span>Others <strong>${escapeHTML(formatPeso(group.others))}</strong></span>
-                        <span>General <strong>${escapeHTML(formatPeso(group.general))}</strong></span>
-                        <span>Paninda <strong>${escapeHTML(formatPeso(group.paninda))}</strong></span>
-                        <span class="branch-money-left">Money left <strong>${escapeHTML(formatPeso(group.sales + group.bilin + group.others - group.general))}</strong></span>
-                    </div>
+                        <div class="daily-branch-body">
+                            <div class="branch-cash-flow-strip">
+                                <span>Sales <strong>${escapeHTML(formatPeso(group.sales))}</strong></span>
+                                <span>Bilin <strong>${escapeHTML(formatPeso(group.bilin))}</strong></span>
+                                <span>Others <strong>${escapeHTML(formatPeso(group.others))}</strong></span>
+                                <span>General <strong>${escapeHTML(formatPeso(group.general))}</strong></span>
+                                <span class="branch-paninda-excluded">Paninda <strong>${escapeHTML(formatPeso(group.paninda))}</strong><small>Excluded</small></span>
+                                <span class="branch-money-left">Money left <strong>${escapeHTML(formatPeso(group.sales + group.bilin + group.others - group.general))}</strong></span>
+                            </div>
 
-                    <div class="daily-inline-expense-list">
-                        ${group.rows.length ? group.rows.map(row => `
-                            <article class="daily-inline-expense-row">
-                                <div>
-                                    <span class="record-category ${normalizeExpenseCategory(row.expense_category) === 'paninda' ? 'paninda-record-category' : ''}">${escapeHTML(getCategoryLabel(row.expense_category))}</span>
-                                    <strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong>
-                                    <span>Submitted by ${escapeHTML(row.team_leader_name || 'Team Leader')}</span>
-                                    <small>Updated ${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</small>
+                            <details class="daily-subsection">
+                                <summary class="daily-subsection-summary">
+                                    <span>Expense Items</span>
+                                    <strong>${group.rows.length} item${group.rows.length === 1 ? '' : 's'}</strong>
+                                    <i aria-hidden="true">⌄</i>
+                                </summary>
+                                <div class="daily-subsection-body daily-inline-expense-list">
+                                    ${group.rows.length ? group.rows.map(row => `
+                                        <article class="daily-inline-expense-row">
+                                            <div>
+                                                <span class="record-category ${normalizeExpenseCategory(row.expense_category) === 'paninda' ? 'paninda-record-category' : ''}">${escapeHTML(getCategoryLabel(row.expense_category))}</span>
+                                                <strong>${escapeHTML(row.expense_name || 'Unnamed Expense')}</strong>
+                                                <span>Submitted by ${escapeHTML(row.team_leader_name || 'Team Leader')}</span>
+                                                <small>Updated ${escapeHTML(formatPHDateTime(row.updated_at || row.created_at))}</small>
+                                            </div>
+                                            <strong>${escapeHTML(formatPeso(getAmount(row)))}</strong>
+                                        </article>
+                                    `).join('') : '<div class="daily-inline-empty compact-empty"><span>No expense items logged for this branch.</span></div>'}
                                 </div>
-                                <strong>${escapeHTML(formatPeso(getAmount(row)))}</strong>
-                            </article>
-                        `).join('') : '<div class="daily-inline-empty compact-empty"><span>No expense items logged for this branch.</span></div>'}
-                    </div>
+                            </details>
 
-                    <div class="daily-support-section-title">Other Funds</div>
-                    <div class="daily-other-funds-list">
-                        ${group.otherFunds.length ? group.otherFunds.map(row => `
-                            <div class="daily-support-row">
-                                <div><strong>${escapeHTML(row.fund_name || 'Other fund')}</strong><br><small>${escapeHTML(row.team_leader_name || 'Team Leader')}</small></div>
-                                <strong>${escapeHTML(formatPeso(getFinancialAmount(row.amount)))}</strong>
-                            </div>
-                        `).join('') : '<div class="daily-inline-empty compact-empty"><span>No Other funds for this branch.</span></div>'}
-                    </div>
+                            <details class="daily-subsection">
+                                <summary class="daily-subsection-summary">
+                                    <span>Other Funds</span>
+                                    <strong>${group.otherFunds.length} record${group.otherFunds.length === 1 ? '' : 's'}</strong>
+                                    <i aria-hidden="true">⌄</i>
+                                </summary>
+                                <div class="daily-subsection-body daily-other-funds-list">
+                                    ${group.otherFunds.length ? group.otherFunds.map(row => `
+                                        <div class="daily-support-row">
+                                            <div><strong>${escapeHTML(row.fund_name || 'Other fund')}</strong><br><small>${escapeHTML(row.team_leader_name || 'Team Leader')}</small></div>
+                                            <strong>${escapeHTML(formatPeso(getFinancialAmount(row.amount)))}</strong>
+                                        </div>
+                                    `).join('') : '<div class="daily-inline-empty compact-empty"><span>No Other funds for this branch.</span></div>'}
+                                </div>
+                            </details>
 
-                    <div class="daily-support-section-title">Taken Food Logs</div>
-                    <div class="daily-taken-food-list">
-                        ${group.takenFoods.length ? group.takenFoods.map(row => `
-                            <div class="daily-support-row">
-                                <div><strong>${escapeHTML(row.person_group_name || 'Unnamed person/group')}</strong><br><span>${escapeHTML(row.menu_items || '')}</span></div>
-                                <small>Non-cash</small>
-                            </div>
-                        `).join('') : '<div class="daily-inline-empty compact-empty"><span>No taken-food logs for this branch.</span></div>'}
-                    </div>
-                </section>
-            `).join('')}
+                            <details class="daily-subsection">
+                                <summary class="daily-subsection-summary">
+                                    <span>Taken Food Logs</span>
+                                    <strong>${group.takenFoods.length} record${group.takenFoods.length === 1 ? '' : 's'}</strong>
+                                    <i aria-hidden="true">⌄</i>
+                                </summary>
+                                <div class="daily-subsection-body daily-taken-food-list">
+                                    ${group.takenFoods.length ? group.takenFoods.map(row => `
+                                        <div class="daily-support-row">
+                                            <div><strong>${escapeHTML(row.person_group_name || 'Unnamed person/group')}</strong><br><span>${escapeHTML(row.menu_items || '')}</span></div>
+                                            <small>Non-cash</small>
+                                        </div>
+                                    `).join('') : '<div class="daily-inline-empty compact-empty"><span>No taken-food logs for this branch.</span></div>'}
+                                </div>
+                            </details>
+                        </div>
+                    </details>
+                `;
+            }).join('')}
         </div>
     `;
 }
@@ -803,13 +840,14 @@ function exportWeeklyPdf() {
     let y = doc.lastAutoTable.finalY + 6;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text('Daily Cash Flow', 14, y);
+    doc.text('Daily Review (Review Total = General + Others + Bilin; Paninda excluded)', 14, y);
 
     doc.autoTable({
         startY: y + 3,
-        head: [['Date', 'Sales', 'Bilin', 'Others', 'General', 'Paninda', 'Money Left']],
+        head: [['Date', 'Review Total', 'Sales', 'Bilin', 'Others', 'General', 'Paninda', 'Money Left']],
         body: dailyItems.map(item => [
             formatDateWithWeekday(item.date),
+            formatPesoForPdf(item.general + item.others + item.bilin),
             formatPesoForPdf(item.sales),
             formatPesoForPdf(item.bilin),
             formatPesoForPdf(item.others),

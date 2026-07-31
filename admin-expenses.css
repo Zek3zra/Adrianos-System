@@ -1704,3 +1704,384 @@ body.modal-open {
         grid-template-columns: repeat(6, minmax(0, 1fr));
     }
 }
+
+
+/* Clear daily review totals and compact collapsible admin sections */
+.summary-panels {
+    align-items: start;
+}
+
+.daily-review-heading {
+    align-items: flex-start;
+}
+
+.daily-review-heading > div:last-child {
+    min-width: 0;
+}
+
+.daily-total-formula-note {
+    max-width: 580px;
+    margin-top: 5px;
+    color: var(--text-muted);
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+.daily-review-list {
+    border: 1px solid #eee7de;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.daily-review-list .daily-accordion-item {
+    border-bottom-color: #eee7de;
+}
+
+.daily-review-list .daily-breakdown-button {
+    min-height: 74px;
+    padding: 11px 10px;
+}
+
+.daily-row-copy {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+
+.daily-row-copy > strong {
+    font-size: 12px;
+}
+
+.daily-row-components {
+    color: var(--coffee-dark) !important;
+    font-size: 9px !important;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.daily-row-exclusion {
+    color: var(--text-muted) !important;
+    font-size: 8px !important;
+    line-height: 1.4;
+}
+
+.daily-rank-value {
+    min-width: 92px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 20px;
+    grid-template-areas:
+        "label chevron"
+        "value chevron";
+    column-gap: 6px;
+    row-gap: 2px;
+    align-items: center;
+    text-align: right;
+}
+
+.daily-value-label {
+    grid-area: label;
+    color: var(--coffee-medium) !important;
+    font-size: 7px !important;
+    font-weight: 800 !important;
+    letter-spacing: .35px;
+    line-height: 1.2 !important;
+    text-transform: uppercase;
+}
+
+.daily-rank-value > strong {
+    grid-area: value;
+    color: var(--coffee-dark);
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.daily-rank-value .daily-chevron {
+    grid-area: chevron;
+    color: var(--coffee-medium);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1;
+}
+
+.daily-cash-flow-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.daily-cash-flow-summary .daily-review-total,
+.daily-cash-flow-summary .daily-money-left {
+    grid-column: 1 / -1;
+}
+
+.daily-cash-flow-summary .daily-review-total {
+    background: #fff7e9;
+    border-color: #e9d4b8;
+}
+
+.daily-cash-flow-summary .daily-review-total strong {
+    font-size: 19px;
+}
+
+.daily-cash-flow-summary small {
+    display: block;
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 7px;
+    line-height: 1.35;
+}
+
+.daily-cash-flow-summary .daily-paninda-excluded {
+    background: #fffaf0;
+    border-style: dashed;
+}
+
+.daily-inline-branch-card {
+    overflow: hidden;
+}
+
+.daily-branch-summary,
+.daily-subsection-summary,
+.collapsible-review-summary {
+    list-style: none;
+}
+
+.daily-branch-summary::-webkit-details-marker,
+.daily-subsection-summary::-webkit-details-marker,
+.collapsible-review-summary::-webkit-details-marker {
+    display: none;
+}
+
+.daily-branch-summary {
+    min-height: 58px;
+    padding: 10px 11px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    background: var(--soft-bg);
+}
+
+.daily-branch-summary > div:first-child {
+    min-width: 0;
+}
+
+.daily-branch-summary span {
+    display: block;
+    color: var(--coffee-medium);
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: .35px;
+    text-transform: uppercase;
+}
+
+.daily-branch-summary strong {
+    color: var(--coffee-dark);
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.daily-branch-summary-value {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: auto 18px;
+    grid-template-areas: "label arrow" "value arrow";
+    gap: 1px 6px;
+    align-items: center;
+    text-align: right;
+}
+
+.daily-branch-summary-value span { grid-area: label; }
+.daily-branch-summary-value strong { grid-area: value; font-size: 13px; }
+.daily-branch-summary-value i {
+    grid-area: arrow;
+    color: var(--coffee-medium);
+    font-size: 18px;
+    font-style: normal;
+    transition: transform .18s ease;
+}
+
+.daily-inline-branch-card[open] .daily-branch-summary-value i {
+    transform: rotate(180deg);
+}
+
+.daily-branch-body {
+    border-top: 1px solid var(--border);
+}
+
+.branch-paninda-excluded {
+    border-style: dashed !important;
+    background: #fffaf0 !important;
+}
+
+.branch-paninda-excluded small {
+    color: var(--text-muted);
+    font-size: 7px;
+}
+
+.daily-subsection {
+    border-top: 1px solid #eee8e1;
+}
+
+.daily-subsection-summary {
+    min-height: 45px;
+    padding: 9px 11px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 18px;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    background: #fff;
+}
+
+.daily-subsection-summary span {
+    color: var(--coffee-dark);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.daily-subsection-summary strong {
+    color: var(--text-muted);
+    font-size: 8px;
+}
+
+.daily-subsection-summary i {
+    color: var(--coffee-medium);
+    font-size: 17px;
+    font-style: normal;
+    transition: transform .18s ease;
+}
+
+.daily-subsection[open] > .daily-subsection-summary {
+    background: #fcfaf7;
+}
+
+.daily-subsection[open] > .daily-subsection-summary i {
+    transform: rotate(180deg);
+}
+
+.daily-subsection-body {
+    margin: 0;
+    padding: 0 9px 9px;
+    background: #fcfaf7;
+}
+
+.daily-subsection-body.daily-inline-expense-list {
+    padding-inline: 0;
+    padding-bottom: 0;
+}
+
+.daily-subsection-body.daily-other-funds-list,
+.daily-subsection-body.daily-taken-food-list {
+    margin-top: 0;
+    padding-top: 8px;
+}
+
+.collapsible-review-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.collapsible-review-summary {
+    min-height: 72px;
+    padding: 13px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    background: #fff;
+}
+
+.collapsible-review-summary:hover {
+    background: #fdfbf8;
+}
+
+.collapsible-review-summary h3 {
+    color: var(--coffee-dark);
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+.collapsible-review-summary p {
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 9px;
+    line-height: 1.4;
+}
+
+.collapsible-review-chevron {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--coffee-medium);
+    font-size: 19px;
+    line-height: 1;
+    transition: transform .18s ease, background-color .18s ease;
+}
+
+.collapsible-review-card[open] > .collapsible-review-summary {
+    border-bottom: 1px solid var(--border);
+    background: #fdfbf8;
+}
+
+.collapsible-review-card[open] > .collapsible-review-summary .collapsible-review-chevron {
+    transform: rotate(180deg);
+    background: #fff;
+}
+
+.collapsible-review-body {
+    padding: 0 14px 14px;
+}
+
+.breakdown-card .collapsible-review-body {
+    padding-top: 3px;
+}
+
+.data-section-body {
+    padding-top: 13px;
+}
+
+.records-collapse-summary > div {
+    min-width: 0;
+}
+
+.collapsible-search-group {
+    margin-bottom: 13px;
+    padding: 11px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--soft-bg);
+}
+
+@media (max-width: 420px) {
+    .daily-review-list .daily-breakdown-button {
+        align-items: flex-start;
+    }
+
+    .daily-rank-value {
+        min-width: 84px;
+    }
+
+    .daily-row-components {
+        font-size: 8px !important;
+    }
+}
+
+@media (min-width: 700px) {
+    .daily-cash-flow-summary {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .daily-cash-flow-summary .daily-review-total,
+    .daily-cash-flow-summary .daily-money-left {
+        grid-column: span 2;
+    }
+
+    .daily-review-list .daily-breakdown-button {
+        padding-inline: 12px;
+    }
+}

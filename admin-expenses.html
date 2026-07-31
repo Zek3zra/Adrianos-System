@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Expense Reports - Adrianos Admin</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-expenses.css?v=others-foodlog-20260729-1">
+    <link rel="stylesheet" href="admin-expenses.css?v=clear-daily-review-20260731-1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -109,129 +109,155 @@
         </section>
 
         <section class="summary-panels three-panels">
-            <article class="dashboard-card breakdown-card">
-                <div class="card-header compact-header">
+            <article class="dashboard-card breakdown-card daily-review-card">
+                <div class="card-header compact-header daily-review-heading">
                     <div class="panel-number">01</div>
                     <div>
-                        <span class="section-kicker">Daily Totals</span>
+                        <span class="section-kicker">Daily Review Total</span>
                         <h3>Monday to Sunday</h3>
+                        <p class="daily-total-formula-note">Amount at the right = General Expenses + Other Funds + Bilin sa Paninda. Paninda purchases are excluded.</p>
                     </div>
                 </div>
-                <div id="dailyBreakdownList" class="rank-list"></div>
+                <div id="dailyBreakdownList" class="rank-list daily-review-list"></div>
             </article>
 
-            <article class="dashboard-card breakdown-card">
-                <div class="card-header compact-header">
-                    <div class="panel-number">02</div>
-                    <div>
-                        <span class="section-kicker">By Expense</span>
-                        <h3>Highest spending</h3>
+            <details class="dashboard-card breakdown-card collapsible-review-card">
+                <summary class="collapsible-review-summary">
+                    <div class="compact-header">
+                        <div class="panel-number">02</div>
+                        <div>
+                            <span class="section-kicker">By Expense</span>
+                            <h3>Highest spending</h3>
+                            <p>Open to review expense totals.</p>
+                        </div>
                     </div>
+                    <span class="collapsible-review-chevron" aria-hidden="true">⌄</span>
+                </summary>
+                <div class="collapsible-review-body">
+                    <div id="expenseBreakdownList" class="rank-list"></div>
                 </div>
-                <div id="expenseBreakdownList" class="rank-list"></div>
-            </article>
+            </details>
 
-            <article class="dashboard-card breakdown-card">
-                <div class="card-header compact-header">
-                    <div class="panel-number">03</div>
-                    <div>
-                        <span class="section-kicker">By Branch</span>
-                        <h3>Branch totals</h3>
+            <details class="dashboard-card breakdown-card collapsible-review-card">
+                <summary class="collapsible-review-summary">
+                    <div class="compact-header">
+                        <div class="panel-number">03</div>
+                        <div>
+                            <span class="section-kicker">By Branch</span>
+                            <h3>Branch totals</h3>
+                            <p>Open to compare branch spending.</p>
+                        </div>
                     </div>
+                    <span class="collapsible-review-chevron" aria-hidden="true">⌄</span>
+                </summary>
+                <div class="collapsible-review-body">
+                    <div id="branchBreakdownList" class="rank-list"></div>
                 </div>
-                <div id="branchBreakdownList" class="rank-list"></div>
-            </article>
+            </details>
         </section>
 
 
-        <section class="dashboard-card admin-supporting-records">
-            <div class="card-header records-header">
+        <details class="dashboard-card admin-supporting-records collapsible-review-card">
+            <summary class="collapsible-review-summary records-collapse-summary">
                 <div>
                     <span class="section-kicker">Additional Cash</span>
                     <h3>Other funds</h3>
                     <p id="adminOtherFundsCountText">0 records shown</p>
                 </div>
+                <span class="collapsible-review-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="collapsible-review-body data-section-body">
+                <div id="adminOtherFundsCards" class="mobile-record-list"></div>
+                <div class="table-wrap desktop-table-wrap">
+                    <table>
+                        <thead><tr><th>Date</th><th>Branch</th><th>Name</th><th>Value</th><th>Logged By</th><th>Updated</th></tr></thead>
+                        <tbody id="adminOtherFundsBody"><tr><td colspan="6" class="table-empty">No Other funds loaded.</td></tr></tbody>
+                    </table>
+                </div>
             </div>
-            <div id="adminOtherFundsCards" class="mobile-record-list"></div>
-            <div class="table-wrap desktop-table-wrap">
-                <table>
-                    <thead><tr><th>Date</th><th>Branch</th><th>Name</th><th>Value</th><th>Logged By</th><th>Updated</th></tr></thead>
-                    <tbody id="adminOtherFundsBody"><tr><td colspan="6" class="table-empty">No Other funds loaded.</td></tr></tbody>
-                </table>
-            </div>
-        </section>
+        </details>
 
-        <section class="dashboard-card admin-taken-food-section">
-            <div class="card-header records-header">
+        <details class="dashboard-card admin-taken-food-section collapsible-review-card">
+            <summary class="collapsible-review-summary records-collapse-summary">
                 <div>
                     <span class="section-kicker">Non-Cash Food Review</span>
                     <h3>Food taken without cash payment</h3>
                     <p id="adminTakenFoodCountText">0 records shown</p>
                 </div>
+                <span class="collapsible-review-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="collapsible-review-body data-section-body">
+                <div id="adminTakenFoodCards" class="admin-taken-food-list"></div>
+                <div class="table-wrap desktop-table-wrap">
+                    <table>
+                        <thead><tr><th>Date</th><th>Branch</th><th>Person / Group</th><th>Menu Items</th><th>Logged By</th><th>Updated</th></tr></thead>
+                        <tbody id="adminTakenFoodBody"><tr><td colspan="6" class="table-empty">No taken-food records loaded.</td></tr></tbody>
+                    </table>
+                </div>
             </div>
-            <div id="adminTakenFoodCards" class="admin-taken-food-list"></div>
-            <div class="table-wrap desktop-table-wrap">
-                <table>
-                    <thead><tr><th>Date</th><th>Branch</th><th>Person / Group</th><th>Menu Items</th><th>Logged By</th><th>Updated</th></tr></thead>
-                    <tbody id="adminTakenFoodBody"><tr><td colspan="6" class="table-empty">No taken-food records loaded.</td></tr></tbody>
-                </table>
-            </div>
-        </section>
+        </details>
 
-        <section class="dashboard-card admin-receipts-section">
-            <div class="card-header records-header">
+        <details class="dashboard-card admin-receipts-section collapsible-review-card">
+            <summary class="collapsible-review-summary records-collapse-summary">
                 <div>
                     <span class="section-kicker">Receipt Attachments</span>
                     <h3>Uploaded expense receipts</h3>
                     <p id="adminReceiptCountText">0 receipts shown</p>
                 </div>
+                <span class="collapsible-review-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="collapsible-review-body data-section-body">
+                <div id="adminReceiptGallery" class="admin-receipt-gallery">
+                    <div class="empty-state">No receipt images uploaded for this selection.</div>
+                </div>
             </div>
-            <div id="adminReceiptGallery" class="admin-receipt-gallery">
-                <div class="empty-state">No receipt images uploaded for this selection.</div>
-            </div>
-        </section>
+        </details>
 
-        <section class="dashboard-card records-section">
-            <div class="card-header records-header">
+        <details class="dashboard-card records-section collapsible-review-card">
+            <summary class="collapsible-review-summary records-collapse-summary">
                 <div>
                     <span class="section-kicker">Detailed Records</span>
                     <h3>Daily expense submissions</h3>
                     <p id="recordsCountText">0 records shown</p>
                 </div>
-                <div class="input-group search-group">
-                    <label for="searchInput">Search records</label>
+                <span class="collapsible-review-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="collapsible-review-body data-section-body">
+                <div class="input-group search-group collapsible-search-group">
+                    <label for="searchInput">Search all review records</label>
                     <div class="search-input-wrap">
                         <span aria-hidden="true">⌕</span>
                         <input type="search" id="searchInput" placeholder="Expense, Other fund, person/group, menu, branch..." autocomplete="off">
                     </div>
+                    <small>The search also filters Other Funds and Taken Food records.</small>
+                </div>
+
+                <div id="recordsCards" class="mobile-record-list"></div>
+
+                <div class="table-wrap desktop-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Branch</th>
+                                <th>Category</th>
+                                <th>Expense</th>
+                                <th>Amount</th>
+                                <th>Submitted By</th>
+                                <th>Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsBody">
+                            <tr><td colspan="7" class="table-empty">No records loaded.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-            <div id="recordsCards" class="mobile-record-list"></div>
-
-            <div class="table-wrap desktop-table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Branch</th>
-                            <th>Category</th>
-                            <th>Expense</th>
-                            <th>Amount</th>
-                            <th>Submitted By</th>
-                            <th>Last Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recordsBody">
-                        <tr><td colspan="7" class="table-empty">No records loaded.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        </details>
     </main>
 
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="admin-expenses.js?v=others-foodlog-20260729-1"></script>
+    <script type="module" src="admin-expenses.js?v=clear-daily-review-20260731-1"></script>
 </body>
 </html>
