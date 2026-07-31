@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Expense Reports - Adrianos Admin</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-expenses.css?v=clear-daily-review-20260731-1">
+    <link rel="stylesheet" href="admin-expenses.css?v=refined-expense-review-20260731-2">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -79,7 +79,7 @@
         <section class="summary-grid admin-financial-summary" aria-label="Expense summary">
             <article class="summary-card summary-card-primary">
                 <div class="summary-icon">₱</div>
-                <div><span>All Expenses</span><strong id="weeklyTotalText">₱0</strong><small id="weeklyEntriesText">0 entries</small></div>
+                <div><span>All Expenses</span><strong id="weeklyTotalText">₱0</strong><small id="weeklyEntriesText">General expenses only</small></div>
             </article>
             <article class="summary-card"><span>General Expenses</span><strong id="generalTotalText">₱0</strong><small>Used in money-left formula</small></article>
             <article class="summary-card"><span>Paninda Purchases</span><strong id="panindaTotalText">₱0</strong><small>Logged but excluded from deduction</small></article>
@@ -89,7 +89,6 @@
             <article class="summary-card"><span>Taken Food Logs</span><strong id="takenFoodCountText">0</strong><small>Non-cash, no inventory effect</small></article>
             <article class="summary-card"><span>Receipts</span><strong id="receiptCountText">0</strong><small>Uploaded this week</small></article>
             <article class="summary-card"><span>Branches</span><strong id="branchCountText">0</strong><small>Reporting this week</small></article>
-            <article class="summary-card summary-card-wide"><span>Top Expense</span><strong id="topExpenseText">None</strong><small id="topExpenseAmountText">₱0</small></article>
             <span id="todayTotalText" class="hidden">₱0</span>
             <span id="todayDateText" class="hidden">Today</span>
         </section>
@@ -115,7 +114,7 @@
                     <div>
                         <span class="section-kicker">Daily Review Total</span>
                         <h3>Monday to Sunday</h3>
-                        <p class="daily-total-formula-note">Amount at the right = General Expenses + Other Funds + Bilin sa Paninda. Paninda purchases are excluded.</p>
+                        <p class="daily-total-formula-note">Amount at the right = General Expenses only. Open a day to review Total Sales = Sales + Bilin sa Paninda + Others. Paninda remains separate.</p>
                     </div>
                 </div>
                 <div id="dailyBreakdownList" class="rank-list daily-review-list"></div>
@@ -127,8 +126,8 @@
                         <div class="panel-number">02</div>
                         <div>
                             <span class="section-kicker">By Expense</span>
-                            <h3>Highest spending</h3>
-                            <p>Open to review expense totals.</p>
+                            <h3>Highest spending by item</h3>
+                            <p>General and Paninda are color-labeled. Matching names such as beef and Beef are combined as Beef.</p>
                         </div>
                     </div>
                     <span class="collapsible-review-chevron" aria-hidden="true">⌄</span>
@@ -144,8 +143,8 @@
                         <div class="panel-number">03</div>
                         <div>
                             <span class="section-kicker">By Branch</span>
-                            <h3>Branch totals</h3>
-                            <p>Open to compare branch spending.</p>
+                            <h3>General expenses by branch</h3>
+                            <p>Paninda is excluded from these branch totals.</p>
                         </div>
                     </div>
                     <span class="collapsible-review-chevron" aria-hidden="true">⌄</span>
@@ -197,12 +196,12 @@
             </div>
         </details>
 
-        <details class="dashboard-card admin-receipts-section collapsible-review-card">
+        <details class="dashboard-card admin-receipts-section collapsible-review-card receipt-review-card">
             <summary class="collapsible-review-summary records-collapse-summary">
                 <div>
                     <span class="section-kicker">Receipt Attachments</span>
-                    <h3>Uploaded expense receipts</h3>
-                    <p id="adminReceiptCountText">0 receipts shown</p>
+                    <h3>Uploaded receipts</h3>
+                    <p id="adminReceiptCountText">0 receipt records</p>
                 </div>
                 <span class="collapsible-review-chevron" aria-hidden="true">⌄</span>
             </summary>
@@ -258,6 +257,6 @@
 
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="admin-expenses.js?v=clear-daily-review-20260731-1"></script>
+    <script type="module" src="admin-expenses.js?v=refined-expense-review-20260731-2"></script>
 </body>
 </html>
