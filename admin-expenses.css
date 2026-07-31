@@ -2314,3 +2314,146 @@ body.modal-open {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+
+
+/* ===== Total sales overview dropdown ===== */
+.summary-breakdown-card {
+    padding: 0;
+    overflow: hidden;
+    justify-content: flex-start;
+}
+
+.summary-breakdown-card > summary {
+    list-style: none;
+}
+
+.summary-breakdown-card > summary::-webkit-details-marker {
+    display: none;
+}
+
+.summary-breakdown-summary {
+    min-height: 100px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.summary-breakdown-summary > div {
+    min-width: 0;
+}
+
+.summary-breakdown-summary span {
+    color: var(--coffee-medium);
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.summary-breakdown-summary strong {
+    display: block;
+    margin: 5px 0;
+    color: var(--coffee-dark);
+    font-size: clamp(18px, 5.7vw, 23px);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.summary-breakdown-summary small {
+    display: block;
+    color: var(--text-muted);
+    font-size: 9px;
+    line-height: 1.35;
+}
+
+.summary-breakdown-chevron {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--soft-bg);
+    color: var(--coffee-medium);
+    font-size: 20px;
+    font-style: normal;
+    line-height: 1;
+    transition: transform .18s ease;
+}
+
+.summary-breakdown-card[open] .summary-breakdown-chevron {
+    transform: rotate(180deg);
+}
+
+.summary-breakdown-card[open] .summary-breakdown-summary {
+    border-bottom: 1px solid var(--border);
+    background: #FFFDFC;
+}
+
+.summary-breakdown-body {
+    display: grid;
+    gap: 0;
+    padding: 3px 12px 11px;
+    background: var(--white);
+}
+
+.summary-breakdown-row {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid #EEE9E3;
+}
+
+.summary-breakdown-row:last-child {
+    border-bottom: 0;
+}
+
+.summary-breakdown-row span {
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.summary-breakdown-row strong {
+    margin: 0;
+    color: var(--coffee-dark);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.summary-breakdown-total {
+    margin-top: 3px;
+    padding: 10px;
+    border: 1px solid #EAD8C4;
+    border-radius: 9px;
+    background: #FFF8EF;
+}
+
+.summary-breakdown-total span,
+.summary-breakdown-total strong {
+    color: var(--coffee-dark);
+    font-weight: 800;
+}
+
+@media (min-width: 700px) {
+    .summary-breakdown-summary {
+        min-height: 120px;
+        padding: 16px;
+    }
+
+    .summary-breakdown-summary strong {
+        font-size: 25px;
+    }
+
+    .summary-breakdown-body {
+        padding: 4px 16px 14px;
+    }
+}

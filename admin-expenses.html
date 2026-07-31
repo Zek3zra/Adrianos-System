@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Expense Reports - Adrianos Admin</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-expenses.css?v=refined-expense-review-20260731-2">
+    <link rel="stylesheet" href="admin-expenses.css?v=total-sales-dropdown-20260731-1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
@@ -83,9 +83,35 @@
             </article>
             <article class="summary-card"><span>General Expenses</span><strong id="generalTotalText">₱0</strong><small>Used in money-left formula</small></article>
             <article class="summary-card"><span>Paninda Purchases</span><strong id="panindaTotalText">₱0</strong><small>Logged but excluded from deduction</small></article>
-            <article class="summary-card"><span>Sales + Bilin sa Paninda</span><strong id="fundsTotalText">₱0</strong><small>Before Other Funds</small></article>
-            <article class="summary-card"><span>Other Funds</span><strong id="otherFundsTotalText">₱0</strong><small>Additional named cash sources</small></article>
-            <article class="summary-card money-left-admin-card"><span>Total Money Left</span><strong id="moneyLeftTotalText">₱0</strong><small>(Sales + Bilin + Others) − General Expenses</small></article>
+            <details class="summary-card summary-breakdown-card">
+                <summary class="summary-breakdown-summary">
+                    <div>
+                        <span>Total Sales</span>
+                        <strong id="fundsTotalText">₱0</strong>
+                        <small>Sales + Bilin sa Paninda + Other Funds</small>
+                    </div>
+                    <i class="summary-breakdown-chevron" aria-hidden="true">⌄</i>
+                </summary>
+                <div class="summary-breakdown-body">
+                    <div class="summary-breakdown-row">
+                        <span>Sales</span>
+                        <strong id="salesOverviewText">₱0</strong>
+                    </div>
+                    <div class="summary-breakdown-row">
+                        <span>Bilin sa Paninda</span>
+                        <strong id="bilinOverviewText">₱0</strong>
+                    </div>
+                    <div class="summary-breakdown-row">
+                        <span>Other Funds</span>
+                        <strong id="otherFundsOverviewText">₱0</strong>
+                    </div>
+                    <div class="summary-breakdown-row summary-breakdown-total">
+                        <span>Total</span>
+                        <strong id="totalFundsBreakdownText">₱0</strong>
+                    </div>
+                </div>
+            </details>
+            <article class="summary-card money-left-admin-card"><span>Total Money Left</span><strong id="moneyLeftTotalText">₱0</strong><small>(Sales + Bilin sa Paninda + Others) − General Expenses</small></article>
             <article class="summary-card"><span>Taken Food Logs</span><strong id="takenFoodCountText">0</strong><small>Non-cash, no inventory effect</small></article>
             <article class="summary-card"><span>Receipts</span><strong id="receiptCountText">0</strong><small>Uploaded this week</small></article>
             <article class="summary-card"><span>Branches</span><strong id="branchCountText">0</strong><small>Reporting this week</small></article>
@@ -257,6 +283,6 @@
 
 
     <div id="toast" class="toast hidden" role="status"></div>
-    <script type="module" src="admin-expenses.js?v=refined-expense-review-20260731-2"></script>
+    <script type="module" src="admin-expenses.js?v=total-sales-dropdown-20260731-1"></script>
 </body>
 </html>

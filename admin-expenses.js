@@ -50,7 +50,8 @@ function bindElements() {
     const ids = [
         'pageLoader', 'backBtn', 'logoutBtn', 'weekPicker', 'weekRangeText', 'branchSelect',
         'refreshBtn', 'exportPdfBtn', 'weeklyTotalText', 'weeklyEntriesText', 'generalTotalText',
-        'panindaTotalText', 'fundsTotalText', 'otherFundsTotalText', 'moneyLeftTotalText',
+        'panindaTotalText', 'fundsTotalText', 'salesOverviewText', 'bilinOverviewText',
+        'otherFundsOverviewText', 'totalFundsBreakdownText', 'moneyLeftTotalText',
         'todayTotalText', 'todayDateText', 'takenFoodCountText', 'branchCountText',
         'receiptCountText', 'dailyBreakdownList', 'expenseBreakdownList',
         'branchBreakdownList', 'searchInput', 'recordsBody', 'recordsCards', 'recordsCountText',
@@ -236,8 +237,8 @@ function renderSummaryCards() {
     const salesTotal = state.financials.reduce((sum, row) => sum + getFinancialAmount(row.sales), 0);
     const bilinTotal = state.financials.reduce((sum, row) => sum + getFinancialAmount(row.bilin_sa_paninda), 0);
     const othersTotal = state.otherFunds.reduce((sum, row) => sum + getFinancialAmount(row.amount), 0);
-    const fundsTotal = salesTotal + bilinTotal;
-    const moneyLeft = fundsTotal + othersTotal - generalTotal;
+    const fundsTotal = salesTotal + bilinTotal + othersTotal;
+    const moneyLeft = fundsTotal - generalTotal;
     const branchCount = new Set([
         ...state.rows.map(row => row.branch_key || row.branch_name),
         ...state.financials.map(row => row.branch_key || row.branch_name),
@@ -250,7 +251,10 @@ function renderSummaryCards() {
     elements.generalTotalText.textContent = formatPeso(generalTotal);
     elements.panindaTotalText.textContent = formatPeso(panindaTotal);
     elements.fundsTotalText.textContent = formatPeso(fundsTotal);
-    elements.otherFundsTotalText.textContent = formatPeso(othersTotal);
+    elements.salesOverviewText.textContent = formatPeso(salesTotal);
+    elements.bilinOverviewText.textContent = formatPeso(bilinTotal);
+    elements.otherFundsOverviewText.textContent = formatPeso(othersTotal);
+    elements.totalFundsBreakdownText.textContent = formatPeso(fundsTotal);
     elements.moneyLeftTotalText.textContent = formatPeso(moneyLeft);
     elements.moneyLeftTotalText.classList.toggle('negative-money', moneyLeft < 0);
     elements.takenFoodCountText.textContent = String(state.takenFoods.length);
