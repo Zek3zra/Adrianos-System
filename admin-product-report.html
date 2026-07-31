@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Weekly Product Report - Adrianos System</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="stylesheet" href="admin-product-report.css?v=category-pastries-20260728">
+    <link rel="stylesheet" href="admin-product-report.css?v=ui-refresh-20260731-1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
@@ -27,15 +27,19 @@
     </nav>
 
     <main class="report-container">
-        <section class="report-hero-card">
+        <section class="report-hero-card" aria-labelledby="productReportTitle">
             <div class="hero-copy">
-                <span class="eyebrow">Weekly Product Report</span>
-                <h1>Develop by Jerow Amelo </h1>
-                <p>Check which products sold the most within the selected week or week range.</p>
+                <span class="eyebrow">Admin Product Analytics</span>
+                <h1 id="productReportTitle">Product Performance Report</h1>
+                <p>Review product quantities, estimated value, branch activity, weekly movement, and detailed order records for the selected coverage.</p>
+                <div class="developer-credit" aria-label="Developer credit">
+                    <span>System Credit</span>
+                    <strong>Developed by Jerow Amelo</strong>
+                </div>
             </div>
-            <div class="hero-buttons">
+            <div class="hero-buttons" aria-label="Report actions">
                 <button id="exportOrdersPdfBtn" class="btn secondary-btn">Export PDF</button>
-                <button id="refreshOrdersBtn" class="btn outline-btn">Refresh</button>
+                <button id="refreshOrdersBtn" class="btn outline-btn">Refresh Data</button>
             </div>
         </section>
 
@@ -50,7 +54,7 @@
 
             <div class="orders-controls">
                 <div class="input-group">
-                    <label for="orderQuickRangeSelect">Quick Range</label>
+                    <label for="orderQuickRangeSelect">Preset range</label>
                     <select id="orderQuickRangeSelect">
                         <option value="thisWeek">This Week</option>
                         <option value="4weeks">Last 4 Weeks</option>
@@ -60,17 +64,17 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="orderStartDateInput">From Week</label>
+                    <label for="orderStartDateInput">Starting week</label>
                     <input type="date" id="orderStartDateInput">
                 </div>
 
                 <div class="input-group">
-                    <label for="orderEndDateInput">To Week</label>
+                    <label for="orderEndDateInput">Ending week</label>
                     <input type="date" id="orderEndDateInput">
                 </div>
 
                 <div class="input-group">
-                    <label for="orderBranchSelect">Branch</label>
+                    <label for="orderBranchSelect">Branch coverage</label>
                     <select id="orderBranchSelect">
                         <option value="all">All Branches</option>
                     </select>
@@ -80,39 +84,60 @@
             <p class="range-note" id="ordersRangeNote">Showing orders for this week.</p>
         </section>
 
-        <section class="summary-grid">
+        <section class="report-reading-guide" aria-label="How to read this report">
+            <article>
+                <span class="guide-number">01</span>
+                <div><strong>Start with the overview</strong><p>The cards summarize quantity, estimated value, product activity, branches, and weeks.</p></div>
+            </article>
+            <article>
+                <span class="guide-number">02</span>
+                <div><strong>Compare performance</strong><p>The graph and ranking panels show which products, weeks, and branches recorded the most orders.</p></div>
+            </article>
+            <article>
+                <span class="guide-number">03</span>
+                <div><strong>Verify the records</strong><p>Use search, category filters, pagination, and the detailed table to review individual entries.</p></div>
+            </article>
+        </section>
+
+        <section class="summary-grid" aria-label="Product report overview">
             <div class="summary-card primary-summary">
-                <span>Total Orders</span>
+                <span>Total Quantity Ordered</span>
                 <strong id="ordersTotalQty">0</strong>
+                <small>Combined quantity for the selected coverage</small>
             </div>
-            <div class="summary-card">
-                <span>Estimated Value</span>
+            <div class="summary-card value-summary">
+                <span>Estimated Order Value</span>
                 <strong id="ordersEstimatedValue">₱0</strong>
+                <small>Quantity multiplied by recorded price</small>
             </div>
             <div class="summary-card">
                 <span>Active Products</span>
                 <strong id="ordersActiveProducts">0</strong>
+                <small>Unique products with positive quantities</small>
             </div>
             <div class="summary-card">
-                <span>Branches Logged</span>
+                <span>Branches Reporting</span>
                 <strong id="ordersBranchCount">0</strong>
+                <small>Branches with recorded product orders</small>
             </div>
             <div class="summary-card">
-                <span>Weeks Logged</span>
+                <span>Weeks Covered</span>
                 <strong id="ordersDaysCovered">0</strong>
+                <small>Number of reporting weeks included</small>
             </div>
-            <div class="summary-card wide-summary">
-                <span>Top Product</span>
+            <div class="summary-card wide-summary top-product-summary">
+                <span>Highest-Ordered Product</span>
                 <strong id="ordersTopProduct">No orders yet</strong>
+                <small>Product with the largest combined quantity</small>
             </div>
         </section>
 
         <section class="report-card chart-card">
             <div class="section-header compact-header">
                 <div>
-                    <span class="section-kicker">Weekly graph</span>
-                    <h3>Product selling graph</h3>
-                    <p>Visual ranking of ordered products within the selected week range.</p>
+                    <span class="section-kicker">Quantity Comparison</span>
+                    <h3>Product performance graph</h3>
+                    <p>Longer bars represent higher recorded quantities in the selected coverage.</p>
                 </div>
             </div>
             <div id="weeklySalesChart" class="weekly-sales-chart">
@@ -123,8 +148,8 @@
         <section class="report-panels">
             <div class="report-panel">
                 <div class="panel-title-row">
-                    <h4>Top Products</h4>
-                    <span>Best sellers in selected range</span>
+                    <div class="panel-heading-copy"><span class="panel-number">01</span><div><h4>Top Products</h4><p>Ranked by total quantity</p></div></div>
+                    <span>Best-performing products</span>
                 </div>
                 <div id="topProductsList" class="rank-list">
                     <div class="empty-state">No product orders found.</div>
@@ -133,8 +158,8 @@
 
             <div class="report-panel">
                 <div class="panel-title-row">
-                    <h4>Weekly Breakdown</h4>
-                    <span>Total orders per week</span>
+                    <div class="panel-heading-copy"><span class="panel-number">02</span><div><h4>Weekly Breakdown</h4><p>Compare reporting weeks</p></div></div>
+                    <span>Quantity and estimated value</span>
                 </div>
                 <div id="dailyOrdersList" class="rank-list">
                     <div class="empty-state">No weekly orders found.</div>
@@ -143,8 +168,8 @@
 
             <div class="report-panel">
                 <div class="panel-title-row">
-                    <h4>Branch Breakdown</h4>
-                    <span>Total orders per branch</span>
+                    <div class="panel-heading-copy"><span class="panel-number">03</span><div><h4>Branch Breakdown</h4><p>Compare branch activity</p></div></div>
+                    <span>Products, cups, and value</span>
                 </div>
                 <div id="branchOrdersList" class="rank-list">
                     <div class="empty-state">No branch orders found.</div>
@@ -155,9 +180,9 @@
         <section class="report-card details-card">
             <div class="section-header">
                 <div>
-                    <span class="section-kicker">Detailed Logs</span>
-                    <h3>Product order records</h3>
-                    <p>Full logged product data from the selected week range.</p>
+                    <span class="section-kicker">Record Verification</span>
+                    <h3>Detailed product order records</h3>
+                    <p>Search and verify the exact entries used to calculate the summaries above.</p>
                 </div>
             </div>
 
@@ -220,6 +245,11 @@
                 </table>
             </div>
         </section>
+
+        <footer class="report-footer">
+            <span>Adrianos Admin Reporting System</span>
+            <strong>Developed by Jerow Amelo</strong>
+        </footer>
     </main>
 
     <div id="pdfLoadingOverlay" class="pdf-loading-overlay hidden">
