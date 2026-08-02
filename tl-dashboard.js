@@ -105,6 +105,7 @@ const PRODUCTS = [
     createProduct('Pastries', 'Choco Caramel', '', 180),
     createProduct('Pastries', 'Cookies', '', 75),
     createProduct('Pastries', 'Cream Cheese Flan', '', 180),
+    createProduct('Pastries', 'Brownies', '', 80),
     createProduct('Pastries', 'Garlic Cheesy Bun', '', 80),
     createProduct('Pastries', 'Muffins', '', 70),
 ];
